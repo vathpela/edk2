@@ -1,0 +1,302 @@
+From 07726861c8d24152a5904a0a6645da9c94989b24 Mon Sep 17 00:00:00 2001
+From: Peter Jones <pjones@redhat.com>
+Date: Thu, 29 May 2014 10:35:17 -0400
+Subject: [PATCH] Update to openssl-1.0.1g
+
+Signed-off-by: Peter Jones <pjones@redhat.com>
+---
+ .../openssl-1.0.1g/crypto/bio/bss_file.c           | 17 ++++++++++++
+ .../OpensslLib/openssl-1.0.1g/crypto/crypto.h      | 30 +++++++++++-----------
+ .../OpensslLib/openssl-1.0.1g/crypto/err/err.c     |  5 ++++
+ .../OpensslLib/openssl-1.0.1g/crypto/err/err.h     |  8 +++++-
+ .../OpensslLib/openssl-1.0.1g/crypto/opensslconf.h |  4 +++
+ .../openssl-1.0.1g/crypto/pkcs7/pk7_smime.c        | 17 +++++++++---
+ .../openssl-1.0.1g/crypto/rand/rand_egd.c          |  2 +-
+ .../openssl-1.0.1g/crypto/rand/rand_unix.c         |  4 +--
+ .../openssl-1.0.1g/crypto/x509/x509_vfy.c          |  5 ++++
+ 9 files changed, 70 insertions(+), 22 deletions(-)
+
+diff --git a/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/bio/bss_file.c b/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/bio/bss_file.c
+index b954fe7..57f6ec4 100644
+--- a/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/bio/bss_file.c
++++ b/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/bio/bss_file.c
+@@ -470,6 +470,23 @@ static int MS_CALLBACK file_puts(BIO *bp, const char *str)
+ 	return(ret);
+ 	}
+ 
++#else
++
++BIO_METHOD *BIO_s_file(void)
++	{
++	return NULL;
++	}
++
++BIO *BIO_new_file(const char *filename, const char *mode)
++	{
++	return NULL;
++	}
++
++BIO *BIO_new_fp(FILE *stream, int close_flag)
++	{
++	return NULL;
++	}
++
+ #endif /* OPENSSL_NO_STDIO */
+ 
+ #endif /* HEADER_BSS_FILE_C */
+diff --git a/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/crypto.h b/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/crypto.h
+index f92fc51..7e22c1c 100644
+--- a/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/crypto.h
++++ b/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/crypto.h
+@@ -231,15 +231,15 @@ typedef struct openssl_item_st
+ #ifndef OPENSSL_NO_LOCKING
+ #ifndef CRYPTO_w_lock
+ #define CRYPTO_w_lock(type)	\
+-	CRYPTO_lock(CRYPTO_LOCK|CRYPTO_WRITE,type,__FILE__,__LINE__)
++	CRYPTO_lock(CRYPTO_LOCK|CRYPTO_WRITE,type,NULL,0)
+ #define CRYPTO_w_unlock(type)	\
+-	CRYPTO_lock(CRYPTO_UNLOCK|CRYPTO_WRITE,type,__FILE__,__LINE__)
++	CRYPTO_lock(CRYPTO_UNLOCK|CRYPTO_WRITE,type,NULL,0)
+ #define CRYPTO_r_lock(type)	\
+-	CRYPTO_lock(CRYPTO_LOCK|CRYPTO_READ,type,__FILE__,__LINE__)
++	CRYPTO_lock(CRYPTO_LOCK|CRYPTO_READ,type,NULL,0)
+ #define CRYPTO_r_unlock(type)	\
+-	CRYPTO_lock(CRYPTO_UNLOCK|CRYPTO_READ,type,__FILE__,__LINE__)
++	CRYPTO_lock(CRYPTO_UNLOCK|CRYPTO_READ,type,NULL,0)
+ #define CRYPTO_add(addr,amount,type)	\
+-	CRYPTO_add_lock(addr,amount,type,__FILE__,__LINE__)
++	CRYPTO_add_lock(addr,amount,type,NULL,0)
+ #endif
+ #else
+ #define CRYPTO_w_lock(a)
+@@ -365,19 +365,19 @@ int CRYPTO_is_mem_check_on(void);
+ #define MemCheck_off()	CRYPTO_mem_ctrl(CRYPTO_MEM_CHECK_DISABLE)
+ #define is_MemCheck_on() CRYPTO_is_mem_check_on()
+ 
+-#define OPENSSL_malloc(num)	CRYPTO_malloc((int)num,__FILE__,__LINE__)
+-#define OPENSSL_strdup(str)	CRYPTO_strdup((str),__FILE__,__LINE__)
++#define OPENSSL_malloc(num)	CRYPTO_malloc((int)num,NULL,0)
++#define OPENSSL_strdup(str)	CRYPTO_strdup((str),NULL,0)
+ #define OPENSSL_realloc(addr,num) \
+-	CRYPTO_realloc((char *)addr,(int)num,__FILE__,__LINE__)
++	CRYPTO_realloc((char *)addr,(int)num,NULL,0)
+ #define OPENSSL_realloc_clean(addr,old_num,num) \
+-	CRYPTO_realloc_clean(addr,old_num,num,__FILE__,__LINE__)
++	CRYPTO_realloc_clean(addr,old_num,num,NULL,0)
+ #define OPENSSL_remalloc(addr,num) \
+-	CRYPTO_remalloc((char **)addr,(int)num,__FILE__,__LINE__)
++	CRYPTO_remalloc((char **)addr,(int)num,NULL,0)
+ #define OPENSSL_freeFunc	CRYPTO_free
+ #define OPENSSL_free(addr)	CRYPTO_free(addr)
+ 
+ #define OPENSSL_malloc_locked(num) \
+-	CRYPTO_malloc_locked((int)num,__FILE__,__LINE__)
++	CRYPTO_malloc_locked((int)num,NULL,0)
+ #define OPENSSL_free_locked(addr) CRYPTO_free_locked(addr)
+ 
+ 
+@@ -503,7 +503,7 @@ void CRYPTO_set_mem_debug_options(long bits);
+ long CRYPTO_get_mem_debug_options(void);
+ 
+ #define CRYPTO_push_info(info) \
+-        CRYPTO_push_info_(info, __FILE__, __LINE__);
++        CRYPTO_push_info_(info, NULL, 0);
+ int CRYPTO_push_info_(const char *info, const char *file, int line);
+ int CRYPTO_pop_info(void);
+ int CRYPTO_remove_all_info(void);
+@@ -541,7 +541,7 @@ void CRYPTO_mem_leaks_cb(CRYPTO_MEM_LEAK_CB *cb);
+ 
+ /* die if we have to */
+ void OpenSSLDie(const char *file,int line,const char *assertion);
+-#define OPENSSL_assert(e)       (void)((e) ? 0 : (OpenSSLDie(__FILE__, __LINE__, #e),1))
++#define OPENSSL_assert(e)       (void)((e) ? 0 : (OpenSSLDie(NULL, 0, #e),1))
+ 
+ unsigned long *OPENSSL_ia32cap_loc(void);
+ #define OPENSSL_ia32cap (*(OPENSSL_ia32cap_loc()))
+@@ -558,14 +558,14 @@ void OPENSSL_init(void);
+ #define fips_md_init_ctx(alg, cx) \
+ 	int alg##_Init(cx##_CTX *c) \
+ 	{ \
+-	if (FIPS_mode()) OpenSSLDie(__FILE__, __LINE__, \
++	if (FIPS_mode()) OpenSSLDie(NULL, 0, \
+ 		"Low level API call to digest " #alg " forbidden in FIPS mode!"); \
+ 	return private_##alg##_Init(c); \
+ 	} \
+ 	int private_##alg##_Init(cx##_CTX *c)
+ 
+ #define fips_cipher_abort(alg) \
+-	if (FIPS_mode()) OpenSSLDie(__FILE__, __LINE__, \
++	if (FIPS_mode()) OpenSSLDie(NULL, 0, \
+ 		"Low level API call to cipher " #alg " forbidden in FIPS mode!")
+ 
+ #else
+diff --git a/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/err/err.c b/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/err/err.c
+index fcdb244..9bbcb4b 100644
+--- a/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/err/err.c
++++ b/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/err/err.c
+@@ -1063,7 +1063,12 @@ void ERR_set_error_data(char *data, int flags)
+ 	es->err_data_flags[i]=flags;
+ 	}
+ 
++/* Add EFIAPI for UEFI version. */
++#if defined(OPENSSL_SYS_UEFI)
++void EFIAPI ERR_add_error_data(int num, ...)
++#else
+ void ERR_add_error_data(int num, ...)
++#endif
+ 	{
+ 	va_list args;
+ 	va_start(args, num);
+diff --git a/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/err/err.h b/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/err/err.h
+index 974cc9c..99db1b7 100644
+--- a/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/err/err.h
++++ b/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/err/err.h
+@@ -344,8 +344,14 @@ void ERR_print_errors_fp(FILE *fp);
+ #endif
+ #ifndef OPENSSL_NO_BIO
+ void ERR_print_errors(BIO *bp);
+-#endif
++
++/* Add EFIAPI for UEFI version. */
++#if defined(OPENSSL_SYS_UEFI)
++void EFIAPI ERR_add_error_data(int num, ...);
++#else
+ void ERR_add_error_data(int num, ...);
++#endif
++#endif
+ void ERR_add_error_vdata(int num, va_list args);
+ void ERR_load_strings(int lib,ERR_STRING_DATA str[]);
+ void ERR_unload_strings(int lib,ERR_STRING_DATA str[]);
+diff --git a/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/opensslconf.h b/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/opensslconf.h
+index b18f4da..4e07bc7 100644
+--- a/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/opensslconf.h
++++ b/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/opensslconf.h
+@@ -138,11 +138,15 @@
+ /* Should we define BN_DIV2W here? */
+ 
+ /* Only one for the following should be defined */
++/* Bypass following definition for UEFI version. */
++#if !defined(OPENSSL_SYS_UEFI)
+ #undef SIXTY_FOUR_BIT_LONG
+ #undef SIXTY_FOUR_BIT
+ #define THIRTY_TWO_BIT
+ #endif
+ 
++#endif
++
+ #if defined(HEADER_RC4_LOCL_H) && !defined(CONFIG_HEADER_RC4_LOCL_H)
+ #define CONFIG_HEADER_RC4_LOCL_H
+ /* if this is defined data[i] is used instead of *data, this is a %20
+diff --git a/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/pkcs7/pk7_smime.c b/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/pkcs7/pk7_smime.c
+index a5104f8..a887eaa 100644
+--- a/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/pkcs7/pk7_smime.c
++++ b/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/pkcs7/pk7_smime.c
+@@ -83,7 +83,7 @@ PKCS7 *PKCS7_sign(X509 *signcert, EVP_PKEY *pkey, STACK_OF(X509) *certs,
+ 	if (!PKCS7_content_new(p7, NID_pkcs7_data))
+ 		goto err;
+ 
+-    	if (pkey && !PKCS7_sign_add_signer(p7, signcert, pkey, NULL, flags))
++    	if (pkey && !PKCS7_sign_add_signer(p7, signcert, pkey, EVP_sha256((), flags))
+ 		{
+ 		PKCS7err(PKCS7_F_PKCS7_SIGN,PKCS7_R_PKCS7_ADD_SIGNER_ERROR);
+ 		goto err;
+@@ -271,7 +271,8 @@ int PKCS7_verify(PKCS7 *p7, STACK_OF(X509) *certs, X509_STORE *store,
+ 	STACK_OF(PKCS7_SIGNER_INFO) *sinfos;
+ 	PKCS7_SIGNER_INFO *si;
+ 	X509_STORE_CTX cert_ctx;
+-	char buf[4096];
++	char *buf = NULL;
++	int bufsiz;
+ 	int i, j=0, k, ret = 0;
+ 	BIO *p7bio;
+ 	BIO *tmpin, *tmpout;
+@@ -382,10 +383,16 @@ int PKCS7_verify(PKCS7 *p7, STACK_OF(X509) *certs, X509_STORE *store,
+ 		BIO_set_mem_eof_return(tmpout, 0);
+ 	} else tmpout = out;
+ 
++	bufsiz = 4096;
++	buf = OPENSSL_malloc (bufsiz);
++		if (buf == NULL) {
++			goto err;
++	}
++
+ 	/* We now have to 'read' from p7bio to calculate digests etc. */
+ 	for (;;)
+ 	{
+-		i=BIO_read(p7bio,buf,sizeof(buf));
++		i=BIO_read(p7bio,buf,bufsiz);
+ 		if (i <= 0) break;
+ 		if (tmpout) BIO_write(tmpout, buf, i);
+ 	}
+@@ -424,6 +431,10 @@ int PKCS7_verify(PKCS7 *p7, STACK_OF(X509) *certs, X509_STORE *store,
+ 
+ 	sk_X509_free(signers);
+ 
++	if (buf != NULL) {
++		OPENSSL_free (buf);
++	}
++
+ 	return ret;
+ }
+ 
+diff --git a/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/rand/rand_egd.c b/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/rand/rand_egd.c
+index d53b916..9d63104 100644
+--- a/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/rand/rand_egd.c
++++ b/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/rand/rand_egd.c
+@@ -95,7 +95,7 @@
+  *   RAND_egd() is a wrapper for RAND_egd_bytes() with numbytes=255.
+  */
+ 
+-#if defined(OPENSSL_SYS_WIN32) || defined(OPENSSL_SYS_VMS) || defined(OPENSSL_SYS_MSDOS) || defined(OPENSSL_SYS_VXWORKS) || defined(OPENSSL_SYS_NETWARE) || defined(OPENSSL_SYS_VOS) || defined(OPENSSL_SYS_BEOS)
++#if defined(OPENSSL_SYS_WIN32) || defined(OPENSSL_SYS_VMS) || defined(OPENSSL_SYS_MSDOS) || defined(OPENSSL_SYS_VXWORKS) || defined(OPENSSL_SYS_NETWARE) || defined(OPENSSL_SYS_VOS) || defined(OPENSSL_SYS_BEOS) || defined(OPENSSL_SYS_UEFI)
+ int RAND_query_egd_bytes(const char *path, unsigned char *buf, int bytes)
+ 	{
+ 	return(-1);
+diff --git a/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/rand/rand_unix.c b/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/rand/rand_unix.c
+index e3a6557..8beeb3d 100644
+--- a/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/rand/rand_unix.c
++++ b/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/rand/rand_unix.c
+@@ -116,7 +116,7 @@
+ #include <openssl/rand.h>
+ #include "rand_lcl.h"
+ 
+-#if !(defined(OPENSSL_SYS_WINDOWS) || defined(OPENSSL_SYS_WIN32) || defined(OPENSSL_SYS_VMS) || defined(OPENSSL_SYS_OS2) || defined(OPENSSL_SYS_VXWORKS) || defined(OPENSSL_SYS_NETWARE))
++#if !(defined(OPENSSL_SYS_WINDOWS) || defined(OPENSSL_SYS_WIN32) || defined(OPENSSL_SYS_VMS) || defined(OPENSSL_SYS_OS2) || defined(OPENSSL_SYS_VXWORKS) || defined(OPENSSL_SYS_NETWARE) || defined(OPENSSL_SYS_UEFI))
+ 
+ #include <sys/types.h>
+ #include <sys/time.h>
+@@ -423,7 +423,7 @@ int RAND_poll(void)
+ #endif /* !(defined(OPENSSL_SYS_WINDOWS) || defined(OPENSSL_SYS_WIN32) || defined(OPENSSL_SYS_VMS) || defined(OPENSSL_SYS_OS2) || defined(OPENSSL_SYS_VXWORKS) || defined(OPENSSL_SYS_NETWARE)) */
+ 
+ 
+-#if defined(OPENSSL_SYS_VXWORKS)
++#if defined(OPENSSL_SYS_VXWORKS) || defined(OPENSSL_SYS_UEFI)
+ int RAND_poll(void)
+ 	{
+ 	return 0;
+diff --git a/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/x509/x509_vfy.c b/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/x509/x509_vfy.c
+index 920066a..7fc890a 100644
+--- a/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/x509/x509_vfy.c
++++ b/CryptoPkg/Library/OpensslLib/openssl-1.0.1g/crypto/x509/x509_vfy.c
+@@ -1538,6 +1538,10 @@ static int check_policy(X509_STORE_CTX *ctx)
+ 
+ static int check_cert_time(X509_STORE_CTX *ctx, X509 *x)
+ 	{
++#if defined(OPENSSL_SYS_UEFI)
++  /* Bypass Certificate Time Checking for UEFI version. */
++  return 1;
++#else
+ 	time_t *ptime;
+ 	int i;
+ 
+@@ -1581,6 +1585,7 @@ static int check_cert_time(X509_STORE_CTX *ctx, X509 *x)
+ 		}
+ 
+ 	return 1;
++#endif	
+ 	}
+ 
+ static int internal_verify(X509_STORE_CTX *ctx)
+-- 
+1.9.0
+
