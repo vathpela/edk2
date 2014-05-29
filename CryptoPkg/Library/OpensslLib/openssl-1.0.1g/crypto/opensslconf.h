@@ -138,9 +138,13 @@
 /* Should we define BN_DIV2W here? */
 
 /* Only one for the following should be defined */
+/* Bypass following definition for UEFI version. */
+#if !defined(OPENSSL_SYS_UEFI)
 #undef SIXTY_FOUR_BIT_LONG
 #undef SIXTY_FOUR_BIT
 #define THIRTY_TWO_BIT
+#endif
+
 #endif
 
 #if defined(HEADER_RC4_LOCL_H) && !defined(CONFIG_HEADER_RC4_LOCL_H)
