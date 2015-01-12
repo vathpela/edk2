@@ -41,7 +41,6 @@
 
     .model  tiny
     .686p
-    .stack  0h
     .code
 
 ;
@@ -49,6 +48,8 @@
 ;
 
     ORG     0h
+__ModuleEntryPoint PROC
+__ModuleEntryPoint ENDP
 ;
 ; This is located at 0xFFFFFFD0h
 ;

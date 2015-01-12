@@ -188,7 +188,6 @@
   gEfiQuarkNcSocIdTokenSpaceGuid.PcdGbaIoBaseAddress|0x1080|UINT16|0x10000205
   gEfiQuarkNcSocIdTokenSpaceGuid.PcdGpe0blkIoBaseAddress|0x1100|UINT16|0x10000206
   gEfiQuarkNcSocIdTokenSpaceGuid.PcdSmbaIoBaseAddress|0x1040|UINT16|0x10000207
-  gEfiQuarkNcSocIdTokenSpaceGuid.PcdSpiDmaIoBaseAddress|0x1020|UINT16|0x10000208 
   gEfiQuarkNcSocIdTokenSpaceGuid.PcdWdtbaIoBaseAddress|0x1140|UINT16|0x10000209  
 
   gEfiQuarkNcSocIdTokenSpaceGuid.PcdRcbaMmioBaseAddress|0xFED1C000|UINT64|0x1000020B
@@ -238,6 +237,9 @@
   gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohI2cMmioBase|0xA001F000|UINT64|0x20000005
   gEfiQuarkSCSocIdTokenSpaceGuid.PcdPeiP2PMemoryBaseAddress|0xA0000000|UINT32|0x20000006
   gEfiQuarkSCSocIdTokenSpaceGuid.PcdPeiQNCUsbControllerMemoryBaseAddress|0xA0010000|UINT32|0x20000007
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohGpioMmioBase|0xA0020000|UINT64|0x20000008
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohMac0MmioBase|0xA0024000|UINT64|0x20000009
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohMac1MmioBase|0xA0028000|UINT64|0x2000000A
 
   # IOH Uart Clock Frequency 44.2368Mhz.
   gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohUartClkFreq|44236800|UINT32|0x20000012
@@ -245,6 +247,10 @@
   gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohUartBusNumber|0x00|UINT8|0x20000013
   gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohUartDevNumber|0x14|UINT8|0x20000014
   gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohUartFunctionNumber|0x5|UINT8|0x20000001
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohGpioBusNumber|0x00|UINT8|0x20000029
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohGpioDevNumber|0x15|UINT8|0x2000002A
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohGpioFunctionNumber|0x2|UINT8|0x2000002B
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohGpioBarRegister|0x14|UINT8|0x2000002D
 
 [PcdsDynamic]
   #

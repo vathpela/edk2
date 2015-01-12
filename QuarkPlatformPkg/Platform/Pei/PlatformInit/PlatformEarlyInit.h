@@ -247,13 +247,13 @@ InitializeUSBPhy (
 /**
   This function provides early platform initialisation.
 
-  @param  PlatformType  Platform type to init.
+  @param  PlatformInfo  Pointer to platform Info structure.
 
 **/
 VOID
 EFIAPI
 EarlyPlatformInit (
-  IN CONST EFI_PLATFORM_TYPE              PlatformType
+  IN CONST EFI_PLATFORM_INFO              *PlatformInfo
   );
 
 /**
@@ -264,7 +264,7 @@ EarlyPlatformInit (
 **/
 VOID
 EFIAPI
-EarlyPlatformGpioInit (
+EarlyPlatformLegacyGpioInit (
   IN CONST EFI_PLATFORM_TYPE              PlatformType
   );
 
@@ -276,8 +276,34 @@ EarlyPlatformGpioInit (
 **/
 VOID
 EFIAPI
-EarlyPlatformGpioManipulation (
+EarlyPlatformLegacyGpioManipulation (
   IN CONST EFI_PLATFORM_TYPE              PlatformType
+  );
+
+/**
+  Performs any early platform specific GPIO Controller init & manipulation.
+
+  @param  PlatformType  Platform type for GPIO init & manipulation.
+
+**/
+VOID
+EFIAPI
+EarlyPlatformGpioCtrlerInitAndManipulation (
+  IN CONST EFI_PLATFORM_TYPE              PlatformType
+  );
+
+/**
+  Performs any early platform init of SoC Ethernet Mac devices.
+
+  @param  IohMac0Address  Mac address to program into Mac0 device.
+  @param  IohMac1Address  Mac address to program into Mac1 device.
+
+**/
+VOID
+EFIAPI
+EarlyPlatformMacInit (
+  IN CONST UINT8                          *IohMac0Address,
+  IN CONST UINT8                          *IohMac1Address
   );
 
 /**

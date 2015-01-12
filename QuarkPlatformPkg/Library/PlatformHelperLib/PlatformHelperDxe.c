@@ -48,6 +48,7 @@ Abstract:
 #include <Protocol/PlatformType.h>
 #include <Protocol/SmmBase2.h>
 #include <Protocol/Spi.h>
+#include <Protocol/I2CHc.h>
 
 #include <Guid/QuarkVariableLock.h>
 
@@ -65,6 +66,92 @@ EFI_SPI_PROTOCOL                    *mPlatHelpSpiProtocolRef = NULL;
 //
 // Routines local to this component.
 //
+
+//
+// Routines shared with other souce modules in this component.
+//
+
+VOID
+Pcal9555SetPortRegBit (
+  IN CONST UINT32                         Pcal9555SlaveAddr,
+  IN CONST UINT32                         GpioNum,
+  IN CONST UINT8                          RegBase,
+  IN CONST BOOLEAN                        LogicOne
+  )
+{
+  EFI_STATUS                        Status;
+  UINTN                             ReadLength;
+  UINTN                             WriteLength;
+  UINT8                             Data[2];
+  EFI_I2C_DEVICE_ADDRESS            I2cDeviceAddr;
+  EFI_I2C_ADDR_MODE                 I2cAddrMode;
+  UINT8                             *RegValuePtr;
+  UINT8                             GpioNumMask;
+  UINT8                             SubAddr;
+  EFI_I2C_HC_PROTOCOL               *I2cBus;
+
+  //
+  // Locate I2C host controller driver.
+  //
+  Status = gBS->LocateProtocol (&gEfiI2CHcProtocolGuid, NULL, (VOID **) &I2cBus);
+  ASSERT_EFI_ERROR (Status);
+
+  I2cDeviceAddr.I2CDeviceAddress = (UINTN) Pcal9555SlaveAddr;
+  I2cAddrMode = EfiI2CSevenBitAddrMode;
+
+  if (GpioNum < 8) {
+    SubAddr = RegBase;
+    GpioNumMask = (UINT8) (1 << GpioNum);
+  } else {
+    SubAddr = RegBase + 1;
+    GpioNumMask = (UINT8) (1 << (GpioNum - 8));
+  }
+
+  //
+  // Output port value always at 2nd byte in Data variable.
+  //
+  RegValuePtr = &Data[1];
+
+  //
+  // On read entry sub address at 2nd byte, on read exit output
+  // port value in 2nd byte.
+  //
+  Data[1] = SubAddr;
+  WriteLength = 1;
+  ReadLength = 1;
+  Status = I2cBus->ReadMultipleByte (
+                      I2cBus,
+                      I2cDeviceAddr,
+                      I2cAddrMode,
+                      &WriteLength,
+                      &ReadLength,
+                      &Data[1]
+                      );
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Adjust output port bit given callers request.
+  //
+  if (LogicOne) {
+    *RegValuePtr = *RegValuePtr | GpioNumMask;
+  } else {
+    *RegValuePtr = *RegValuePtr & ~(GpioNumMask);
+  }
+
+  //
+  // Update register. Sub address at 1st byte, value at 2nd byte.
+  //
+  WriteLength = 2;
+  Data[0] = SubAddr;
+  Status = I2cBus->WriteMultipleByte (
+                      I2cBus,
+                      I2cDeviceAddr,
+                      I2cAddrMode,
+                      &WriteLength,
+                      Data
+                      );
+  ASSERT_EFI_ERROR (Status);
+}
 
 
 EFI_SPI_PROTOCOL *
@@ -550,4 +637,103 @@ PlatformIsBootWithRecoveryStage1 (
   )
 {
   ASSERT_EFI_ERROR (EFI_UNSUPPORTED);
+  return FALSE;
+}
+
+/**
+  Set the direction of Pcal9555 IO Expander GPIO pin.
+
+  @param  Pcal9555SlaveAddr  I2c Slave address of Pcal9555 Io Expander.
+  @param  GpioNum            Gpio direction to configure - values 0-7 for Port0
+                             and 8-15 for Port1.
+  @param  CfgAsInput         If TRUE set pin direction as input else set as output.
+
+**/
+VOID
+EFIAPI
+PlatformPcal9555GpioSetDir (
+  IN CONST UINT32                         Pcal9555SlaveAddr,
+  IN CONST UINT32                         GpioNum,
+  IN CONST BOOLEAN                        CfgAsInput
+  )
+{
+  Pcal9555SetPortRegBit (
+    Pcal9555SlaveAddr,
+    GpioNum,
+    PCAL9555_REG_CFG_PORT0,
+    CfgAsInput
+    );
+}
+
+/**
+  Set the level of Pcal9555 IO Expander GPIO high or low.
+
+  @param  Pcal9555SlaveAddr  I2c Slave address of Pcal9555 Io Expander.
+  @param  GpioNum            Gpio to change values 0-7 for Port0 and 8-15
+                             for Port1.
+  @param  HighLevel          If TRUE set pin high else set pin low.
+
+**/
+VOID
+EFIAPI
+PlatformPcal9555GpioSetLevel (
+  IN CONST UINT32                         Pcal9555SlaveAddr,
+  IN CONST UINT32                         GpioNum,
+  IN CONST BOOLEAN                        HighLevel
+  )
+{
+  Pcal9555SetPortRegBit (
+    Pcal9555SlaveAddr,
+    GpioNum,
+    PCAL9555_REG_OUT_PORT0,
+    HighLevel
+    );
+}
+
+/**
+
+  Enable pull-up/pull-down resistors of Pcal9555 GPIOs.
+
+  @param  Pcal9555SlaveAddr  I2c Slave address of Pcal9555 Io Expander.
+  @param  GpioNum            Gpio to change values 0-7 for Port0 and 8-15
+                             for Port1.
+
+**/
+VOID
+EFIAPI
+PlatformPcal9555GpioEnablePull (
+  IN CONST UINT32                         Pcal9555SlaveAddr,
+  IN CONST UINT32                         GpioNum
+  )
+{
+  Pcal9555SetPortRegBit (
+    Pcal9555SlaveAddr,
+    GpioNum,
+    PCAL9555_REG_PULL_EN_PORT0,
+    TRUE
+    );
+}
+
+/**
+
+  Disable pull-up/pull-down resistors of Pcal9555 GPIOs.
+
+  @param  Pcal9555SlaveAddr  I2c Slave address of Pcal9555 Io Expander.
+  @param  GpioNum            Gpio to change values 0-7 for Port0 and 8-15
+                             for Port1.
+
+**/
+VOID
+EFIAPI
+PlatformPcal9555GpioDisablePull (
+  IN CONST UINT32                         Pcal9555SlaveAddr,
+  IN CONST UINT32                         GpioNum
+  )
+{
+  Pcal9555SetPortRegBit (
+    Pcal9555SlaveAddr,
+    GpioNum,
+    PCAL9555_REG_PULL_EN_PORT0,
+    FALSE
+    );
 }

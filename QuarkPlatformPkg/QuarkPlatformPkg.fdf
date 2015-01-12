@@ -46,17 +46,17 @@
 #
 ################################################################################
 [FD.Quark]
-BaseAddress   = 0xFFC00000                   #The base address of the 4MB FLASH Device.
-Size          = 0x400000                     #The size in bytes of the 4MB FLASH Device.
+BaseAddress   = 0xFF800000                   #The base address of the the FLASH Device.
+Size          = 0x800000                     #The size in bytes of the the FLASH Device.
 ErasePolarity = 1
 BlockSize     = 0x1000
-NumBlocks     = 0x400                        #The number of blocks for 4MB FLASH Device.
+NumBlocks     = 0x800                        #The number of blocks for the FLASH Device.
 
 #
 #Flash location override based on actual flash map
 #
-SET gQuarkPlatformTokenSpaceGuid.PcdFlashAreaBaseAddress = 0xFFC00000
-SET gQuarkPlatformTokenSpaceGuid.PcdFlashAreaSize = 0x400000
+SET gQuarkPlatformTokenSpaceGuid.PcdFlashAreaBaseAddress = 0xFF800000
+SET gQuarkPlatformTokenSpaceGuid.PcdFlashAreaSize = 0x800000
 
 SET gQuarkPlatformTokenSpaceGuid.PcdFlashNvStorageBase = 0xFFF30000
 SET gQuarkPlatformTokenSpaceGuid.PcdFlashNvStorageSize = 0x20000
@@ -85,14 +85,14 @@ SET gQuarkPlatformTokenSpaceGuid.PcdFlashFvMainSize = 0x00120000
 ########################################################
 # Quark EDKII Payload Image.
 ########################################################
-0x00000400|0x000F0000
+0x00400400|0x000F0000
 gQuarkPlatformTokenSpaceGuid.PcdFlashFvPayloadBase|gQuarkPlatformTokenSpaceGuid.PcdFlashFvPayloadSize
 FV = EDKII_PAYLOAD_IMAGE
 
 ########################################################
 # Quark EDKII Stage2 Image (Compressed)
 ########################################################
-0x00100400|0x00120000
+0x00500400|0x00120000
 gQuarkPlatformTokenSpaceGuid.PcdFlashFvMainBase|gQuarkPlatformTokenSpaceGuid.PcdFlashFvMainSize
 FV = EDKII_BOOT_STAGE2_COMPACT
 
@@ -100,20 +100,20 @@ FV = EDKII_BOOT_STAGE2_COMPACT
 # Quark EDKII Stage1 Backup Image
 # Quark EDKII Stage1 contains: Stage1 FV + Remote Management Unit Binary
 #########################################################
-0x00280400|0x0003f000
+0x00680400|0x0003f000
 FV = EDKII_BOOT_STAGE1_IMAGE2
 
 #########################################################
 # Quark EDKII Stage1 Primary Image
 # Quark EDKII Stage1 contains: Stage1 FV + Remote Management Unit Binary
 #########################################################
-0x002C0400|0x0003f000
+0x006C0400|0x0003f000
 FV = EDKII_BOOT_STAGE1_IMAGE1
 
 #########################################################
 # Quark Remote Management Unit Binary
 #########################################################
-0x00300000|0x00008000
+0x00700000|0x00008000
 !ifdef QUARK2
   FILE = QuarkSocPkg/QuarkNorthCluster/Binary/Quark2Microcode/RMU.bin
 !else
@@ -123,7 +123,7 @@ FV = EDKII_BOOT_STAGE1_IMAGE1
 #########################################################
 # Master Flash Header Data.
 #########################################################
-0x00308000|0x00001000
+0x00708000|0x00001000
 DATA = {
   ## This is the MFH_HEADER struct.
   # MFH_HEADER.QuarkMFHIdentifier.
@@ -131,50 +131,48 @@ DATA = {
   # MFH_HEADER.Version, MFH_HEADER.RsvdFlags & MFH_HEADER.NextHeaderBlock.
   0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   # MFH_HEADER.FlashItemCount UINT32 LSB - MSB.
-  0x07, 0x00, 0x00, 0x00,
+  0x06, 0x00, 0x00, 0x00,
   # MFH_HEADER.BootPriorityListCount UINT32 LSB - MSB.
   0x03, 0x00, 0x00, 0x00,
   ## This is the BootPriorityList.
   # 1st                 , 2nd                   , 3rd.
-  0x02, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+  0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   ## This is Flash Item [0] desc. 4xUINT32 LSB - MSB.
   # Type                , FlashAddress          , LengthBytes,          ,Reserved.
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF9, 0xFF, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
   ## This is Flash Item [1] desc. 4xUINT32 LSB - MSB.
   # Type                , FlashAddress          , LengthBytes,          ,Reserved.
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF5, 0xFF, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xEC, 0xFF, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
   ## This is Flash Item [2] desc. 4xUINT32 LSB - MSB.
   # Type                , FlashAddress          , LengthBytes,          ,Reserved.
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xEC, 0xFF, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE8, 0xFF, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
   ## This is Flash Item [3] desc. 4xUINT32 LSB - MSB.
   # Type                , FlashAddress          , LengthBytes,          ,Reserved.
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE8, 0xFF, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0xD0, 0xFF, 0x00, 0x00, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00,
   ## This is Flash Item [4] desc. 4xUINT32 LSB - MSB.
   # Type                , FlashAddress          , LengthBytes,          ,Reserved.
-  0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0xD0, 0xFF, 0x00, 0x00, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x0B, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0xFF, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00,
   ## This is Flash Item [5] desc. 4xUINT32 LSB - MSB.
   # Type                , FlashAddress          , LengthBytes,          ,Reserved.
-  0x0B, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0xFF, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00,
-  ## This is Flash Item [6] desc. 4xUINT32 LSB - MSB.
-  # Type                , FlashAddress          , LengthBytes,          ,Reserved.
-  0x19, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x08, 0x00  
+  0x19, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x99, 0x02, 0x00, 0x01
 }
 
 #########################################################
 # PlatformData Binary, default for standalone is none built-in so user selects.
 #########################################################
-#0x00310000|0x00001000
+#0x00710000|0x00001000
 #FILE = QuarkPlatformPkg/Binary/PlatformData/svp-platform-data.bin
 #FILE = QuarkPlatformPkg/Binary/PlatformData/kipsbay-platform-data.bin
 #FILE = QuarkPlatformPkg/Binary/PlatformData/crosshill-platform-data.bin
 #FILE = QuarkPlatformPkg/Binary/PlatformData/clantonhill-platform-data.bin
 #FILE = QuarkPlatformPkg/Binary/PlatformData/galileo-platform-data.bin
+#FILE = QuarkPlatformPkg/Binary/PlatformData/galileo-gen2-platform-data.bin
 
 #############################################################################
 # Quark EDKII NVRAM Area
 # Quark EDKII NVRAM Area contains: Variable + FTW Working + FTW Spare
 #############################################################################
-0x00330000|0x0000E000
+0x00730000|0x0000E000
 gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableBase|gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableSize
 #NV_VARIABLE_STORE
 DATA = {
@@ -213,7 +211,7 @@ DATA = {
   0x5A, 0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 }
 
-0x0033E000|0x00002000
+0x0073E000|0x00002000
 gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingBase|gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingSize
 #NV_FTW_WORKING
 DATA = {
@@ -227,34 +225,24 @@ DATA = {
   0xE0, 0x1F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 }
 
-0x00340000|0x00010000
+0x00740000|0x00010000
 gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareBase|gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareSize
 #NV_FTW_SPARE
-
-#########################################################################################
-# Quark EDKII Recovery Backup Image
-# Quark EDKII Recovery contains: Recovery Stage1 FV + Recovery Stage2 FV + Remote Management Unit Binary
-#########################################################################################
-0x00350400|0x00038000
-FV = EDKII_RECOVERY_STAGE1_IMAGE2
-
-0x00388400|0x00007000
-FV = EDKII_RECOVERY_STAGE2_IMAGE2
 
 #########################################################################################
 # Quark EDKII Recovery Primary Image
 # Quark EDKII Recovery contains: Recovery Stage1 FV + Recovery Stage2 FV + Remote Management Unit Binary
 #########################################################################################
-0x00390400|0x00038000
+0x00790400|0x00038000
 FV = EDKII_RECOVERY_STAGE1_IMAGE1
 
-0x003C8400|0x00007000
+0x007C8400|0x00007000
 FV = EDKII_RECOVERY_STAGE2_IMAGE1
 
 #######################
 # Quark BootRom Image
 #######################
-0x003E0000|0x00020000
+0x007E0000|0x00020000
 FV = EDKII_BOOTROM_OVERRIDE
 
 ################################################################################
@@ -399,9 +387,6 @@ FILE FREEFORM = EE84C5E7-9412-42cc-B755-A915A7B68536 {
 FILE FREEFORM = E4AD87C8-D20E-40ce-97F5-9756FD0E81D4 {
     SECTION RAW = QuarkPlatformPkg/Binary/PlatformData/galileo-platform-data.bin
   }
-FILE FREEFORM = E27ADA6A-9F8A-4f2e-B09E-4CCDD82C2F54 {
-    SECTION RAW = QuarkPlatformPkg/Binary/PlatformData/galileo-fabe-platform-data.bin
-  }
 FILE FREEFORM = 23B3C10D-46E3-4a78-8AAA-217B6A39EF04 {
     SECTION RAW = QuarkPlatformPkg/Binary/PlatformData/galileo-gen2-platform-data.bin
   }
@@ -481,167 +466,7 @@ FILE FV_IMAGE = 1E9D7604-EF45-46a0-BD8A-71AC78C17AC1 {
 # module statements.
 #
 ################################################################################
-[FV.EDKII_RECOVERY_STAGE1_IMAGE2]
-BlockSize          = 0x1000
-FvBaseAddress      = 0x80000400
-FvForceRebase      = TRUE
-FvAlignment        = 16         #FV alignment and FV attributes setting.
-ERASE_POLARITY     = 1
-MEMORY_MAPPED      = TRUE
-STICKY_WRITE       = TRUE
-LOCK_CAP           = TRUE
-LOCK_STATUS        = TRUE
-WRITE_DISABLED_CAP = TRUE
-WRITE_ENABLED_CAP  = TRUE
-WRITE_STATUS       = TRUE
-WRITE_LOCK_CAP     = TRUE
-WRITE_LOCK_STATUS  = TRUE
-READ_DISABLED_CAP  = TRUE
-READ_ENABLED_CAP   = TRUE
-READ_STATUS        = TRUE
-READ_LOCK_CAP      = TRUE
-READ_LOCK_STATUS   = TRUE
-FvNameGuid         = 18D6D9F4-2EEF-4913-AEE6-BE61C6DA6CC8
-
-################################################################################
-#
-# The INF statements point to EDK component and EDK II module INF files, which will be placed into this FV image.
-# Parsing tools will scan the INF file to determine the type of component or module.
-# The component or module type is used to reference the standard rules
-# defined elsewhere in the FDF file.
-#
-# The format for INF statements is:
-# INF $(PathAndInfFileName)
-#
-################################################################################
-  ##
-  #  PEI Apriori file example, more PEIM module added later.
-  ##
-APRIORI PEI {
-  INF  MdeModulePkg/Universal/PCD/Pei/Pcd.inf
-  # PlatformConfigPei should be immediately after Pcd driver.
-  INF  QuarkPlatformPkg/Platform/Pei/PlatformConfig/PlatformConfigPei.inf
-  INF  MdeModulePkg/Universal/PcatSingleSegmentPciCfg2Pei/PcatSingleSegmentPciCfg2Pei.inf
-  INF  MdeModulePkg/Universal/ReportStatusCodeRouter/Pei/ReportStatusCodeRouterPei.inf
-  INF  MdeModulePkg/Universal/StatusCodeHandler/Pei/StatusCodeHandlerPei.inf
-  INF  QuarkPlatformPkg/Platform/Pei/PlatformInfo/PlatformInfo.inf
-  }
-
-  ##
-  #  PEI Phase RAW Data files.
-  ##
-FILE FREEFORM = PCD(gEfiQuarkNcSocIdTokenSpaceGuid.PcdQuarkMicrocodeFile) {
-!ifdef QUARK2
-    SECTION RAW = QuarkSocPkg/QuarkNorthCluster/Binary/Quark2Microcode/RMU.bin
-!else
-    SECTION RAW = QuarkSocPkg/QuarkNorthCluster/Binary/QuarkMicrocode/RMU.bin
-!endif
-  }
-
-  ##
-  #  Platform data files see QuarkPlatformPkg/Include/Guid/PlatformDataFileNameGuids.h
-  #  for steps to add new platform.
-  ##
-FILE FREEFORM = 0A975562-DF47-4dc3-8AB0-3BA2C3522302 {
-    SECTION RAW = QuarkPlatformPkg/Binary/PlatformData/svp-platform-data.bin
-  }
-FILE FREEFORM = 956EDAD3-8440-45cb-89AC-D1930C004E34 {
-    SECTION RAW = QuarkPlatformPkg/Binary/PlatformData/kipsbay-platform-data.bin
-  }
-FILE FREEFORM = 095B3C16-6D67-4c85-B528-339D9FF6222C {
-    SECTION RAW = QuarkPlatformPkg/Binary/PlatformData/crosshill-platform-data.bin
-  }
-FILE FREEFORM = EE84C5E7-9412-42cc-B755-A915A7B68536 {
-    SECTION RAW = QuarkPlatformPkg/Binary/PlatformData/clantonhill-platform-data.bin
-  }
-FILE FREEFORM = E4AD87C8-D20E-40ce-97F5-9756FD0E81D4 {
-    SECTION RAW = QuarkPlatformPkg/Binary/PlatformData/galileo-platform-data.bin
-  }
-FILE FREEFORM = E27ADA6A-9F8A-4f2e-B09E-4CCDD82C2F54 {
-    SECTION RAW = QuarkPlatformPkg/Binary/PlatformData/galileo-fabe-platform-data.bin
-  }
-FILE FREEFORM = 23B3C10D-46E3-4a78-8AAA-217B6A39EF04 {
-    SECTION RAW = QuarkPlatformPkg/Binary/PlatformData/galileo-gen2-platform-data.bin
-  }
-
-
-  ##
-  #  PEI Phase modules
-  ##
-INF  IA32FamilyCpuBasePkg/SecCore/SecCore.inf
-INF  MdeModulePkg/Core/Pei/PeiMain.inf
-INF  RuleOverride = NORELOC  MdeModulePkg/Universal/PCD/Pei/Pcd.inf
-# PlatformConfigPei should be immediately after Pcd driver.
-INF  QuarkPlatformPkg/Platform/Pei/PlatformConfig/PlatformConfigPei.inf
-INF  RuleOverride = NORELOC  MdeModulePkg/Universal/ReportStatusCodeRouter/Pei/ReportStatusCodeRouterPei.inf
-INF  RuleOverride = NORELOC  MdeModulePkg/Universal/StatusCodeHandler/Pei/StatusCodeHandlerPei.inf
-!ifdef SECURE_BOOT
-  INF  RuleOverride = NORELOC  SecurityPkg/VariableAuthenticated/Pei/VariablePei.inf
-!else
-  INF  RuleOverride = NORELOC  MdeModulePkg/Universal/Variable/Pei/VariablePei.inf
-!endif
-INF  RuleOverride = NORELOC  IA32FamilyCpuBasePkg/CpuPei/CpuPei.inf
-INF  RuleOverride = NORELOC  MdeModulePkg/Universal/CapsulePei/CapsulePei.inf
-INF  RuleOverride = NORELOC  QuarkSocPkg/QuarkNorthCluster/MemoryInit/Pei/MemoryInitPei.inf
-INF  RuleOverride = NORELOC  QuarkSocPkg/QuarkNorthCluster/Smm/Pei/SmmAccessPei/SmmAccessPei.inf
-INF  QuarkPlatformPkg/Platform/Pei/PlatformInit/PlatformEarlyInit.inf
-INF  QuarkPlatformPkg/Platform/Pei/PlatformInfo/PlatformInfo.inf
-INF  MdeModulePkg/Universal/PcatSingleSegmentPciCfg2Pei/PcatSingleSegmentPciCfg2Pei.inf
-INF  QuarkPlatformPkg/Override/MdeModulePkg/Core/DxeIplPeim/DxeIpl.inf
-
-################################################################################
-#
-# FV Section
-#
-# [FV] section is used to define what components or modules are placed within a flash
-# device file.  This section also defines order the components and modules are positioned
-# within the image.  The [FV] section consists of define statements, set statements and
-# module statements.
-#
-################################################################################
-[FV.EDKII_RECOVERY_STAGE2_IMAGE2]
-BlockSize          = 0x1000
-FvBaseAddress      = 0x80030000
-FvForceRebase      = TRUE
-FvAlignment        = 16         #FV alignment and FV attributes setting.
-ERASE_POLARITY     = 1
-MEMORY_MAPPED      = TRUE
-STICKY_WRITE       = TRUE
-LOCK_CAP           = TRUE
-LOCK_STATUS        = TRUE
-WRITE_DISABLED_CAP = TRUE
-WRITE_ENABLED_CAP  = TRUE
-WRITE_STATUS       = TRUE
-WRITE_LOCK_CAP     = TRUE
-WRITE_LOCK_STATUS  = TRUE
-READ_DISABLED_CAP  = TRUE
-READ_ENABLED_CAP   = TRUE
-READ_STATUS        = TRUE
-READ_LOCK_CAP      = TRUE
-READ_LOCK_STATUS   = TRUE
-
-!if $(CFG_SOURCE_DEBUG) == TRUE
- INF  QuarkPlatformPkg/Override/UefiCpuPkg/Universal/Acpi/S3Resume2Pei/S3Resume2Pei.inf
-!endif
-FILE FV_IMAGE = 1E9D7604-EF45-46a0-BD8A-71AC78C17AC1 {
-       SECTION PEI_DEPEX_EXP = {gEfiPeiMemoryDiscoveredPpiGuid AND gEfiPeiBootInRecoveryModePpiGuid}
-       SECTION GUIDED EE4E5898-3914-4259-9D6E-DC7BD79403CF {
-          SECTION FV_IMAGE = FVRECOVERY_COMPONENTS
-       }
-     }
-     
-     
-################################################################################
-#
-# FV Section
-#
-# [FV] section is used to define what components or modules are placed within a flash
-# device file.  This section also defines order the components and modules are positioned
-# within the image.  The [FV] section consists of define statements, set statements and
-# module statements.
-#
-################################################################################
-[FV.FVRECOVERY_COMPONENTS]     
+[FV.FVRECOVERY_COMPONENTS]
 BlockSize          = 0x1000
 FvAlignment        = 16         #FV alignment and FV attributes setting.
 ERASE_POLARITY     = 1
@@ -752,9 +577,6 @@ FILE FREEFORM = EE84C5E7-9412-42cc-B755-A915A7B68536 {
   }
 FILE FREEFORM = E4AD87C8-D20E-40ce-97F5-9756FD0E81D4 {
     SECTION RAW = QuarkPlatformPkg/Binary/PlatformData/galileo-platform-data.bin
-  }
-FILE FREEFORM = E27ADA6A-9F8A-4f2e-B09E-4CCDD82C2F54 {
-    SECTION RAW = QuarkPlatformPkg/Binary/PlatformData/galileo-fabe-platform-data.bin
   }
 FILE FREEFORM = 23B3C10D-46E3-4a78-8AAA-217B6A39EF04 {
     SECTION RAW = QuarkPlatformPkg/Binary/PlatformData/galileo-gen2-platform-data.bin
@@ -877,9 +699,6 @@ FILE FREEFORM = EE84C5E7-9412-42cc-B755-A915A7B68536 {
   }
 FILE FREEFORM = E4AD87C8-D20E-40ce-97F5-9756FD0E81D4 {
     SECTION RAW = QuarkPlatformPkg/Binary/PlatformData/galileo-platform-data.bin
-  }
-FILE FREEFORM = E27ADA6A-9F8A-4f2e-B09E-4CCDD82C2F54 {
-    SECTION RAW = QuarkPlatformPkg/Binary/PlatformData/galileo-fabe-platform-data.bin
   }
 FILE FREEFORM = 23B3C10D-46E3-4a78-8AAA-217B6A39EF04 {
     SECTION RAW = QuarkPlatformPkg/Binary/PlatformData/galileo-gen2-platform-data.bin
@@ -1154,8 +973,17 @@ FvNameGuid         = 30D9ED01-38D2-418a-90D5-C561750BF80F
   #  DXE Phase modules
   ##
 INF  MdeModulePkg/Core/Dxe/DxeMain.inf
-
 INF  MdeModulePkg/Universal/PCD/Dxe/Pcd.inf
+
+#
+# Early SoC / Platform modules. I2C must be loaded before platform init.
+#
+INF  QuarkSocPkg/QuarkSouthCluster/I2C/Dxe/I2CDxe.inf
+INF  QuarkPlatformPkg/Platform/Dxe/PlatformInit/PlatformInitDxe.inf
+
+#
+# EDK Core modules.
+#
 INF  IntelFrameworkModulePkg/Universal/CpuIoDxe/CpuIoDxe.inf
 INF  UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe.inf
 INF  MdeModulePkg/Universal/ReportStatusCodeRouter/RuntimeDxe/ReportStatusCodeRouterRuntimeDxe.inf
@@ -1200,7 +1028,6 @@ INF  QuarkSocPkg/QuarkNorthCluster/Smm/Dxe/SmmAccessDxe/SmmAccess.inf
 INF  QuarkSocPkg/QuarkNorthCluster/S3Support/Dxe/QncS3Support.inf
 INF  QuarkSocPkg/QuarkNorthCluster/Spi/RuntimeDxe/PchSpiRuntime.inf
 INF  QuarkSocPkg/QuarkNorthCluster/Spi/Smm/PchSpiSmm.inf
-INF  QuarkPlatformPkg/Platform/Dxe/PlatformInit/PlatformInitDxe.inf
 INF  QuarkPlatformPkg/Platform/Dxe/Setup/DxePlatform.inf
 
 #

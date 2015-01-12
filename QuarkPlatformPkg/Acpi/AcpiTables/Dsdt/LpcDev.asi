@@ -180,17 +180,8 @@ Device(XTRA)    // all "PNP0C02" devices- pieces that don't fit anywhere else
               0,
               0,
               0x01,
-              0x20,
-              FIX6
-              )
-
-            IO(
-              Decode16,
-              0,
-              0,
-              0x01,
               0x40,
-              FIX7
+              FIX6
               )
 
         }
@@ -218,13 +209,9 @@ Device(XTRA)    // all "PNP0C02" devices- pieces that don't fit anywhere else
       CreateWordField (CRS, ^FIX5._MAX, MBR9)
       Store(\SMBB, MBR9)
       CreateWordField (CRS, ^FIX6._MIN, MBRA)
-      Store(\SPIB, MBRA)
+      Store(\WDTB, MBRA)
       CreateWordField (CRS, ^FIX6._MAX, MBRB)
-      Store(\SPIB, MBRB)
-      CreateWordField (CRS, ^FIX7._MIN, MBRC)
-      Store(\WDTB, MBRC)
-      CreateWordField (CRS, ^FIX7._MAX, MBRD)
-      Store(\WDTB, MBRD)
+      Store(\WDTB, MBRB)
       return (CRS)
     }
 }

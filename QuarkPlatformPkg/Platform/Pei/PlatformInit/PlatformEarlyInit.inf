@@ -113,7 +113,6 @@
   RecoveryOemHookLib
   PcdLib
   IntelQNCLib
-  IohLib
   ReportStatusCodeLib
   PciLib
   PciExpressLib
@@ -208,6 +207,13 @@
   gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohUartFunctionNumber
   gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohUartBusNumber
   gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohUartDevNumber
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohGpioBusNumber
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohGpioDevNumber
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohGpioFunctionNumber
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohGpioBarRegister
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohGpioMmioBase
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohMac0MmioBase
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohMac1MmioBase
   gEfiQuarkSCSocIdTokenSpaceGuid.PcdPeiQNCUsbControllerMemoryBaseAddress
   gEfiQuarkNcSocIdTokenSpaceGuid.PcdRcbaMmioBaseAddress
   gEfiQuarkNcSocIdTokenSpaceGuid.PcdPciHostBridgeMemory32Base

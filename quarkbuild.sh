@@ -50,22 +50,26 @@ build_all()
 
     mkdir -p Conf
 
+
+    ##############################################################################
+    ########################       PreBuild-processing       #####################
+    ##############################################################################
+
+    # Provide default config files when the user has not
+    for cfgf in  tools_def  build_rule; do
+
+        [ -e ./Conf/"${cfgf}".txt ] ||
+            cp -f ./QuarkPlatformPkg/Override/BaseTools/Conf/"${cfgf}".template ./Conf/"${cfgf}".txt
+
+    done
+
     make -C BaseTools
      # This defines EDK_TOOLS_PATH=..../BaseTools and others
+    # Note: this script will also provide all the other default Conf/
+    # files (from BaseTools/), i.e., all config files besides the ones
+    # we provided just above
     . ./edksetup.sh
 
-
-    ###############################################################################
-    ########################       PreBuild-processing       ######################
-    ###############################################################################
-    if [ -e $WORKSPACE/QuarkPlatformPkg/Override/BaseTools/Conf/tools_def.template ]
-    then
-      cp -f $WORKSPACE/QuarkPlatformPkg/Override/BaseTools/Conf/tools_def.template $WORKSPACE/Conf/tools_def.txt
-    fi
-    if [ -e $WORKSPACE/QuarkPlatformPkg/Override/BaseTools/Conf/build_rule.template ]
-    then
-      cp -f $WORKSPACE/QuarkPlatformPkg/Override/BaseTools/Conf/build_rule.template $WORKSPACE/Conf/build_rule.txt
-    fi
 
     local thread_number_opt=''
     if test -n "${THREAD_NUMBER}"; then
@@ -85,15 +89,25 @@ build_all()
     ./QuarkPlatformPkg/Tools/QuarkSpiFixup/QuarkSpiFixup.py $platform $target $tool_opt
 
 
+    ####################################################################################################################
+    ######         Perform EDKII build again after QuarkSpiFixup so that output .fd file usable.           #############
+    ######   Warning: parameters here are supposed to override any corresponding value in Conf/target.txt  #############
+    ####################################################################################################################
+    build -p ${platform}Pkg/${platform}Pkg.dsc -b ${target} -a IA32 ${thread_number_opt} -t $tool_opt -y Report.log $_args ${debug_print_error_level} ${debug_property_mask}
+
+    OutputModulesDir=$WORKSPACE/Build/${platform}/${target}_$tool_opt/FV
+
+    # Copy build output .fd file int0 FlashModules directory.
+    # Use similar name to full Quark Spi Flash tools but emphasise only EDKII assets in bin file.
+    cp -f $OutputModulesDir/QUARK.fd $OutputModulesDir/FlashModules/Flash-EDKII-missingPDAT.bin
+
     ###############################################################################
     ########################     Image signing stage           ####################
     ########################       (dummy signing)             ####################
     ###############################################################################
-    OutputModulesDir=$WORKSPACE/Build/${platform}/${target}_$tool_opt/FV
-      
-	  if [ ! -e $WORKSPACE/QuarkPlatformPkg/Tools/SignTool/DummySignTool ]
+    if [ ! -e $WORKSPACE/QuarkPlatformPkg/Tools/SignTool/DummySignTool ]
     then
-		  make -C $WORKSPACE/QuarkPlatformPkg/Tools/SignTool
+      make -C $WORKSPACE/QuarkPlatformPkg/Tools/SignTool
     fi
           
     $WORKSPACE/QuarkPlatformPkg/Tools/SignTool/DummySignTool ${OutputModulesDir}/FlashModules/EDKII_BOOT_STAGE1_IMAGE1.Fv $OutputModulesDir/EDKII_BOOT_STAGE1_IMAGE1.Fv.signed
@@ -102,36 +116,31 @@ build_all()
     $WORKSPACE/QuarkPlatformPkg/Tools/SignTool/DummySignTool ${OutputModulesDir}/FlashModules/EDKII_BOOT_STAGE2_COMPACT.Fv $OutputModulesDir/EDKII_BOOT_STAGE2_COMPACT.Fv.signed
     $WORKSPACE/QuarkPlatformPkg/Tools/SignTool/DummySignTool ${OutputModulesDir}/FlashModules/EDKII_BOOT_STAGE2.Fv $OutputModulesDir/EDKII_BOOT_STAGE2.Fv.signed
     $WORKSPACE/QuarkPlatformPkg/Tools/SignTool/DummySignTool ${OutputModulesDir}/FlashModules/EDKII_RECOVERY_IMAGE1.Fv $OutputModulesDir/EDKII_RECOVERY_IMAGE1.Fv.signed
-    $WORKSPACE/QuarkPlatformPkg/Tools/SignTool/DummySignTool ${OutputModulesDir}/FlashModules/EDKII_RECOVERY_IMAGE2.Fv $OutputModulesDir/EDKII_RECOVERY_IMAGE2.Fv.signed
 
-		     
     ###############################################################################
     ####################         Capsule creation stage            ################
     ####################     (Recovery and Update capsules)        ################
     ###############################################################################
     CapsuleConfigFile=$WORKSPACE/${platform}Pkg/Tools/CapsuleCreate/${platform}PkgCapsuleComponents.inf
-    CapsuleOutputFileNoReset=$OutputModulesDir/${platform}PkgNoReset.Cap
     CapsuleOutputFileReset=$OutputModulesDir/${platform}PkgReset.Cap
     # CAPSULE_FLAGS_PERSIST_ACROSS_RESET          0x00010000
     # CAPSULE_FLAGS_INITIATE_RESET                0x00040000
     CapsuleFlagsNoReset=0x00000000
     CapsuleFlagsReset=0x00050000
-    
+
 	  if [ ! -e $WORKSPACE/QuarkPlatformPkg/Tools/CapsuleCreate/CapsuleCreate ]
     then
 		  make -C $WORKSPACE/QuarkPlatformPkg/Tools/CapsuleCreate
     fi
-	
+
 	  if [ -e $WORKSPACE/${platform}Pkg/Tools/CapsuleCreate/${platform}PkgCapsuleComponents.inf ]
     then
-		  $WORKSPACE/QuarkPlatformPkg/Tools/CapsuleCreate/CapsuleCreate $CapsuleConfigFile $OutputModulesDir $CapsuleOutputFileNoReset $CapsuleFlagsNoReset
 		  $WORKSPACE/QuarkPlatformPkg/Tools/CapsuleCreate/CapsuleCreate $CapsuleConfigFile $OutputModulesDir $CapsuleOutputFileReset $CapsuleFlagsReset
     fi
-    
+
     $WORKSPACE/QuarkPlatformPkg/Tools/SignTool/DummySignTool $CapsuleOutputFileReset ${CapsuleOutputFileReset}.signed
-    $WORKSPACE/QuarkPlatformPkg/Tools/SignTool/DummySignTool $CapsuleOutputFileNoReset ${CapsuleOutputFileNoReset}.signed
 		cat $OutputModulesDir/EDKII_BOOT_STAGE2_RECOVERY.Fv.signed $CapsuleOutputFileReset.signed > $OutputModulesDir/FVMAIN.fv
-		    
+
     ###############################################################################
     ################       Create useful output directories        ################
     ###############################################################################
@@ -140,13 +149,13 @@ build_all()
     then
 		  mkdir $OutputModulesDir/RemediationModules
     fi
-    
+
 		# Copy the 'Recovery Capsule' and 'Update Capsules' to the RemediationModules directory
+		# Use same/similar names in stand-alone builds compared to full Quark Spi Flash tools.
 		cp -f $OutputModulesDir/FVMAIN.fv $OutputModulesDir/RemediationModules/.
-		cp -f ${CapsuleOutputFileReset}.signed $OutputModulesDir/RemediationModules/.
-		cp -f ${CapsuleOutputFileNoReset}.signed $OutputModulesDir/RemediationModules/.
+		cp -f ${CapsuleOutputFileReset}.signed $OutputModulesDir/RemediationModules/Flash-EDKII.cap
 		cp -f $WORKSPACE/QuarkPlatformPkg/Applications/CapsuleApp.efi $OutputModulesDir/RemediationModules/.
-		  
+
     # Create Tools directory
 	  if [ ! -e $OutputModulesDir/Tools ]
     then

@@ -37,7 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //----------------------------------------------------------------------------
 // I2C Controller B:D:F
 //----------------------------------------------------------------------------
-#define I2C_Bus	    0x00
+#define I2C_Bus     0x00
 #define I2C_Device  0x15
 #define I2C_Func    0x02
 
@@ -61,7 +61,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define   B_I2C_REG_INTR_STAT_STOP_DET       (BIT9)        // Interrupt Status Register STOP_DET signal status
 #define I2C_REG_INTR_MASK                  0x30          // Interrupt Status Mask Register
 #define I2C_REG_RAW_INTR_STAT              0x34          // Raw Interrupt Status Register
-#define   I2C_REG_RAW_INTR_STAT_STOP_DET    (BIT9)         // Raw Interrupt Status Register STOP_DET signal status
+#define   I2C_REG_RAW_INTR_STAT_STOP_DET    (BIT9)         // Raw Interrupt Status Register STOP_DET signal status.
+#define   I2C_REG_RAW_INTR_STAT_TX_ABRT     (BIT6)         // Raw Interrupt Status Register TX Abort status.
+#define   I2C_REG_RAW_INTR_STAT_TX_OVER     (BIT3)         // Raw Interrupt Status Register TX Overflow signal status.
+#define   I2C_REG_RAW_INTR_STAT_RX_OVER     (BIT1)         // Raw Interrupt Status Register RX Overflow signal status.
+#define   I2C_REG_RAW_INTR_STAT_RX_UNDER    (BIT0)         // Raw Interrupt Status Register RX Underflow signal status.
 #define I2C_REG_RX_TL                      0x38          // Receive FIFO Threshold Level Register
 #define I2C_REG_TX_TL                      0x3C          // Transmit FIFO Threshold Level Register
 #define I2C_REG_CLR_INT                    0x40          // Clear Combined and Individual Interrupt Register
@@ -86,5 +90,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define I2C_REG_TX_ABRT_SOURCE             0x80          // Transmit Abort Source Register
 #define I2C_REG_ENABLE_STATUS              0x9C          // Enable Status Register
 #define I2C_REG_FS_SPKLEN                  0xA0          // SS and FS Spike Suppression Limit Register
+
+//
+// Features.
+//
+#define I2C_FIFO_SIZE                      16
 
 #endif

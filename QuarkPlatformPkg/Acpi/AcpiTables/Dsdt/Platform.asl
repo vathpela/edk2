@@ -38,7 +38,6 @@
 
 --*/
 
-
 //
 // OS TYPE DEFINITION
 //
@@ -48,7 +47,34 @@
 #define WINDOWS_2003        0x08
 #define WINDOWS_Vista       0x10
 #define WINDOWS_WIN7        0x11
+#define WINDOWS_WIN8        0x12
+#define WINDOWS_WIN8_1      0x13
 #define LINUX               0xF0
+
+//
+// GPIO Interrupt Connection Resource Descriptor (GpioInt) usage.
+// GpioInt() descriptors maybe used in this file and included .asi files.
+//
+// The mapping below was provided by the first OS user that requested
+// GpioInt() support.
+// Other OS users that need GpioInt() support must use the following mapping.
+//
+#define QUARK_GPIO8_MAPPING         0x00
+#define QUARK_GPIO9_MAPPING         0x01
+#define QUARK_GPIO_SUS0_MAPPING     0x02
+#define QUARK_GPIO_SUS1_MAPPING     0x03
+#define QUARK_GPIO_SUS2_MAPPING     0x04
+#define QUARK_GPIO_SUS3_MAPPING     0x05
+#define QUARK_GPIO_SUS4_MAPPING     0x06
+#define QUARK_GPIO_SUS5_MAPPING     0x07
+#define QUARK_GPIO0_MAPPING         0x08
+#define QUARK_GPIO1_MAPPING         0x09
+#define QUARK_GPIO2_MAPPING         0x0A
+#define QUARK_GPIO3_MAPPING         0x0B
+#define QUARK_GPIO4_MAPPING         0x0C
+#define QUARK_GPIO5_MAPPING         0x0D
+#define QUARK_GPIO6_MAPPING         0x0E
+#define QUARK_GPIO7_MAPPING         0x0F
 
 DefinitionBlock (
   "Platform.aml",
@@ -65,7 +91,7 @@ DefinitionBlock (
 
     //
     // Port 80
-    // 
+    //
     OperationRegion (DBG0, SystemIO, 0x80, 1)
     Field (DBG0, ByteAcc, NoLock, Preserve)
     { IO80,8 }
@@ -88,12 +114,12 @@ DefinitionBlock (
       HPEA, 32,  // HPET Enabled ?
 
       P1BB, 32,  // Pm1blkIoBaseAddress;
-      PBAB, 32,  // PmbaIoBaseAddress;  
+      PBAB, 32,  // PmbaIoBaseAddress;
       GP0B, 32,  // Gpe0blkIoBaseAddress;
       GPAB, 32,  // GbaIoBaseAddress;
 
       SMBB, 32,  // SmbaIoBaseAddress;
-      SPIB, 32,  // SpiDmaIoBaseAddress;
+      NRV1, 32,  // GNVS reserved field 1.
       WDTB, 32,  // WdtbaIoBaseAddress;
 
       HPTB, 32,  // HpetBaseAddress;
@@ -107,6 +133,9 @@ DefinitionBlock (
       APCS, 32,  // IoApicSize;
 
       TPMP, 32,  // TpmPresent ?
+      DBGP, 32,  // DBG2 Present?
+      PTYP, 32,  // Set to one of EFI_PLATFORM_TYPE enums.
+      ALTS, 32,  // Use alternate I2c SLA addresses.
     }
 
     OperationRegion (GPEB, SystemIO, 0x1100, 0x40)  //GPE Block
@@ -237,7 +266,7 @@ DefinitionBlock (
     //
     Method(_WAK, 1, Serialized)
     {
-       // Do nothing here 
+       // Do nothing here
        Return (0)
     }
 
@@ -306,6 +335,14 @@ DefinitionBlock (
                     {
                         Store (WINDOWS_WIN7, OSTP)
                     }
+                    If (\_OSI("Windows 2012"))
+                    {
+                        Store (WINDOWS_WIN8, OSTP)
+                    }
+                    If (\_OSI("Windows 2013"))
+                    {
+                        Store (WINDOWS_WIN8_1, OSTP)
+                    }
                     If (\_OSI("Linux"))
                     {
                       Store (LINUX, OSTP)
@@ -313,13 +350,29 @@ DefinitionBlock (
                 }
             }
 
-            Include ("PciHostBridge.asi")    // PCI0 Host bridge
+            Include ("PciHostBridge.asi")     // PCI0 Host bridge
             Include ("QNC.asi")               // QNC miscellaneous
-            Include ("PcieExpansionPrt.asi") // PCIe expansion bridges/devices
+            Include ("PcieExpansionPrt.asi")  // PCIe expansion bridges/devices
             Include ("QuarkSouthCluster.asi") // Quark South Cluster devices
             Include ("QNCLpc.asi")            // LPC bridge device
             Include ("QNCApic.asi")           // QNC I/O Apic device
+
         }
-        Include ("Tpm.asi")                   // TPM device
+
+        //
+        // Include asi files for I2C and SPI onboard devices.
+        // Devices placed here instead of below relevant controllers.
+        // Hardware topology information is maintained by the
+        // ResourceSource arg to the I2CSerialBus/SPISerialBus macros
+        // within the device asi files.
+        //
+        Include ("Tpm.asi")          // TPM device.
+        Include ("CY8C9540A.asi")    // CY8C9540A 40Bit I/O Expander & EEPROM
+        Include ("PCAL9555A.asi")    // NXP PCAL9555A I/O expander.
+        Include ("PCA9685.asi")      // NXP PCA9685 PWM/LED controller.
+        Include ("CAT24C08.asi")     // ONSEMI CAT24C08 I2C 8KB EEPROM.
+        Include ("AD7298.asi")       // Analog devices AD7298 ADC.
+        Include ("ADC108S102.asi")   // TI ADC108S102 ADC.
+        Include ("GpioClient.asi")   // Software device to expose GPIO
     }
 }

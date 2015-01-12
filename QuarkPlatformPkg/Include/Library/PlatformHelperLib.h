@@ -41,6 +41,7 @@ Abstract:
 #ifndef __PLATFORM_HELPER_LIB_H__
 #define __PLATFORM_HELPER_LIB_H__
 
+#include "Platform.h"
 #include "PlatformData.h"
 
 //
@@ -108,10 +109,10 @@ PlatformDebugPortGetChar8 (
 /**
   Return platform type string given platform type enum.
 
+  @param  PlatformType  Executing platform type.
+
   ASSERT if invalid platform type enum.
-
   ASSERT if EFI_PLATFORM_TYPE_NAME_TABLE_DEFINITION has no entries.
-
   ASSERT if EFI_PLATFORM_TYPE_NAME_TABLE_DEFINITION has no string for type.
 
   @return string for platform type enum.
@@ -120,7 +121,22 @@ PlatformDebugPortGetChar8 (
 CHAR16 *
 EFIAPI
 PlatformTypeString (
-  IN CONST UINT16                         Type
+  IN CONST EFI_PLATFORM_TYPE              Type
+  );
+
+/**
+  Return if platform type value is supported.
+
+  @param  PlatformType  Executing platform type.
+
+  @retval  TRUE    If type within range and not reserved.
+  @retval  FALSE   if type is not supported.
+
+**/
+BOOLEAN
+EFIAPI
+PlatformIsSupportedPlatformType (
+  IN CONST EFI_PLATFORM_TYPE              Type
   );
 
 /**
@@ -302,4 +318,118 @@ PlatformLegacyGpioSetLevel (
   IN CONST UINT32       GpioNum,
   IN CONST BOOLEAN      HighLevel
   );
+
+/**
+  Get Legacy GPIO Level
+
+  @param  LevelRegOffset      GPIO level register Offset from GPIO Base Address.
+  @param  GpioNum             GPIO bit to check.
+
+  @retval TRUE       If bit is SET.
+  @retval FALSE      If bit is CLEAR.
+
+**/
+BOOLEAN
+EFIAPI
+PlatformLegacyGpioGetLevel (
+  IN CONST UINT32       LevelRegOffset,
+  IN CONST UINT32       GpioNum
+  );
+
+/**
+  Set the direction of Pcal9555 IO Expander GPIO pin.
+
+  @param  Pcal9555SlaveAddr  I2c Slave address of Pcal9555 Io Expander.
+  @param  GpioNum            Gpio direction to configure - values 0-7 for Port0
+                             and 8-15 for Port1.
+  @param  CfgAsInput         If TRUE set pin direction as input else set as output.
+
+**/
+VOID
+EFIAPI
+PlatformPcal9555GpioSetDir (
+  IN CONST UINT32                         Pcal9555SlaveAddr,
+  IN CONST UINT32                         GpioNum,
+  IN CONST BOOLEAN                        CfgAsInput
+  );
+
+/**
+  Set the level of Pcal9555 IO Expander GPIO high or low.
+
+  @param  Pcal9555SlaveAddr  I2c Slave address of Pcal9555 Io Expander.
+  @param  GpioNum            Gpio to change values 0-7 for Port0 and 8-15
+                             for Port1.
+  @param  HighLevel          If TRUE set pin high else set pin low.
+
+**/
+VOID
+EFIAPI
+PlatformPcal9555GpioSetLevel (
+  IN CONST UINT32                         Pcal9555SlaveAddr,
+  IN CONST UINT32                         GpioNum,
+  IN CONST BOOLEAN                        HighLevel
+  );
+
+/**
+
+  Enable pull-up/pull-down resistors of Pcal9555 GPIOs.
+
+  @param  Pcal9555SlaveAddr  I2c Slave address of Pcal9555 Io Expander.
+  @param  GpioNum            Gpio to change values 0-7 for Port0 and 8-15
+                             for Port1.
+
+**/
+VOID
+EFIAPI
+PlatformPcal9555GpioEnablePull (
+  IN CONST UINT32                         Pcal9555SlaveAddr,
+  IN CONST UINT32                         GpioNum
+  );
+
+/**
+
+  Disable pull-up/pull-down resistors of Pcal9555 GPIOs.
+
+  @param  Pcal9555SlaveAddr  I2c Slave address of Pcal9555 Io Expander.
+  @param  GpioNum            Gpio to change values 0-7 for Port0 and 8-15
+                             for Port1.
+
+**/
+VOID
+EFIAPI
+PlatformPcal9555GpioDisablePull (
+  IN CONST UINT32                         Pcal9555SlaveAddr,
+  IN CONST UINT32                         GpioNum
+  );
+
+/**
+  Init platform LEDs into known state.
+
+  @param   PlatformType     Executing platform type.
+
+  @retval  EFI_SUCCESS      Operation success.
+
+**/
+EFI_STATUS
+EFIAPI
+PlatformLedInit (
+  IN CONST EFI_PLATFORM_TYPE              Type
+  );
+
+/**
+  Turn on or off platform flash update LED.
+
+  @param   PlatformType     Executing platform type.
+  @param   TurnOn           If TRUE turn on else turn off.
+
+  @retval  EFI_SUCCESS      Operation success.
+
+**/
+EFI_STATUS
+EFIAPI
+PlatformFlashUpdateLed (
+  IN CONST EFI_PLATFORM_TYPE              Type,
+  IN CONST BOOLEAN                        TurnOn
+  );
+
 #endif // #ifndef __PLATFORM_HELPER_LIB_H__

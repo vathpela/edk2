@@ -77,9 +77,7 @@ PlatformPERSTAssert (
   IN CONST EFI_PLATFORM_TYPE              PlatformType
   )
 {
-  if (PlatformType == GalileoFabE) {
-    GalileoFabEPERSTAssert ();
-  } else if (PlatformType == GalileoGen2) {
+  if (PlatformType == GalileoGen2) {
     LegacyGpioSetLevel (R_QNC_GPIO_RGLVL_RESUME_WELL, GALILEO_GEN2_PCIEXP_PERST_RESUMEWELL_GPIO, FALSE);
   } else {
     LegacyGpioSetLevel (R_QNC_GPIO_RGLVL_RESUME_WELL, PCIEXP_PERST_RESUMEWELL_GPIO, FALSE);
@@ -98,9 +96,7 @@ PlatformPERSTDeAssert (
   IN CONST EFI_PLATFORM_TYPE              PlatformType
   )
 {
-  if (PlatformType == GalileoFabE) {
-    GalileoFabEPERSTDeAssert ();
-  } else if (PlatformType == GalileoGen2) {
+  if (PlatformType == GalileoGen2) {
     LegacyGpioSetLevel (R_QNC_GPIO_RGLVL_RESUME_WELL, GALILEO_GEN2_PCIEXP_PERST_RESUMEWELL_GPIO, TRUE);
   } else {
     LegacyGpioSetLevel (R_QNC_GPIO_RGLVL_RESUME_WELL, PCIEXP_PERST_RESUMEWELL_GPIO, TRUE);

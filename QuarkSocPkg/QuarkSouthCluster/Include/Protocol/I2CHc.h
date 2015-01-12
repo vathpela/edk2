@@ -1,5 +1,5 @@
 /** @file
-  The file provides defintion of I2C host controller management 
+  The file provides defintion of I2C host controller management
   functions and data transactions over the I2C Bus.
 
 Copyright (c) 2013 Intel Corporation.
@@ -59,7 +59,7 @@ typedef enum _EFI_I2C_ADDR_MODE {
 } EFI_I2C_ADDR_MODE;
 
 /**
-     
+
   The WriteByte() function provides a standard way to execute a
   standard single byte write to an IC2 device (without accessing
   sub-addresses), as defined in the I2C Specification.
@@ -71,16 +71,14 @@ typedef enum _EFI_I2C_ADDR_MODE {
 
   @param AddrMode     I2C Addressing Mode: 7-bit or 10-bit address.
 
-  @param Length       No. of bytes to be written.
-
   @param Buffer       Contains the value of byte data to execute to the
                       I2C slave device.
 
-
-  @retval EFI_SUCCESS           I2C Operation completed successfully.
-
-  @retval EFI_DEVICE_ERROR      The request was not completed due to error
-                                accessing the slave device.
+  @retval EFI_SUCCESS           Transfer success.
+  @retval EFI_INVALID_PARAMETER  This or Buffer pointers are invalid.
+  @retval EFI_TIMEOUT           Timeout while waiting xfer.
+  @retval EFI_ABORTED           Controller aborted xfer.
+  @retval EFI_DEVICE_ERROR      Device error detected by controller.
 
 **/
 typedef
@@ -89,7 +87,6 @@ EFI_STATUS
   IN CONST  EFI_I2C_HC_PROTOCOL     *This,
   IN        EFI_I2C_DEVICE_ADDRESS  SlaveAddress,
   IN        EFI_I2C_ADDR_MODE       AddrMode,
-  IN        UINTN                   *Length,
   IN OUT    VOID                    *Buffer
 );
 
@@ -106,16 +103,14 @@ EFI_STATUS
 
   @param AddrMode     I2C Addressing Mode: 7-bit or 10-bit address.
 
-  @param Length       No. of bytes to be read.
-
   @param Buffer       Contains the value of byte data read from the
                       I2C slave device.
 
-
-  @retval EFI_SUCCESS           I2C Operation completed successfully.
-
-  @retval EFI_DEVICE_ERROR      The request was not completed due to error
-                                accessing the slave device.
+  @retval EFI_SUCCESS           Transfer success.
+  @retval EFI_INVALID_PARAMETER This or Buffer pointers are invalid.
+  @retval EFI_TIMEOUT           Timeout while waiting xfer.
+  @retval EFI_ABORTED           Controller aborted xfer.
+  @retval EFI_DEVICE_ERROR      Device error detected by controller.
 
 **/
 typedef
@@ -124,7 +119,6 @@ EFI_STATUS
   IN CONST  EFI_I2C_HC_PROTOCOL     *This,
   IN        EFI_I2C_DEVICE_ADDRESS  SlaveAddress,
   IN        EFI_I2C_ADDR_MODE       AddrMode,
-  IN        UINTN                   *Length,
   IN OUT    VOID                    *Buffer
 );
 
@@ -146,11 +140,12 @@ EFI_STATUS
   @param Buffer       Contains the value of byte to be written to the
                       I2C slave device.
 
-
-  @retval EFI_SUCCESS           I2C Operation completed successfully.
-
-  @retval EFI_DEVICE_ERROR      The request was not completed due to error
-                                accessing the slave device.
+  @retval EFI_SUCCESS            Transfer success.
+  @retval EFI_INVALID_PARAMETER  This, Length or Buffer pointers are invalid.
+  @retval EFI_UNSUPPORTED        Unsupported input param.
+  @retval EFI_TIMEOUT            Timeout while waiting xfer.
+  @retval EFI_ABORTED            Controller aborted xfer.
+  @retval EFI_DEVICE_ERROR       Device error detected by controller.
 
 **/
 typedef
@@ -167,7 +162,7 @@ EFI_STATUS
 
   The ReadMultipleByte() function provides a standard way to execute
   multiple byte writes to an IC2 device (e.g. when accessing sub-addresses
-  or when reading block of data), as defined in the I2C Specification 
+  or when reading block of data), as defined in the I2C Specification
   (I2C combined write/read protocol).
 
   @param This         A pointer to the EFI_I2C_PROTOCOL instance.
@@ -179,20 +174,22 @@ EFI_STATUS
 
   @param WriteLength  No. of bytes to be written. In this case data
                       written typically contains sub-address or sub-addresses
-                      in Hi-Lo format, that need to be read (I2C combined 
+                      in Hi-Lo format, that need to be read (I2C combined
                       write/read protocol).
 
-  @param ReadLength   No. of bytes to be read from I2C slave device. 
+  @param ReadLength   No. of bytes to be read from I2C slave device.
                       need to be read.
 
   @param Buffer       Contains the value of byte data read from the
                       I2C slave device.
 
-
-  @retval EFI_SUCCESS           I2C Operation completed successfully.
-
-  @retval EFI_DEVICE_ERROR      The request was not completed due to error
-                                accessing the slave device.
+  @retval EFI_SUCCESS            Transfer success.
+  @retval EFI_INVALID_PARAMETER  This, WriteLength, ReadLength or Buffer
+                                 pointers are invalid.
+  @retval EFI_UNSUPPORTED        Unsupported input param.
+  @retval EFI_TIMEOUT            Timeout while waiting xfer.
+  @retval EFI_ABORTED            Controller aborted xfer.
+  @retval EFI_DEVICE_ERROR       Device error detected by controller.
 
 **/
 typedef
@@ -206,7 +203,6 @@ EFI_STATUS
   IN OUT    VOID                    *Buffer
 );
 
-
 //
 // The EFI_I2C_HC_PROTOCOL provides I2C host controller management and basic data
 // transactions over I2C. There is one EFI_I2C_HC_PROTOCOL instance for each I2C
@@ -218,7 +214,6 @@ struct _EFI_I2C_HC_PROTOCOL {
   EFI_I2C_WRITE_MULTIPLE_BYTE_OPERATION   WriteMultipleByte;
   EFI_I2C_READ_MULTIPLE_BYTE_OPERATION    ReadMultipleByte;
 };
-
 
 extern EFI_GUID gEfiI2CHcProtocolGuid;
 

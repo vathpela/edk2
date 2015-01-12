@@ -79,7 +79,6 @@
   gEfiQuarkNcSocIdTokenSpaceGuid.PcdGpe0blkIoBaseAddress
   gEfiQuarkNcSocIdTokenSpaceGuid.PcdPmbaIoBaseAddress
   gEfiQuarkNcSocIdTokenSpaceGuid.PcdSmbaIoBaseAddress
-  gEfiQuarkNcSocIdTokenSpaceGuid.PcdSpiDmaIoBaseAddress
   gEfiQuarkNcSocIdTokenSpaceGuid.PcdWdtbaIoBaseAddress
   gEfiQuarkNcSocIdTokenSpaceGuid.PcdRcbaMmioBaseAddress
   gEfiQuarkNcSocIdTokenSpaceGuid.PcdDeviceEnables

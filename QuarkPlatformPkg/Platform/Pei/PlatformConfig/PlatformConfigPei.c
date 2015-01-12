@@ -119,8 +119,8 @@ UpdateDynamicPcds (
   UINT32                            SecHdrSize;
   UINT32                            Temp32;
   UINT32                            SramImageIndex;
-  QUARK_EDKII_STAGE1_HEADER       *SramEdk2ImageHeader;
-  QUARK_EDKII_STAGE1_HEADER       *FlashEntryEdk2ImageHeader;
+  QUARK_EDKII_STAGE1_HEADER         *SramEdk2ImageHeader;
+  QUARK_EDKII_STAGE1_HEADER         *FlashEntryEdk2ImageHeader;
   MFH_LIB_FINDCONTEXT               MfhFindContext;
   UINT32                            Stage1Base;
   UINT32                            Stage1Len;
@@ -128,76 +128,77 @@ UpdateDynamicPcds (
   SecHdrSize = FixedPcdGet32 (PcdFvSecurityHeaderSize);
 
   //
-  // Setup stage1 base and length PCDs.
-  //
-
-  //
-  // Assume running from fixed recovery area if no match found in MFH.
+  // Init stage1 locals with fixed recovery image constants.
   //
   Stage1Base = FixedPcdGet32 (PcdFlashFvFixedStage1AreaBase);
   Stage1Len = FixedPcdGet32 (PcdFlashFvFixedStage1AreaSize);
 
   //
-  // If found in SPI MFH override Stage1Base & Len with MFH values.
+  // Setup PCDs determined from MFH if not running in recovery.
   //
-  SramEdk2ImageHeader = (QUARK_EDKII_STAGE1_HEADER *) (FixedPcdGet32 (PcdEsramStage1Base) + SecHdrSize);
-  SramImageIndex = (UINT32)  SramEdk2ImageHeader->ImageIndex;
-  FlashItem = MfhLibFindFirstWithFilter (
-                MFH_FIND_ALL_STAGE1_FILTER,
-                FALSE,
-                &MfhFindContext
-                );
-  while (FlashItem != NULL) {
-    FlashEntryEdk2ImageHeader = (QUARK_EDKII_STAGE1_HEADER *) (FlashItem->FlashAddress + SecHdrSize);
-    if (SramImageIndex == FlashEntryEdk2ImageHeader->ImageIndex) {
-      Stage1Base = FlashItem->FlashAddress;
-      Stage1Len = FlashItem->LengthBytes;
-      break;
-    }
-    FlashItem = MfhLibFindNextWithFilter (
+  if (!PlatformIsBootWithRecoveryStage1()) {
+    //
+    // If found in SPI MFH override Stage1Base & Len with MFH values.
+    //
+    SramEdk2ImageHeader = (QUARK_EDKII_STAGE1_HEADER *) (FixedPcdGet32 (PcdEsramStage1Base) + SecHdrSize);
+    SramImageIndex = (UINT32)  SramEdk2ImageHeader->ImageIndex;
+    FlashItem = MfhLibFindFirstWithFilter (
                   MFH_FIND_ALL_STAGE1_FILTER,
+                  FALSE,
                   &MfhFindContext
                   );
-  }
+    while (FlashItem != NULL) {
+      FlashEntryEdk2ImageHeader = (QUARK_EDKII_STAGE1_HEADER *) (FlashItem->FlashAddress + SecHdrSize);
+      if (SramImageIndex == FlashEntryEdk2ImageHeader->ImageIndex) {
+        Stage1Base = FlashItem->FlashAddress;
+        Stage1Len = FlashItem->LengthBytes;
+        break;
+      }
+      FlashItem = MfhLibFindNextWithFilter (
+                    MFH_FIND_ALL_STAGE1_FILTER,
+                    &MfhFindContext
+                    );
+    }
 
-  Temp32 = PcdSet32 (PcdFlashFvRecoveryBase, (Stage1Base + SecHdrSize));
-  ASSERT (Temp32 == (Stage1Base + SecHdrSize));
+    Temp32 = PcdSet32 (PcdFlashFvRecoveryBase, (Stage1Base + SecHdrSize));
+    ASSERT (Temp32 == (Stage1Base + SecHdrSize));
 
-  Temp32 = PcdSet32 (PcdFlashFvRecoverySize, (Stage1Len - SecHdrSize));
-  ASSERT (Temp32 == (Stage1Len - SecHdrSize));
+    Temp32 = PcdSet32 (PcdFlashFvRecoverySize, (Stage1Len - SecHdrSize));
+    ASSERT (Temp32 == (Stage1Len - SecHdrSize));
 
-  //
-  // Set FvMain base and length PCDs from SPI MFH database.
-  //
-  FlashItem = MfhLibFindFirstWithFilter (
-                MFH_FIND_ALL_STAGE2_FILTER,
-                FALSE,
-                &FindContext
-                );
+    //
+    // Set FvMain base and length PCDs from SPI MFH database.
+    //
+    FlashItem = MfhLibFindFirstWithFilter (
+                  MFH_FIND_ALL_STAGE2_FILTER,
+                  FALSE,
+                  &FindContext
+                  );
 
-  if (FlashItem != NULL) {
-    Temp32 = PcdSet32 (PcdFlashFvMainBase, (FlashItem->FlashAddress + SecHdrSize));
-    ASSERT (Temp32 == (FlashItem->FlashAddress + SecHdrSize));
+    if (FlashItem != NULL) {
+      Temp32 = PcdSet32 (PcdFlashFvMainBase, (FlashItem->FlashAddress + SecHdrSize));
+      ASSERT (Temp32 == (FlashItem->FlashAddress + SecHdrSize));
 
-    Temp32 = PcdSet32 (PcdFlashFvMainSize, (FlashItem->LengthBytes - SecHdrSize));
-    ASSERT (Temp32 == (FlashItem->LengthBytes - SecHdrSize));
-  }
+      Temp32 = PcdSet32 (PcdFlashFvMainSize, (FlashItem->LengthBytes - SecHdrSize));
+      ASSERT (Temp32 == (FlashItem->LengthBytes - SecHdrSize));
+    }
 
-  //
-  // Set Payload base and length PCDs from SPI MFH database.
-  //
-  FlashItem = MfhLibFindFirstWithFilter (
-                MFH_FIND_ALL_BOOTLOADER_FILTER,
-                FALSE,
-                &FindContext
-                );
+    //
+    // Set Payload base and length PCDs from SPI MFH database.
+    //
+    FlashItem = MfhLibFindFirstWithFilter (
+                  MFH_FIND_ALL_BOOTLOADER_FILTER,
+                  FALSE,
+                  &FindContext
+                  );
 
-  if (FlashItem != NULL) {
-    Temp32 = PcdSet32 (PcdFlashFvPayloadBase, (FlashItem->FlashAddress + SecHdrSize));
-    ASSERT (Temp32 == (FlashItem->FlashAddress + SecHdrSize));
+    if (FlashItem != NULL) {
+      Temp32 = PcdSet32 (PcdFlashFvPayloadBase, (FlashItem->FlashAddress + SecHdrSize));
+      ASSERT (Temp32 == (FlashItem->FlashAddress + SecHdrSize));
 
-    Temp32 = PcdSet32 (PcdFlashFvPayloadSize, FlashItem->LengthBytes);
-    ASSERT (Temp32 == FlashItem->LengthBytes);
+      Temp32 = PcdSet32 (PcdFlashFvPayloadSize, FlashItem->LengthBytes);
+      ASSERT (Temp32 == FlashItem->LengthBytes);
+    }
   }
 }
 

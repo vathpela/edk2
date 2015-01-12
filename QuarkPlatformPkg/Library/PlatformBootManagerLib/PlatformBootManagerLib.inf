@@ -84,6 +84,7 @@
   PlatformHelperLib
 
 [Protocols]
+  gEfiPlatformTypeProtocolGuid
   gEfiPciRootBridgeIoProtocolGuid
   gEfiLegacyBiosProtocolGuid
   gEfiPciIoProtocolGuid

@@ -89,6 +89,9 @@
   gEfiSmmSpiReadyProtocolGuid
   gEfiI2CHcProtocolGuid
 
+[FeaturePcd]
+  gQuarkPlatformTokenSpaceGuid.PcdEnableSecureLock
+
 [FixedPcd]
   gQuarkPlatformTokenSpaceGuid.PcdFlashNvStorageBase
 

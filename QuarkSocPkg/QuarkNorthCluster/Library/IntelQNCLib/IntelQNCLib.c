@@ -59,9 +59,6 @@ PeiQNCPreMemInit (
 
   // Sideband register write to Remote Management Unit
   QNCPortWrite (QUARK_NC_RMU_SB_PORT_ID, QNC_MSG_TMPM_REG_PMBA, (BIT31 | PcdGet16 (PcdPmbaIoBaseAddress)));
- 
-  // Sideband register write to Remote Management Unit
-  QNCPortWrite (QUARK_NC_RMU_SB_PORT_ID, QUARK_NC_RMU_REG_SDMA, (BIT31 | PcdGet16 (PcdSpiDmaIoBaseAddress)));
 
   // Configurable I/O address in iLB (legacy block)
 

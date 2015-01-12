@@ -65,3 +65,11 @@
   PciCf8Lib
   BaseLib
   CpuLib
+
+[FixedPcd]
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohGpioBusNumber
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohGpioBusNumber
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohGpioDevNumber
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohGpioFunctionNumber
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohGpioBarRegister
+  gEfiQuarkSCSocIdTokenSpaceGuid.PcdIohGpioMmioBase

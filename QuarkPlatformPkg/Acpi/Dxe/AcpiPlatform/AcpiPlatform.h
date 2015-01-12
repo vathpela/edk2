@@ -51,11 +51,16 @@ Abstract:
 #include <PiDxe.h>
 #include <IntelQNCDxe.h>
 #include <QuarkPlatformDxe.h>
+#include <Platform.h>
+#include <PlatformBoards.h>
+#include <Ioh.h>
+#include <QNCCommonDefinitions.h>
 
 #include <Protocol/GlobalNvsArea.h>
 #include <Protocol/MpService.h>
 #include <Protocol/AcpiSupport.h>
 #include <Protocol/FirmwareVolume2.h>
+#include <Protocol/PlatformType.h>
 
 #include <Library/UefiDriverEntryPoint.h>
 #include <Library/UefiBootServicesTableLib.h>
@@ -68,6 +73,8 @@ Abstract:
 #include <Library/DxeServicesLib.h>
 #include <Library/DevicePathLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/QNCAccessLib.h>
+#include <Library/PlatformHelperLib.h>
 
 #include <IndustryStandard/Acpi.h>
 #include <IndustryStandard/HighPrecisionEventTimerTable.h>

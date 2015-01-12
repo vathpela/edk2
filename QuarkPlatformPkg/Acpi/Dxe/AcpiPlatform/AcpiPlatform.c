@@ -220,7 +220,7 @@ DsdtTableUpdate (
         *Size     = sizeof (EFI_GLOBAL_NVS_AREA);
       }
       break;
-      
+
     //
     // Update processor PBLK register I/O base address
     //
@@ -275,7 +275,7 @@ ApicTableUpdate (
   UINTN                      NumberOfEnabledCPUs;
   UINTN                      BufferSize;
   EFI_PROCESSOR_INFORMATION  MpContext;
-  ACPI_APIC_STRUCTURE_PTR    *ApicPtr;  
+  ACPI_APIC_STRUCTURE_PTR    *ApicPtr;
 
   CurrIoApic    = 0;
   CurrProcessor = 0;
@@ -311,7 +311,7 @@ ApicTableUpdate (
   EndPtr  = EndPtr + TableHeader->Length;
 
   while (CurrPtr < EndPtr) {
-  
+
     ApicPtr = (ACPI_APIC_STRUCTURE_PTR*) CurrPtr;
     switch (ApicPtr->AcpiApicCommon.Type) {
 
@@ -353,7 +353,7 @@ ApicTableUpdate (
         }
         CurrIoApic++;
         break;
-          
+
       default:
         break;
       };
@@ -420,31 +420,31 @@ AcpiUpdateTable (
       	FadtHeader1->SmiCmd     = PcdGet16(PcdSmmActivationPort);
       	FadtHeader1->Pm1aEvtBlk = PcdGet16(PcdPm1blkIoBaseAddress);
       	FadtHeader1->Pm1aCntBlk = PcdGet16(PcdPm1blkIoBaseAddress) + R_QNC_PM1BLK_PM1C;
-      	FadtHeader1->PmTmrBlk   = PcdGet16(PcdPm1blkIoBaseAddress) + R_QNC_PM1BLK_PM1T;        
+      	FadtHeader1->PmTmrBlk   = PcdGet16(PcdPm1blkIoBaseAddress) + R_QNC_PM1BLK_PM1T;
       	FadtHeader1->Gpe0Blk    = PcdGet16(PcdGpe0blkIoBaseAddress);
       } else if (TableHeader->Revision == EFI_ACPI_2_0_FIXED_ACPI_DESCRIPTION_TABLE_REVISION) {
       	*Version = EFI_ACPI_TABLE_VERSION_2_0;
-      	FadtHeader2 = (EFI_ACPI_2_0_FIXED_ACPI_DESCRIPTION_TABLE *) TableHeader;      	
+      	FadtHeader2 = (EFI_ACPI_2_0_FIXED_ACPI_DESCRIPTION_TABLE *) TableHeader;
       	FadtHeader2->SmiCmd     = PcdGet16(PcdSmmActivationPort);
       	FadtHeader2->Pm1aEvtBlk = PcdGet16(PcdPm1blkIoBaseAddress);
       	FadtHeader2->Pm1aCntBlk = PcdGet16(PcdPm1blkIoBaseAddress) + R_QNC_PM1BLK_PM1C;
-      	FadtHeader2->PmTmrBlk   = PcdGet16(PcdPm1blkIoBaseAddress) + R_QNC_PM1BLK_PM1T;        
+      	FadtHeader2->PmTmrBlk   = PcdGet16(PcdPm1blkIoBaseAddress) + R_QNC_PM1BLK_PM1T;
       	FadtHeader2->Gpe0Blk    = PcdGet16(PcdGpe0blkIoBaseAddress);
         FadtHeader2->XPm1aEvtBlk.Address = FadtHeader2->Pm1aEvtBlk;
         FadtHeader2->XPm1aCntBlk.Address = FadtHeader2->Pm1aCntBlk;
-        FadtHeader2->XPmTmrBlk.Address   = FadtHeader2->PmTmrBlk;        
+        FadtHeader2->XPmTmrBlk.Address   = FadtHeader2->PmTmrBlk;
         FadtHeader2->XGpe0Blk.Address    = FadtHeader2->Gpe0Blk;
       } else if (TableHeader->Revision == EFI_ACPI_3_0_FIXED_ACPI_DESCRIPTION_TABLE_REVISION) {
-      	*Version = EFI_ACPI_TABLE_VERSION_3_0;      	
+      	*Version = EFI_ACPI_TABLE_VERSION_3_0;
       	FadtHeader3 = (EFI_ACPI_3_0_FIXED_ACPI_DESCRIPTION_TABLE *) TableHeader;
       	FadtHeader3->SmiCmd     = PcdGet16(PcdSmmActivationPort);
       	FadtHeader3->Pm1aEvtBlk = PcdGet16(PcdPm1blkIoBaseAddress);
       	FadtHeader3->Pm1aCntBlk = PcdGet16(PcdPm1blkIoBaseAddress) + R_QNC_PM1BLK_PM1C;
-      	FadtHeader3->PmTmrBlk   = PcdGet16(PcdPm1blkIoBaseAddress) + R_QNC_PM1BLK_PM1T;        
-      	FadtHeader3->Gpe0Blk    = PcdGet16(PcdGpe0blkIoBaseAddress);      	
+      	FadtHeader3->PmTmrBlk   = PcdGet16(PcdPm1blkIoBaseAddress) + R_QNC_PM1BLK_PM1T;
+      	FadtHeader3->Gpe0Blk    = PcdGet16(PcdGpe0blkIoBaseAddress);
         FadtHeader3->XPm1aEvtBlk.Address = FadtHeader3->Pm1aEvtBlk;
         FadtHeader3->XPm1aCntBlk.Address = FadtHeader3->Pm1aCntBlk;
-        FadtHeader3->XPmTmrBlk.Address   = FadtHeader3->PmTmrBlk;        
+        FadtHeader3->XPmTmrBlk.Address   = FadtHeader3->PmTmrBlk;
         FadtHeader3->XGpe0Blk.Address    = FadtHeader3->Gpe0Blk;
       }
       break;
@@ -571,23 +571,26 @@ AcpiPlatformEntryPoint (
   IN EFI_SYSTEM_TABLE   *SystemTable
   )
 {
-  EFI_STATUS                   Status;
+  EFI_STATUS                    Status;
   EFI_ACPI_TABLE_PROTOCOL       *AcpiTable;
   EFI_FIRMWARE_VOLUME2_PROTOCOL *FwVol;
-  INTN                         Instance;
-  EFI_ACPI_COMMON_HEADER       *CurrentTable;
-  UINTN                        TableHandle;
-  UINT32                       FvStatus;
-  UINTN                        Size;
-  EFI_ACPI_TABLE_VERSION       Version;
-  QNC_DEVICE_ENABLES           QNCDeviceEnables;
-  EFI_HANDLE                   Handle;
+  INTN                          Instance;
+  EFI_ACPI_COMMON_HEADER        *CurrentTable;
+  UINTN                         TableHandle;
+  UINT32                        FvStatus;
+  UINTN                         Size;
+  EFI_ACPI_TABLE_VERSION        Version;
+  QNC_DEVICE_ENABLES            QNCDeviceEnables;
+  EFI_HANDLE                    Handle;
   UINTN                         Index;
   PCI_DEVICE_INFO               *PciDeviceInfo;
   EFI_ACPI_HANDLE               PciRootHandle;
   BOOLEAN                       UpdatePRT;
   BOOLEAN                       UpdatePRW;
   PCI_DEVICE_SETTING            *mConfigData;
+  EFI_PLATFORM_TYPE_PROTOCOL    *PlatformType;
+
+  DEBUG((DEBUG_INFO, "ACPI Platform start...\n"));
 
   Instance = 0;
   TableHandle = 0;
@@ -598,6 +601,9 @@ AcpiPlatformEntryPoint (
   //
   // Initialize the EFI Driver Library
   //
+  Status = gBS->LocateProtocol (&gEfiPlatformTypeProtocolGuid, NULL, (VOID **) &PlatformType);
+  DEBUG((DEBUG_INFO, "ACPI Platform locate gEfiPlatformTypeProtocolGuid protocol...\n"));
+  ASSERT_EFI_ERROR (Status);
 
   ASSERT (sizeof (EFI_GLOBAL_NVS_AREA) == 512);
 
@@ -627,23 +633,35 @@ AcpiPlatformEntryPoint (
   //
   // Initialize the data.  Eventually, this will be controlled by setup options.
   //
-  mGlobalNvsArea.Area->HpetEnable           =  PcdGetBool (PcdHpetEnable);  
+  mGlobalNvsArea.Area->HpetEnable           =  PcdGetBool (PcdHpetEnable);
   mGlobalNvsArea.Area->Pm1blkIoBaseAddress  =  PcdGet16(PcdPm1blkIoBaseAddress);
-  mGlobalNvsArea.Area->PmbaIoBaseAddress    =  PcdGet16(PcdPmbaIoBaseAddress);   
+  mGlobalNvsArea.Area->PmbaIoBaseAddress    =  PcdGet16(PcdPmbaIoBaseAddress);
   mGlobalNvsArea.Area->Gpe0blkIoBaseAddress =  PcdGet16(PcdGpe0blkIoBaseAddress);
-  mGlobalNvsArea.Area->GbaIoBaseAddress     =  PcdGet16(PcdGbaIoBaseAddress);                        
+  mGlobalNvsArea.Area->GbaIoBaseAddress     =  PcdGet16(PcdGbaIoBaseAddress);
   mGlobalNvsArea.Area->SmbaIoBaseAddress    =  PcdGet16(PcdSmbaIoBaseAddress);
-  mGlobalNvsArea.Area->SpiDmaIoBaseAddress  =  PcdGet16(PcdSpiDmaIoBaseAddress);
   mGlobalNvsArea.Area->WdtbaIoBaseAddress   =  PcdGet16(PcdWdtbaIoBaseAddress);
-  mGlobalNvsArea.Area->HpetBaseAddress      =  (UINT32)PcdGet64(PcdHpetBaseAddress);       
-  mGlobalNvsArea.Area->HpetSize             =  (UINT32)PcdGet64(PcdHpetSize);              
-  mGlobalNvsArea.Area->PciExpressBaseAddress=  (UINT32)PcdGet64(PcdPciExpressBaseAddress); 
-  mGlobalNvsArea.Area->PciExpressSize       =  (UINT32)PcdGet64(PcdPciExpressSize);        
-  mGlobalNvsArea.Area->RcbaMmioBaseAddress  =  (UINT32)PcdGet64(PcdRcbaMmioBaseAddress); 
-  mGlobalNvsArea.Area->RcbaMmioSize         =  (UINT32)PcdGet64(PcdRcbaMmioSize);        
-  mGlobalNvsArea.Area->IoApicBaseAddress    =  (UINT32)PcdGet64(PcdIoApicBaseAddress);     
+  mGlobalNvsArea.Area->HpetBaseAddress      =  (UINT32)PcdGet64(PcdHpetBaseAddress);
+  mGlobalNvsArea.Area->HpetSize             =  (UINT32)PcdGet64(PcdHpetSize);
+  mGlobalNvsArea.Area->PciExpressBaseAddress=  (UINT32)PcdGet64(PcdPciExpressBaseAddress);
+  mGlobalNvsArea.Area->PciExpressSize       =  (UINT32)PcdGet64(PcdPciExpressSize);
+  mGlobalNvsArea.Area->RcbaMmioBaseAddress  =  (UINT32)PcdGet64(PcdRcbaMmioBaseAddress);
+  mGlobalNvsArea.Area->RcbaMmioSize         =  (UINT32)PcdGet64(PcdRcbaMmioSize);
+  mGlobalNvsArea.Area->IoApicBaseAddress    =  (UINT32)PcdGet64(PcdIoApicBaseAddress);
   mGlobalNvsArea.Area->IoApicSize           =  (UINT32)PcdGet64(PcdIoApicSize);
   mGlobalNvsArea.Area->TpmPresent           =  (UINT32)(FALSE);
+  mGlobalNvsArea.Area->DBG2Present          =  (UINT32)(FALSE);
+  mGlobalNvsArea.Area->PlatformType         =  (UINT32)PlatformType->Type;
+
+  //
+  // Configure platform IO expander I2C Slave Address.
+  //
+  if (PlatformType->Type == Galileo) {
+    if (PlatformLegacyGpioGetLevel (R_QNC_GPIO_RGLVL_RESUME_WELL, GALILEO_DETERMINE_IOEXP_SLA_RESUMEWELL_GPIO)) {
+      mGlobalNvsArea.Area->AlternateSla = FALSE;
+    } else {
+      mGlobalNvsArea.Area->AlternateSla = TRUE;
+    }
+  }
 
   //
   // Find the AcpiTable protocol
@@ -655,7 +673,7 @@ AcpiPlatformEntryPoint (
 
   //
   // Initialize MADT table
-  // 
+  //
   Status = MadtTableInitialize (&CurrentTable, &Size);
   ASSERT_EFI_ERROR (Status);
   //
@@ -664,13 +682,13 @@ AcpiPlatformEntryPoint (
   AcpiUpdateTable ((EFI_ACPI_DESCRIPTION_HEADER *) CurrentTable, &Version);
 
   //
-  // Update the check sum 
+  // Update the check sum
   // It needs to be zeroed before the checksum calculation
   //
-  ((EFI_ACPI_SDT_HEADER *)CurrentTable)->Checksum = 0;  
-  ((EFI_ACPI_SDT_HEADER *)CurrentTable)->Checksum = 
+  ((EFI_ACPI_SDT_HEADER *)CurrentTable)->Checksum = 0;
+  ((EFI_ACPI_SDT_HEADER *)CurrentTable)->Checksum =
     CalculateCheckSum8 ((VOID *)CurrentTable, CurrentTable->Length);
-    
+
   //
   // Add the table
   //
@@ -725,13 +743,13 @@ AcpiPlatformEntryPoint (
       AcpiUpdateTable ((EFI_ACPI_DESCRIPTION_HEADER *) CurrentTable, &Version);
 
       //
-      // Update the check sum 
+      // Update the check sum
       // It needs to be zeroed before the checksum calculation
       //
-      ((EFI_ACPI_SDT_HEADER *)CurrentTable)->Checksum = 0;   
-      ((EFI_ACPI_SDT_HEADER *)CurrentTable)->Checksum = 
+      ((EFI_ACPI_SDT_HEADER *)CurrentTable)->Checksum = 0;
+      ((EFI_ACPI_SDT_HEADER *)CurrentTable)->Checksum =
         CalculateCheckSum8 ((VOID *)CurrentTable, CurrentTable->Length);
-        
+
       //
       // Add the table
       //
@@ -758,7 +776,7 @@ AcpiPlatformEntryPoint (
 
         PciRootHandle = NULL;
         PciRootHandle = SdtGetRootBridgeHandle (mAcpiSdt, mDsdtHandle);
-        ASSERT (PciRootHandle != NULL);	
+        ASSERT (PciRootHandle != NULL);
 
         PciDeviceInfo = NULL;
         for (Index = 0; Index < mConfigData->PciDeviceInfoNumber; Index++) {
@@ -783,7 +801,7 @@ AcpiPlatformEntryPoint (
               // Update the pci routing information
               //
               //DEBUG ((EFI_D_ERROR, "Update _PRT\n"));
-              SdtUpdatePciRouting (mAcpiSdt, PciRootHandle, PciDeviceInfo);  						
+              SdtUpdatePciRouting (mAcpiSdt, PciRootHandle, PciDeviceInfo);
             }
             //
             // Check whether there is any valid pci routing item
@@ -793,7 +811,7 @@ AcpiPlatformEntryPoint (
               // Update the pci wakeup information
               //
               //DEBUG ((EFI_D_ERROR, "Update _PRW\n"));
-              SdtUpdatePowerWake (mAcpiSdt, PciRootHandle, PciDeviceInfo);				
+              SdtUpdatePowerWake (mAcpiSdt, PciRootHandle, PciDeviceInfo);
             }
           }
         }
@@ -805,7 +823,7 @@ AcpiPlatformEntryPoint (
         ((EFI_AML_HANDLE *)mDsdtHandle)->Modified = TRUE;
         Status = mAcpiSdt->Close (mDsdtHandle);
         ASSERT_EFI_ERROR (Status);
-      } 
+      }
       //
       // Increment the instance
       //

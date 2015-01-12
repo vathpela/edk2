@@ -57,6 +57,7 @@
   PlatformHelperDxe.c
   Crc32.c
   PlatformSecureBoot.c
+  PlatformLeds.c
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -69,7 +70,6 @@
   PcdLib
   BaseMemoryLib
   SerialPortLib
-  IohLib
   S3BootScriptLib
   UefiBootServicesTableLib
   UefiRuntimeServicesTableLib
@@ -84,6 +84,7 @@
   gEfiSmmSpiProtocolGuid
   gSecureBootHelperProtocolGuid
   gEfiSmmBase2ProtocolGuid
+  gEfiI2CHcProtocolGuid
 
 [Guids]
   gEfiGlobalVariableGuid

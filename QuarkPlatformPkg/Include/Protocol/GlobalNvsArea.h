@@ -69,7 +69,7 @@ typedef struct {
   UINT32      GbaIoBaseAddress;
 
   UINT32      SmbaIoBaseAddress;
-  UINT32      SpiDmaIoBaseAddress;
+  UINT32      Reserved1;
   UINT32      WdtbaIoBaseAddress;
 
   UINT32      HpetBaseAddress;
@@ -83,8 +83,11 @@ typedef struct {
   UINT32      IoApicSize;
 
   UINT32      TpmPresent;
+  UINT32      DBG2Present;
+  UINT32      PlatformType;           // Set to one of EFI_PLATFORM_TYPE enums.
+  UINT32      AlternateSla;           // If TRUE use alternate I2C Slave addresses.
 
-  UINT8       Reserved[512 - 4 * 19];  // Total 512 Bytes
+  UINT8       Reserved[512 - 4 * 22]; // Total 512 Bytes
 } EFI_GLOBAL_NVS_AREA;
 #pragma pack ()
 

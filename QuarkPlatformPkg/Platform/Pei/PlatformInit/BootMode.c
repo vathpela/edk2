@@ -181,7 +181,13 @@ UpdateBootMode (
   EFI_BOOT_MODE       NewBootMode;
   PEI_CAPSULE_PPI     *Capsule;
   CHAR8               UserSelection;
-  
+  UINT32              Straps32;
+
+  //
+  // Read Straps. Used later if recovery boot.
+  //
+  Straps32 = QNCAltPortRead (QUARK_SCSS_SOC_UNIT_SB_PORT_ID, QUARK_SCSS_SOC_UNIT_STPDDRCFG);
+
   //
   // Check if we need to boot in recovery mode
   //
@@ -252,22 +258,31 @@ UpdateBootMode (
   // continue with the recovery. Also give the user a chance to retry a normal boot.
   //
   if (NewBootMode == BOOT_IN_RECOVERY_MODE) {
-    DEBUG ((EFI_D_ERROR, "*****************************************************************\n"));
-    DEBUG ((EFI_D_ERROR, "*****           ERROR: System boot failure!!!!!!!           *****\n"));
-    DEBUG ((EFI_D_ERROR, "*****  REMOVE ANY FORCE RECOVERY JUMPERS BEFORE PROCEEDING! *****\n"));
-    DEBUG ((EFI_D_ERROR, "***** - Press 'R' if you wish to force system recovery      *****\n"));
-    DEBUG ((EFI_D_ERROR, "*****     (connect USB key with recovery module first)      *****\n"));
-    DEBUG ((EFI_D_ERROR, "***** - Press any other key to attempt another boot         *****\n"));
-    DEBUG ((EFI_D_ERROR, "*****************************************************************\n"));
-    UserSelection = PlatformDebugPortGetChar8 ();
-    if ((UserSelection != 'R') && (UserSelection != 'r')) {
-      DEBUG ((EFI_D_ERROR, "New boot attempt selected........\n"));
-      //
-      // Initialte the cold reset
-      //
-      ResetCold ();
+    if ((Straps32 & B_STPDDRCFG_FORCE_RECOVERY) == 0) {
+      DEBUG ((EFI_D_ERROR, "*****************************************************************\n"));
+      DEBUG ((EFI_D_ERROR, "*****           Force Recovery Jumper Detected.             *****\n"));
+      DEBUG ((EFI_D_ERROR, "*****      Attempting auto recovery of system flash.        *****\n"));
+      DEBUG ((EFI_D_ERROR, "*****   Expecting USB key with recovery module connected.   *****\n"));
+      DEBUG ((EFI_D_ERROR, "*****         PLEASE REMOVE FORCE RECOVERY JUMPER.          *****\n"));
+      DEBUG ((EFI_D_ERROR, "*****************************************************************\n"));
+    } else {
+      DEBUG ((EFI_D_ERROR, "*****************************************************************\n"));
+      DEBUG ((EFI_D_ERROR, "*****           ERROR: System boot failure!!!!!!!           *****\n"));
+      DEBUG ((EFI_D_ERROR, "***** - Press 'R' if you wish to force system recovery      *****\n"));
+      DEBUG ((EFI_D_ERROR, "*****     (connect USB key with recovery module first)      *****\n"));
+      DEBUG ((EFI_D_ERROR, "***** - Press any other key to attempt another boot         *****\n"));
+      DEBUG ((EFI_D_ERROR, "*****************************************************************\n"));
+
+      UserSelection = PlatformDebugPortGetChar8 ();
+      if ((UserSelection != 'R') && (UserSelection != 'r')) {
+        DEBUG ((EFI_D_ERROR, "New boot attempt selected........\n"));
+        //
+        // Initialte the cold reset
+        //
+        ResetCold ();
+      }
+      DEBUG ((EFI_D_ERROR, "Recovery boot selected..........\n"));
     }
-    DEBUG ((EFI_D_ERROR, "Recovery boot selected..........\n"));
   }
 
   return EFI_SUCCESS;  

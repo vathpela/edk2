@@ -94,6 +94,12 @@ Abstract:
 #define PLATFORM_CATASTROPHIC_TRIP_CELSIUS  105
 
 //
+// Platform flash update LED common definitions.
+//
+#define PLATFORM_FLASH_UPDATE_LED_TOGGLE_COUNT   7
+#define PLATFORM_FLASH_UPDATE_LED_TOGGLE_DELTA   (1000 * 1000)  // In Microseconds for EFI_STALL.
+
+//
 // This structure stores the base and size of the ACPI reserved memory used when
 // resuming from S3.  This region must be allocated by the platform code.
 //
@@ -109,17 +115,19 @@ typedef struct {
 // Define valid platform types.
 // First add value before TypePlatformMax in EFI_PLATFORM_TYPE definition
 // and then add string description to end of EFI_PLATFORM_TYPE_NAME_TABLE_DEFINITION.
+// Value shown for supported platforms to help sanity checking with build tools
+// and ACPI method usage.
 //
 typedef enum {
   TypeUnknown = 0,      // !!! SHOULD BE THE FIRST ENTRY !!!
-  QuarkEmulation,
-  ClantonPeakSVP,
-  KipsBay,
-  CrossHill,
-  ClantonHill,
-  Galileo,
-  GalileoFabE,
-  GalileoGen2,
+  QuarkEmulation = 1,
+  ClantonPeakSVP = 2,
+  KipsBay = 3,
+  CrossHill = 4,
+  ClantonHill = 5,
+  Galileo = 6,
+  TypePlatformRsv7 = 7,
+  GalileoGen2 = 8,
   TypePlatformMax       // !!! SHOULD BE THE LAST ENTRY !!!
 } EFI_PLATFORM_TYPE;
 
@@ -131,7 +139,7 @@ typedef enum {
   L"CrossHill",\
   L"ClantonHill",\
   L"Galileo",\
-  L"GalileoGen2", /* FabE should use same name as final Gen2 */\
+  L"TypePlatformRsv7",\
   L"GalileoGen2",\
 
 typedef struct {

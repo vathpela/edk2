@@ -77,16 +77,4 @@ SocUnitReleasePcieControllerPostPllLock (
   IN CONST EFI_PLATFORM_TYPE              PlatformType
   );
 
-VOID
-EFIAPI
-GalileoFabEPERSTAssert (
-  VOID
-  );
-
-VOID
-EFIAPI
-GalileoFabEPERSTDeAssert (
-  VOID
-  );
-
 #endif

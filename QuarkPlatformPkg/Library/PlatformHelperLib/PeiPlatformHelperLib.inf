@@ -70,7 +70,6 @@
   PeiServicesTablePointerLib
   PeiServicesLib
   SerialPortLib
-  IohLib
 
 [Guids]
   gEfiQuarkCapsuleGuid

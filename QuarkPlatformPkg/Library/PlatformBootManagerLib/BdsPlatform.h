@@ -61,6 +61,7 @@ Abstract:
 #include <Protocol/AcpiS3Save.h>
 #include <Protocol/DxeSmmReadyToLock.h>
 #include <Protocol/SecureBootHelper.h>
+#include <Protocol/PlatformType.h>
 
 #include <Guid/CapsuleVendor.h>
 #include <Guid/MemoryTypeInformation.h>
@@ -90,7 +91,6 @@ Abstract:
 #include <IndustryStandard/Pci.h>
 #include <IndustryStandard/Atapi.h>
 
-
 typedef struct {
   EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
   UINTN                     ConnectType;
@@ -100,12 +100,6 @@ typedef struct {
 #define STD_ERROR   0x00000002
 #define CONSOLE_IN  0x00000004
 #define CONSOLE_ALL (CONSOLE_OUT | CONSOLE_IN | STD_ERROR)
-
-//
-//
-//
-#define VIDEO_DEV_NUM                   0x00
-#define VIDEO_FUNC_NUM                  0x00
 
 extern EFI_DEVICE_PATH_PROTOCOL  *gPlatformRootBridges [];
 extern BDS_CONSOLE_CONNECT_ENTRY gPlatformConsole [];
@@ -173,8 +167,9 @@ typedef struct {
 // Platform BDS global variables.
 //
 
-extern PLATFORM_PCI_SERIAL_DEVICE_PATH gSerialDevicePath;
-extern SECUREBOOT_HELPER_PROTOCOL      *gSecureBootHelperProtocol;
+extern PLATFORM_PCI_SERIAL_DEVICE_PATH    gSerialDevicePath;
+extern SECUREBOOT_HELPER_PROTOCOL         *gSecureBootHelperProtocol;
+extern EFI_PLATFORM_TYPE_PROTOCOL         *gPlatformType;
 
 //
 // Platform BDS Functions

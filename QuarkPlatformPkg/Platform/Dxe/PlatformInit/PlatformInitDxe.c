@@ -180,7 +180,7 @@ Returns:
     );
 
   mPrivatePlatformData.PlatformType.TypeStringPtr =
-    PlatformTypeString ((UINT16) mPrivatePlatformData.PlatformType.Type);
+    PlatformTypeString ((EFI_PLATFORM_TYPE) mPrivatePlatformData.PlatformType.Type);
 
   GetQncName();
   GetIioName();
@@ -261,34 +261,19 @@ Returns:
 --*/
 {
   EFI_STATUS                      Status;
+  EFI_PLATFORM_TYPE_PROTOCOL      *PlatformType;
 
   //
   // Install data protocols whose contents are derived from Hobs.
   //
   InstallProtocolsFromHobs ();
+  PlatformType = &mPrivatePlatformData.PlatformType;
 
   //
-  // GalileoGen2 Platform support.
+  // Locate I2C host controller driver.
   //
-  if (mPrivatePlatformData.PlatformType.Type == GalileoFabE) {
-    //
-    // Locate I2C host controller driver.
-    //
-    Status = gBS->LocateProtocol (&gEfiI2CHcProtocolGuid, NULL, (VOID **) &mI2cBus);
-    ASSERT_EFI_ERROR (Status);
-
-    //
-    // Set Pcal9555 IO Expander config.
-    //
-    Status = PlatformPcal9555Config ((EFI_PLATFORM_TYPE) mPrivatePlatformData.PlatformType.Type);
-    ASSERT_EFI_ERROR (Status);
-
-    //
-    // Do Early PCIe init if GalileoFabE Platform.
-    //
-    Status = PlatformPciExpressEarlyInit ((EFI_PLATFORM_TYPE) mPrivatePlatformData.PlatformType.Type);
-    ASSERT_EFI_ERROR (Status);
-  }
+  Status = gBS->LocateProtocol (&gEfiI2CHcProtocolGuid, NULL, (VOID **) &mI2cBus);
+  ASSERT_EFI_ERROR (Status);
 
   //
   // Initialize Firmware Volume security.
@@ -301,6 +286,12 @@ Returns:
   // Create events for configuration callbacks.
   //
   CreateConfigEvents ();
+
+  //
+  // Init Platform LEDs.
+  //
+  Status = PlatformLedInit ((EFI_PLATFORM_TYPE) PlatformType->Type);
+  ASSERT_EFI_ERROR (Status);
 
   return EFI_SUCCESS;
 }

@@ -1,6 +1,7 @@
 /** @file
-	Provides definition of entry point to the DXE Driver that produces the 
-    I2C Controller Protocol and definition of protocol functions.
+
+  Provides definition of entry point to the DXE Driver that produces the
+  I2C Controller Protocol and definition of protocol functions.
 
 Copyright (c) 2013 Intel Corporation.
 
@@ -32,7 +33,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 **/
 
-
 #ifndef _I2C_H_
 #define _I2C_H_
 
@@ -44,8 +44,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Constants that define I2C Controller timeout and max. polling time.
 //
-#define MAX_T_POLL_COUNT 100
-#define TI2C_POLL 25     // microseconds
+#define MAX_T_POLL_COUNT         100
+#define TI2C_POLL                25  // microseconds
+#define MAX_STOP_DET_POLL_COUNT ((1000 * 1000) / TI2C_POLL)  // Extreme for expected Stop detect.
 
 /**
   The GetI2CIoPortBaseAddress() function gets IO port base address of I2C Controller.
@@ -60,7 +61,6 @@ GetI2CIoPortBaseAddress (
   VOID
   );
 
-
 /**
   The EnableI2CMmioSpace() function enables access to I2C MMIO space.
 
@@ -70,20 +70,14 @@ EnableI2CMmioSpace (
   VOID
   );
 
-
 /**
   The DisableI2CController() functions disables I2C Controller.
 
-  @retval EFI_SUCCESS           I2C Controller disabled successfully.
-
-  @retval EFI_DEVICE_ERROR      I2C Controller could not be disabled.
-
 **/
-EFI_STATUS
+VOID
 DisableI2CController (
   VOID
   );
-
 
 /**
   The EnableI2CController() function enables the I2C Controller.
@@ -94,16 +88,20 @@ EnableI2CController (
   VOID
   );
 
-
 /**
   The WaitForStopDet() function waits until I2C STOP Condition occurs,
   indicating transfer completion.
 
-**/
-VOID
-WaitForStopDet (
-  );
+  @retval EFI_SUCCESS           Stop detected.
+  @retval EFI_TIMEOUT           Timeout while waiting for stop condition.
+  @retval EFI_ABORTED           Tx abort signaled in HW status register.
+  @retval EFI_DEVICE_ERROR      Tx or Rx overflow detected.
 
+**/
+EFI_STATUS
+WaitForStopDet (
+  VOID
+  );
 
 /**
 
@@ -114,15 +112,11 @@ WaitForStopDet (
 
   @retval EFI_SUCCESS           I2C Operation completed successfully.
 
-  @retval EFI_DEVICE_ERROR      The request was not completed due to error
-                                accessing the slave device.
-
 **/
 EFI_STATUS  
 InitializeInternal (
   IN EFI_I2C_ADDR_MODE  AddrMode
   );
-
 
 /**
 
@@ -132,20 +126,20 @@ InitializeInternal (
 
   @param  I2CAddress      I2C Slave device address
   @param  Value           The 8-bit value to write.
-  @param  Status          Return status for the executed command (EFI_SUCCESS or EFI_DEVICE_ERROR).
-                          This is an optional parameter and may be NULL.
 
-  @return Data written to I2C Slave device, as read from I2C Data CMD register.
+  @retval EFI_SUCCESS           Transfer success.
+  @retval EFI_UNSUPPORTED       Unsupported input param.
+  @retval EFI_TIMEOUT           Timeout while waiting xfer.
+  @retval EFI_ABORTED           Controller aborted xfer.
+  @retval EFI_DEVICE_ERROR      Device error detected by controller.
 
 **/
-UINT8
+EFI_STATUS
 EFIAPI
 WriteByte (
   IN  UINTN          I2CAddress,
-  IN  UINT8          Value,
-  OUT RETURN_STATUS  *Status        OPTIONAL
+  IN  UINT8          Value
   );
-
 
 /**
 
@@ -154,19 +148,21 @@ WriteByte (
   sub-addresses), as defined in the I2C Specification.
 
   @param  I2CAddress      I2C Slave device address
-  @param  Status          Return status for the executed command (EFI_SUCCESS or EFI_DEVICE_ERROR).
-                          This is an optional parameter and may be NULL.
+  @param  ReturnDataPtr   Pointer to location to receive read byte.
 
-  @return Data read from the I2C Slave device.
+  @retval EFI_SUCCESS           Transfer success.
+  @retval EFI_UNSUPPORTED       Unsupported input param.
+  @retval EFI_TIMEOUT           Timeout while waiting xfer.
+  @retval EFI_ABORTED           Controller aborted xfer.
+  @retval EFI_DEVICE_ERROR      Device error detected by controller.
 
-**/ 
-UINT8
+**/
+EFI_STATUS
 EFIAPI
 ReadByte (
   IN  UINTN          I2CAddress,
-  OUT RETURN_STATUS  *Status        OPTIONAL
+  OUT UINT8          *ReturnDataPtr
   );
-
 
 /**
 
@@ -182,25 +178,26 @@ ReadByte (
 
   @param Length       No. of bytes to be written.
 
-  @param  Status      Return status for the executed command (EFI_SUCCESS or EFI_DEVICE_ERROR).
-                      This is an optional parameter and may be NULL.
+  @retval EFI_SUCCESS           Transfer success.
+  @retval EFI_UNSUPPORTED       Unsupported input param.
+  @retval EFI_TIMEOUT           Timeout while waiting xfer.
+  @retval EFI_ABORTED           Tx abort signaled in HW status register.
+  @retval EFI_DEVICE_ERROR      Tx overflow detected.
 
 **/
-VOID
+EFI_STATUS
 EFIAPI
 WriteMultipleByte (
   IN  UINTN          I2CAddress,
   IN  UINT8          *WriteBuffer,
-  IN  UINTN          Length,
-  OUT RETURN_STATUS  *Status        OPTIONAL
+  IN  UINTN          Length
   );
-
 
 /**
 
   The ReadMultipleByte() function provides a standard way to execute
   multiple byte writes to an IC2 device (e.g. when accessing sub-addresses or
-  when reading block of data), as defined in the I2C Specification (I2C combined 
+  when reading block of data), as defined in the I2C Specification (I2C combined
   write/read protocol).
 
   @param SlaveAddress The I2C slave address of the device
@@ -211,34 +208,35 @@ WriteMultipleByte (
 
   @param WriteLength  No. of bytes to be written. In this case data
                       written typically contains sub-address or sub-addresses
-                      in Hi-Lo format, that need to be read (I2C combined 
+                      in Hi-Lo format, that need to be read (I2C combined
                       write/read protocol).
 
   @param ReadLength   No. of bytes to be read.
 
-  @param ReadLength   No. of bytes to be read from I2C slave device. 
+  @param ReadLength   No. of bytes to be read from I2C slave device.
                       need to be read.
 
   @param Buffer       Contains the value of byte data read from the
                       I2C slave device.
 
-  @param  Status      Return status for the executed command (EFI_SUCCESS or EFI_DEVICE_ERROR).
-                      This is an optional parameter and may be NULL.
+  @retval EFI_SUCCESS           Transfer success.
+  @retval EFI_UNSUPPORTED       Unsupported input param.
+  @retval EFI_TIMEOUT           Timeout while waiting xfer.
+  @retval EFI_ABORTED           Tx abort signaled in HW status register.
+  @retval EFI_DEVICE_ERROR      Rx underflow or Rx/Tx overflow detected.
 
 **/
-VOID
+EFI_STATUS
 EFIAPI
 ReadMultipleByte (
   IN  UINTN          I2CAddress,
   IN  OUT UINT8      *Buffer,
   IN  UINTN          WriteLength,
-  IN  UINTN          ReadLength,
-  OUT RETURN_STATUS  *Status        OPTIONAL
+  IN  UINTN          ReadLength
   );
 
-
 /**
-     
+
   The I2CWriteByte() function is a wrapper function for the WriteByte() function.
   Provides a standard way to execute a standard single byte write to an IC2 device 
   (without accessing sub-addresses), as defined in the I2C Specification.
@@ -256,10 +254,11 @@ ReadMultipleByte (
                       I2C slave device.
 
 
-  @retval EFI_SUCCESS           I2C Operation completed successfully.
-
-  @retval EFI_DEVICE_ERROR      The request was not completed due to error
-                                accessing the slave device.
+  @retval EFI_SUCCESS           Transfer success.
+  @retval EFI_INVALID_PARAMETER  This or Buffer pointers are invalid.
+  @retval EFI_TIMEOUT           Timeout while waiting xfer.
+  @retval EFI_ABORTED           Controller aborted xfer.
+  @retval EFI_DEVICE_ERROR      Device error detected by controller.
 
 **/
 EFI_STATUS  
@@ -267,15 +266,13 @@ I2CWriteByte (
   IN CONST  EFI_I2C_HC_PROTOCOL     *This,
   IN        EFI_I2C_DEVICE_ADDRESS  SlaveAddress,
   IN        EFI_I2C_ADDR_MODE       AddrMode,
-  IN UINTN                          *Length,
   IN OUT VOID                       *Buffer
   );
-
 
 /**
 
   The I2CReadByte() function is a wrapper function for the ReadByte() function.
-  Provides a standard way to execute a standard single byte read to an IC2 device 
+  Provides a standard way to execute a standard single byte read to an IC2 device
   (without accessing sub-addresses), as defined in the I2C Specification.
 
   @param This         A pointer to the EFI_I2C_PROTOCOL instance.
@@ -291,10 +288,11 @@ I2CWriteByte (
                       I2C slave device.
 
 
-  @retval EFI_SUCCESS           I2C Operation completed successfully.
-
-  @retval EFI_DEVICE_ERROR      The request was not completed due to error
-                                accessing the slave device.
+  @retval EFI_SUCCESS           Transfer success.
+  @retval EFI_INVALID_PARAMETER This or Buffer pointers are invalid.
+  @retval EFI_TIMEOUT           Timeout while waiting xfer.
+  @retval EFI_ABORTED           Controller aborted xfer.
+  @retval EFI_DEVICE_ERROR      Device error detected by controller.
 
 **/
 EFI_STATUS  
@@ -302,10 +300,8 @@ I2CReadByte (
   IN CONST  EFI_I2C_HC_PROTOCOL     *This,
   IN        EFI_I2C_DEVICE_ADDRESS  SlaveAddress,
   IN        EFI_I2C_ADDR_MODE       AddrMode,
-  IN UINTN                          *Length,
   IN OUT VOID                       *Buffer
   );
-
 
 /**
 
@@ -325,11 +321,12 @@ I2CReadByte (
   @param Buffer       Contains the value of byte to be written to the
                       I2C slave device.
 
-
-  @retval EFI_SUCCESS           I2C Operation completed successfully.
-
-  @retval EFI_DEVICE_ERROR      The request was not completed due to error
-                                accessing the slave device.
+  @retval EFI_SUCCESS            Transfer success.
+  @retval EFI_INVALID_PARAMETER  This, Length or Buffer pointers are invalid.
+  @retval EFI_UNSUPPORTED        Unsupported input param.
+  @retval EFI_TIMEOUT            Timeout while waiting xfer.
+  @retval EFI_ABORTED            Controller aborted xfer.
+  @retval EFI_DEVICE_ERROR       Device error detected by controller.
 
 **/
 EFI_STATUS  
@@ -341,12 +338,11 @@ I2CWriteMultipleByte (
   IN OUT VOID                       *Buffer
   );
 
-
 /**
 
   The I2CReadMultipleByte() function is a wrapper function for the ReadMultipleByte function.
-  Provides a standard way to execute multiple byte writes to an IC2 device 
-  (e.g. when accessing sub-addresses or when reading block of data), as defined 
+  Provides a standard way to execute multiple byte writes to an IC2 device
+  (e.g. when accessing sub-addresses or when reading block of data), as defined
   in the I2C Specification (I2C combined write/read protocol).
 
   @param This         A pointer to the EFI_I2C_PROTOCOL instance.
@@ -358,20 +354,22 @@ I2CWriteMultipleByte (
 
   @param WriteLength  No. of bytes to be written. In this case data
                       written typically contains sub-address or sub-addresses
-                      in Hi-Lo format, that need to be read (I2C combined 
+                      in Hi-Lo format, that need to be read (I2C combined
                       write/read protocol).
 
-  @param ReadLength   No. of bytes to be read from I2C slave device. 
+  @param ReadLength   No. of bytes to be read from I2C slave device.
                       need to be read.
 
   @param Buffer       Contains the value of byte data read from the
                       I2C slave device.
 
-
-  @retval EFI_SUCCESS           I2C Operation completed successfully.
-
-  @retval EFI_DEVICE_ERROR      The request was not completed due to error
-                                accessing the slave device.
+  @retval EFI_SUCCESS            Transfer success.
+  @retval EFI_INVALID_PARAMETER  This, WriteLength, ReadLength or Buffer
+                                 pointers are invalid.
+  @retval EFI_UNSUPPORTED        Unsupported input param.
+  @retval EFI_TIMEOUT            Timeout while waiting xfer.
+  @retval EFI_ABORTED            Controller aborted xfer.
+  @retval EFI_DEVICE_ERROR       Device error detected by controller.
 
 **/
 EFI_STATUS  
@@ -383,7 +381,6 @@ I2CReadMultipleByte (
   IN UINTN                          *ReadLength,
   IN OUT VOID                       *Buffer
   );
-
 
 /**
   Entry point to the DXE Driver that produces the I2C Controller Protocol.

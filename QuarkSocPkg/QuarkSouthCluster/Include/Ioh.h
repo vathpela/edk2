@@ -240,15 +240,11 @@ Revision History:
 //---------------------------------------------------------------------------
 // Quark I2C / GPIO definitions
 //---------------------------------------------------------------------------
-#define IOH_I2C_GPIO_BUS_NUMBER           0x00
-#define IOH_I2C_GPIO_DEVICE_NUMBER        0x15
-#define IOH_I2C_GPIO_FUNCTION_NUMBER      0x02
 
 #define   V_IOH_I2C_GPIO_VENDOR_ID          INTEL_VENDOR_ID
 #define   V_IOH_I2C_GPIO_DEVICE_ID          0x0934
 
 #define R_IOH_I2C_MEMBAR                  0x10
-#define R_IOH_GPIO_MEMBAR                 0x14
 #define   B_IOH_I2C_GPIO_MEMBAR_ADDR_MASK   0xFFFFF000  // [31:12].
 
 #define GPIO_SWPORTA_DR                   0x00

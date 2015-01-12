@@ -45,12 +45,13 @@ extern USB_CLASS_FORMAT_DEVICE_PATH gUsbClassKeyboardDevicePath;
 EFI_USER_PROFILE_HANDLE             mCurrentUser = NULL;
 UINT16                              mPayloadBootOptionNumber = 0xffff;
 SECUREBOOT_HELPER_PROTOCOL          *gSecureBootHelperProtocol = NULL;
+EFI_PLATFORM_TYPE_PROTOCOL          *gPlatformType = NULL;
 
 /**
   Identify a user and, if authenticated, returns the current user profile handle.
 
   @param[out]  User           Point to user profile handle.
-  
+
   @retval EFI_SUCCESS         User is successfully identified, or user identification
                               is not supported.
   @retval EFI_ACCESS_DENIED   User is not successfully identified
@@ -63,7 +64,7 @@ UserIdentify (
 {
   EFI_STATUS                          Status;
   EFI_USER_MANAGER_PROTOCOL           *Manager;
-  
+
   Status = gBS->LocateProtocol (
                   &gEfiUserManagerProtocolGuid,
                   NULL,
@@ -112,7 +113,7 @@ PlatformGetVideoController (
   if (EFI_ERROR (Status) || (RootBridgeHandleCount == 0)) {
     return NULL;
   }
-  
+
   Status = gBS->LocateProtocol (
                 &gEfiPciPlatformProtocolGuid,
                 NULL,
@@ -153,7 +154,7 @@ PlatformGetVideoController (
                           &Pci
                           );
         if (!EFI_ERROR (Status) && IS_PCI_VGA (&Pci)) {
-          // Set VideoController to default to first video controller. 
+          // Set VideoController to default to first video controller.
           // This will be the device used if Video Select is set to Auto.
           if(VideoController == NULL) {
             VideoController = HandleBuffer[Index];
@@ -169,7 +170,7 @@ PlatformGetVideoController (
     }
   }
   FreePool (RootBridgeHandleBuffer);
-  
+
   return VideoController;
 }
 
@@ -189,11 +190,11 @@ UpdateConOut (
   // Get the platform vga device
   //
   VideoController = PlatformGetVideoController (&OnboardVideoController, &AddinVideoController);
-  
+
   if (VideoController == NULL) {
     return ;
   }
-  
+
 
   // Force to Auto
   VideoSelect = 0;
@@ -207,7 +208,7 @@ UpdateConOut (
   }
 
   switch(VideoSelect) {
-  case 1: 
+  case 1:
     // Onboard selected
     VideoController = OnboardVideoController;
     DEBUG((EFI_D_INFO, "Video select: Onboard\n"));
@@ -225,9 +226,9 @@ UpdateConOut (
   }
 
   //
-  // Try to connect the PCI device path, so that GOP dirver could start on this 
+  // Try to connect the PCI device path, so that GOP dirver could start on this
   // device and create child handles with GraphicsOutput Protocol installed
-  // on them, then we get device paths of these child handles and select 
+  // on them, then we get device paths of these child handles and select
   // them as possible console device.
   //
   gBS->ConnectController (VideoController, NULL, NULL, FALSE);
@@ -346,7 +347,7 @@ PlatformBootManagerBeforeConsole (
 
   InitializeConsoleVariables (gPlatformConsole);
   UpdateConOut ();
-  
+
   RegisterLoadOptions ();
 
 
@@ -356,7 +357,7 @@ PlatformBootManagerBeforeConsole (
   }
 
   //
-  // Inform the SMM infrastructure that we're entering BDS and may run 3rd party code hereafter 
+  // Inform the SMM infrastructure that we're entering BDS and may run 3rd party code hereafter
   //
   Handle = NULL;
   Status = gBS->InstallProtocolInterface (
@@ -366,18 +367,18 @@ PlatformBootManagerBeforeConsole (
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
-  
+
   //
-  // Append Usb Keyboard short form DevicePath into "ConInDev" 
+  // Append Usb Keyboard short form DevicePath into "ConInDev"
   //
   EfiBootManagerUpdateConsoleVariable (
     ConInDev,
     (EFI_DEVICE_PATH_PROTOCOL *) &gUsbClassKeyboardDevicePath,
     NULL
     );
-    
+
   //
-  // Before user authentication, the user identification devices need be connected 
+  // Before user authentication, the user identification devices need be connected
   // from the platform customized device paths
   //
   ConnectAuthDevice ();
@@ -396,17 +397,17 @@ ConnectSequence (
 
 Routine Description:
 
-  Connect with predeined platform connect sequence, 
+  Connect with predeined platform connect sequence,
   the OEM/IBV can customize with their own connect sequence.
-  
+
 Arguments:
 
   None.
- 
+
 Returns:
 
   None.
-  
+
 --*/
 {
   UINTN Index;
@@ -437,11 +438,11 @@ FvFilePath (
   EFI_GUID                     *FileGuid
   )
 {
-  
+
   EFI_STATUS                         Status;
   EFI_LOADED_IMAGE_PROTOCOL          *LoadedImage;
   MEDIA_FW_VOL_FILEPATH_DEVICE_PATH  FileNode;
-  EFI_HANDLE                         FvProtocolHandle; 
+  EFI_HANDLE                         FvProtocolHandle;
   EFI_HANDLE                         *FvHandleBuffer;
   UINTN                              FvHandleCount;
   EFI_FV_FILETYPE                    Type;
@@ -468,7 +469,7 @@ FvFilePath (
   else {
     //
     // Expose Payload file in FV
-    //  
+    //
     gDS->ProcessFirmwareVolume (
            (VOID *)FvBaseAddress,
            (UINT32)FvSize,
@@ -680,7 +681,7 @@ Routine Description:
 Arguments:
 
   BdsDriverLists  -  The header of the driver option link list.
- 
+
 Returns:
 
   None.
@@ -774,19 +775,19 @@ Routine Description:
 
   Perform the platform diagnostic, such like test memory. OEM/IBV also
   can customize this fuction to support specific platform diagnostic.
-  
+
 Arguments:
 
   MemoryTestLevel  - The memory test intensive level
-  
+
   QuietBoot        - Indicate if need to enable the quiet boot
 
   BaseMemoryTest   - A pointer to BdsMemoryTest()
- 
+
 Returns:
 
   None.
-  
+
 --*/
 {
   EFI_STATUS  Status;
@@ -820,7 +821,7 @@ Returns:
 /**
   Returns the priority number.
 
-  @param BootOption          
+  @param BootOption
 **/
 UINTN
 BootOptionPriority (
@@ -830,6 +831,12 @@ BootOptionPriority (
   //
   // Make sure Shell is in the last
   //
+  if (StrCmp (BootOption->Description, L"USB Device") == 0) {
+    return 10;
+  }
+  if (StrCmp (BootOption->Description, L"UEFI Payload") == 0) {
+    return 90;
+  }
   if (StrCmp (BootOption->Description, L"UEFI Internal Shell") == 0) {
     return 100;
   }
@@ -852,7 +859,7 @@ extern EFI_GUID  gSignalBeforeEnterSetupGuid;
   This function Installs a guid before entering the Setup.
 
 **/
-VOID 
+VOID
 SignalProtocolEvent(IN EFI_GUID *ProtocolGuid)
 {
   EFI_HANDLE  Handle = NULL;
@@ -927,21 +934,21 @@ Routine Description:
   The function will excute with as the platform policy, current policy
   is driven by boot mode. IBV/OEM can customize this code for their specific
   policy action.
-  
+
 Arguments:
 
   DriverOptionList - The header of the driver option link list
-  
+
   BootOptionList   - The header of the boot option link list
 
   ProcessCapsules  - A pointer to ProcessCapsules()
 
   BaseMemoryTest   - A pointer to BaseMemoryTest()
- 
+
 Returns:
 
   None.
-  
+
 --*/
 {
   EFI_HANDLE         Handle;
@@ -956,8 +963,10 @@ Returns:
     0x60b5e939, 0xfcf, 0x4227, { 0xba, 0x83, 0x6b, 0xbe, 0xd4, 0x5b, 0xc0, 0xe3 }
   };
   BOOLEAN            SecureBootEnabled;
+  BOOLEAN            FalseUpdateLedOn;
 
   SecureBootEnabled = FALSE;
+  FalseUpdateLedOn = FALSE;
 
   if(gSecureBootHelperProtocol != NULL) {
     SecureBootEnabled = gSecureBootHelperProtocol->IsSecureBootEnabled (
@@ -977,7 +986,7 @@ Returns:
   DEBUG ((EFI_D_INFO, "[PlatformBds]BootMode = %d\n", (UINTN) BootMode));
 
   //
-  // Clear all the capsule variables CapsuleUpdateData, CapsuleUpdateData1, CapsuleUpdateData2... 
+  // Clear all the capsule variables CapsuleUpdateData, CapsuleUpdateData1, CapsuleUpdateData2...
   // as early as possible which will avoid the next time boot after the capsule update
   // will still into the capsule loop
   //
@@ -1009,7 +1018,7 @@ Returns:
   // No deferred image exists by default
   //
   DeferredImageExist = FALSE;
-  
+
   //
   // Go the different platform policy with different boot mode
   // Notes: this part code can be change with the table policy
@@ -1042,6 +1051,16 @@ Returns:
         ConnectSequence ();
       }
     }
+
+    //
+    // If unsecure refresh and sort boot options.
+    //
+    if (!FeaturePcdGet (PcdEnableSecureLock)) {
+      DEBUG ((EFI_D_INFO, "[PlatformBds]: Refresh All and Sort.\n"));
+      EfiBootManagerRefreshAllBootOption ();
+      EfiBootManagerSortLoadOptionVariable (LoadOptionTypeBoot, CompareBootOption);
+    }
+
     break;
 
   case BOOT_ON_FLASH_UPDATE:
@@ -1050,10 +1069,22 @@ Returns:
     //
     Status = PlatformClearSpiProtect ();
     ASSERT_EFI_ERROR (Status);
+    FalseUpdateLedOn = TRUE;
+    PlatformFlashUpdateLed (gPlatformType->Type, FalseUpdateLedOn);
     if (FeaturePcdGet (PcdSupportUpdateCapsuleReset)) {
       EfiBootManagerProcessCapsules ();
     } else {
       ASSERT (FeaturePcdGet (PcdSupportUpdateCapsuleReset));
+    }
+
+    //
+    // Toggle flash update LED for a predefined number of times with 
+    // a predefined interval.
+    //
+    for (Index = 0; Index < PLATFORM_FLASH_UPDATE_LED_TOGGLE_COUNT; Index++) {
+      FalseUpdateLedOn = (FalseUpdateLedOn) ? FALSE : TRUE;
+      PlatformFlashUpdateLed (gPlatformType->Type, FalseUpdateLedOn);
+      gBS->Stall (PLATFORM_FLASH_UPDATE_LED_TOGGLE_DELTA);
     }
 
     //
@@ -1084,7 +1115,7 @@ Returns:
         EfiBootManagerConnectAll ();
       }
     }
-    
+
     break;
 
   case BOOT_WITH_FULL_CONFIGURATION:
@@ -1115,14 +1146,12 @@ Returns:
         ConnectSequence ();
       }
     }
-    
+
     //
     // Here we have enough time to do the enumeration of boot device
     //
     EfiBootManagerRefreshAllBootOption ();
-    if (BootState == NULL) {
-      EfiBootManagerSortLoadOptionVariable (LoadOptionTypeBoot, CompareBootOption);
-    }
+    EfiBootManagerSortLoadOptionVariable (LoadOptionTypeBoot, CompareBootOption);
     break;
   }
 
@@ -1173,7 +1202,7 @@ Returns:
   Connect the predefined platform default authentication devices.
 
   This function connects the predefined device path for authentication device,
-  and if the predefined device path has child device path, the child handle will 
+  and if the predefined device path has child device path, the child handle will
   be connected too. But the child handle of the child will not be connected.
 
 **/
@@ -1185,7 +1214,7 @@ ConnectAuthDevice (
 {
   EFI_STATUS                   Status;
   UINTN                        Index;
-  UINTN                        HandleIndex; 
+  UINTN                        HandleIndex;
   UINTN                        HandleCount;
   EFI_HANDLE                   *HandleBuffer;
   EFI_DEVICE_PATH_PROTOCOL     *ChildDevicePath;
@@ -1198,15 +1227,15 @@ ConnectAuthDevice (
                   );
   if (EFI_ERROR (Status)) {
     //
-    // As user manager protocol is not installed, the authentication devices 
+    // As user manager protocol is not installed, the authentication devices
     // should not be connected.
     //
     return ;
   }
-  
+
   Index = 0;
   while (gUserAuthenticationDevice[Index] != NULL) {
-    //   
+    //
     // Connect the platform customized device paths
     //
     EfiBootManagerConnectDevicePath (gUserAuthenticationDevice[Index], NULL);
@@ -1226,7 +1255,7 @@ ConnectAuthDevice (
                     &HandleCount,
                     &HandleBuffer
                     );
-    ASSERT_EFI_ERROR (Status); 
+    ASSERT_EFI_ERROR (Status);
 
     //
     // Find and connect the child device paths of gUserIdentificationDevice[Index]
@@ -1248,7 +1277,7 @@ ConnectAuthDevice (
             (GetDevicePathSize (gUserAuthenticationDevice[Index]) - sizeof (EFI_DEVICE_PATH_PROTOCOL))
             ) != 0) {
         continue;
-      }      
+      }
       gBS->ConnectController (HandleBuffer[HandleIndex], NULL, NULL, TRUE);
     }
   }
@@ -1280,11 +1309,11 @@ CheckDeferredImage (
   UINTN                              DriverIndex;
   EFI_DEVICE_PATH_PROTOCOL           *ImageDevicePath;
   VOID                               *DriverImage;
-  UINTN                              ImageSize; 
+  UINTN                              ImageSize;
   BOOLEAN                            BootOption;
 
   //
-  // Perform user identification 
+  // Perform user identification
   //
   do {
     Status = UserIdentify (User);
@@ -1313,31 +1342,31 @@ CheckDeferredImage (
                     &gEfiDeferredImageLoadProtocolGuid,
                     (VOID **) &DeferredImage
                     );
-    if (!EFI_ERROR (Status)) {       
+    if (!EFI_ERROR (Status)) {
       //
       // Find whether deferred image exists in this instance.
       //
       DriverIndex = 0;
       Status = DeferredImage->GetImageInfo(
-                                DeferredImage, 
-                                DriverIndex, 
-                                &ImageDevicePath, 
+                                DeferredImage,
+                                DriverIndex,
+                                &ImageDevicePath,
                                 (VOID **) &DriverImage,
-                                &ImageSize, 
+                                &ImageSize,
                                 &BootOption
                                 );
       if (!EFI_ERROR (Status)) {
         //
         // The deferred image is found.
         //
-        FreePool (HandleBuf); 
+        FreePool (HandleBuf);
         *DeferredImageExist = TRUE;
         return ;
-      }          
-    }    
+      }
+    }
   }
-  
-  FreePool (HandleBuf); 
+
+  FreePool (HandleBuf);
 }
 
 /** Constructor for this lib.
@@ -1379,5 +1408,12 @@ PlatformBootManagerLibConstructor (
     //
     gSecureBootHelperProtocol = NULL;
   }
+
+  //
+  // Get reference to platform type protocol.
+  //
+  Status = gBS->LocateProtocol (&gEfiPlatformTypeProtocolGuid, NULL, (VOID **) &gPlatformType);
+  ASSERT_EFI_ERROR (Status);
+
   return EFI_SUCCESS;
 }

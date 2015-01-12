@@ -144,10 +144,10 @@ PlatformDebugPortGetChar8 (
 /**
   Return platform type string given platform type enum.
 
+  @param  PlatformType  Executing platform type.
+
   ASSERT if invalid platform type enum.
-
   ASSERT if EFI_PLATFORM_TYPE_NAME_TABLE_DEFINITION has no entries.
-
   ASSERT if EFI_PLATFORM_TYPE_NAME_TABLE_DEFINITION has no string for type.
 
   @return string for platform type enum.
@@ -156,14 +156,50 @@ PlatformDebugPortGetChar8 (
 CHAR16 *
 EFIAPI
 PlatformTypeString (
-  IN CONST UINT16                         Type
+  IN CONST EFI_PLATFORM_TYPE              Type
   )
 {
-  ASSERT ((EFI_PLATFORM_TYPE) Type < TypePlatformMax);
+  ASSERT (Type < TypePlatformMax);
   ASSERT (mPlatTypeNameTableLen > 0);
   ASSERT ((UINTN) Type < mPlatTypeNameTableLen);
 
-  return mPlatTypeNameTable [Type];
+  return mPlatTypeNameTable [(UINTN) Type];
+}
+
+/**
+  Return if platform type value is supported.
+
+  @param  PlatformType  Executing platform type.
+
+  @retval  TRUE    If type within range and not reserved.
+  @retval  FALSE   if type is not supported.
+
+**/
+BOOLEAN
+EFIAPI
+PlatformIsSupportedPlatformType (
+  IN CONST EFI_PLATFORM_TYPE              Type
+  )
+{
+  //
+  // Out of range types not supported.
+  //
+  if ((Type == TypeUnknown) || (Type >= TypePlatformMax)) {
+    return FALSE;
+  }
+
+  //
+  // Reserved types not supported.
+  //
+  if (Type == TypePlatformRsv7) {
+    return FALSE;
+  }
+
+  //
+  // All others supported.
+  //
+  return TRUE;
+
 }
 
 /**
@@ -305,4 +341,31 @@ PlatformLegacyGpioSetLevel (
     RegValue &= ~(GpioNumMask);
   }
   IoWrite32 (GpioBaseAddress + LevelRegOffset, RegValue);
+}
+
+/**
+  Get Legacy GPIO Level
+
+  @param  LevelRegOffset      GPIO level register Offset from GPIO Base Address.
+  @param  GpioNum             GPIO bit to check.
+
+  @retval TRUE       If bit is SET.
+  @retval FALSE      If bit is CLEAR.
+
+**/
+BOOLEAN
+EFIAPI
+PlatformLegacyGpioGetLevel (
+  IN CONST UINT32       LevelRegOffset,
+  IN CONST UINT32       GpioNum
+  )
+{
+  UINT32  RegValue;
+  UINT32  GpioBaseAddress;
+  UINT32  GpioNumMask;
+
+  GpioBaseAddress =  LpcPciCfg32 (R_QNC_LPC_GBA_BASE) & B_QNC_LPC_GPA_BASE_MASK;
+  RegValue = IoRead32 (GpioBaseAddress + LevelRegOffset);
+  GpioNumMask = (1 << GpioNum);
+  return ((RegValue & GpioNumMask) != 0);
 }

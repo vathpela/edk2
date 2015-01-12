@@ -34,7 +34,7 @@
 
   Abstract:
 
-    Quark South Cluster Devices
+    Quark South Cluster Devices.
 
 --*/
 
@@ -116,6 +116,26 @@ Device (GIP0)    // I2C/GPIO [Bus 0, Device 21, Function 2]
     Name(_ADR,0x00150002)            // Device (HI WORD)=21, Func (LO WORD)=2
     Name(_STA,0xF)                   // Enabled, do Display
     Name(_PRW,Package(){0x0F,0x03})  // GPE pin 0x0F, Wake from S3 -- PCI PME#
-}
 
+    Device(GPO_)  // GPIO Virtual Child Device- for BAR0 resources
+    {
+        Name(_ADR, 0)
+        Name(_STA, 0xf)
+        Name(_PRW, Package(0x2)
+        {
+            0xf,
+            0x3
+        })
+    }
+    Device(I2C_)  // I2C Controller Virtual Child Device- for BAR1 resources
+    {
+        Name(_ADR, 1)
+        Name(_STA, 0xf)
+        Name(_PRW, Package(0x2)
+        {
+            0xf,
+            0x3
+        })
+    }
+}
 #endif

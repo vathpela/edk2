@@ -28,7 +28,6 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
 Module Name:
 
     MrcWrapper.c
@@ -39,7 +38,6 @@ Abstract:
 
 
 --*/
-
 
 #include "CommonHeader.h"
 #include "MrcWrapper.h"
@@ -52,8 +50,8 @@ Abstract:
 #include <Library/PlatformDataLib.h>
 
 //
-// ------------------------ TSEG Base 
-// ...............
+// ------------------------ TSEG Base
+//
 // ------------------------ RESERVED_CPU_S3_SAVE_OFFSET
 // CPU S3 data
 // ------------------------ RESERVED_ACPI_S3_RANGE_OFFSET
@@ -79,57 +77,6 @@ EFI_MEMORY_TYPE_INFORMATION mDefaultCltMemoryTypeInformation[] = {
 };
 
 /**
-  Read south cluster GPIO input from Port A
-
-**/
-static UINT32
-ScGpioRead(
-  VOID
-  )
-{
-  UINT32 GipMmioBase = 0xC1000000;
-  UINT32 GipData;
-  UINT32 GipAddr;
-  UINT8  Cmd;
-
-  GipAddr = PCI_LIB_ADDRESS(
-      IOH_I2C_GPIO_BUS_NUMBER,
-      IOH_I2C_GPIO_DEVICE_NUMBER,
-      IOH_I2C_GPIO_FUNCTION_NUMBER, 0);
-
-  Cmd = PciRead8 ( GipAddr + PCI_COMMAND_OFFSET);
-
-  if( Cmd & EFI_PCI_COMMAND_MEMORY_SPACE) {
-    // Someone already enabled mmio decoding
-    GipMmioBase = PciRead32 ( GipAddr + PCI_BASE_ADDRESSREG_OFFSET); 
-
-	// Interested in address bits only
-	GipMmioBase &= 0xFFFFFF00;
-    DEBUG ((EFI_D_INFO, "SC GPIO already enabled at %08X\n", GipMmioBase));
-
-    // Assume default configuration all input
-	GipData = MmioRead32( GipMmioBase + GPIO_EXT_PORTA);
-  }
-  else {
-    DEBUG ((EFI_D_INFO, "SC GPIO temporary enable  at %08X\n", GipMmioBase));
-
-    // Use predefined tempory memory resource
-    PciWrite32 ( GipAddr + PCI_BASE_ADDRESSREG_OFFSET, GipMmioBase); 
-    PciWrite8 ( GipAddr + PCI_COMMAND_OFFSET, EFI_PCI_COMMAND_MEMORY_SPACE); 
-
-    // Assume default configuration all input
-	GipData = MmioRead32( GipMmioBase + GPIO_EXT_PORTA);
-
-    // Disable mmio decoding
-	PciWrite8 ( GipAddr + PCI_COMMAND_OFFSET, 0); 
-  }
-
-  // Only 20 bits valid
-  return GipData & 0x000FFFFF;
-}
-
-
-/**
   Configure Uart mmio base for MRC serial log purpose
 
   @param  MrcData  - MRC configuration data updated
@@ -140,17 +87,17 @@ MrcUartConfig(
   MRC_PARAMS *MrcData
   )
 {
-	UINT8    UartIdx;
-	UINT32   RegData32;
-	UINT8    IohUartBus;
-	UINT8    IohUartDev;
+  UINT8    UartIdx;
+  UINT32   RegData32;
+  UINT8    IohUartBus;
+  UINT8    IohUartDev;
 
-	UartIdx    = PcdGet8(PcdIohUartFunctionNumber);
-	IohUartBus = PcdGet8(PcdIohUartBusNumber);
-	IohUartDev = PcdGet8(PcdIohUartDevNumber);
+  UartIdx    = PcdGet8(PcdIohUartFunctionNumber);
+  IohUartBus = PcdGet8(PcdIohUartBusNumber);
+  IohUartDev = PcdGet8(PcdIohUartDevNumber);
 
-	RegData32 = PciRead32 (PCI_LIB_ADDRESS(IohUartBus,  IohUartDev, UartIdx, PCI_BASE_ADDRESSREG_OFFSET));
-	MrcData->uart_mmio_base = RegData32 & 0xFFFFFFF0;
+  RegData32 = PciRead32 (PCI_LIB_ADDRESS(IohUartBus,  IohUartDev, UartIdx, PCI_BASE_ADDRESSREG_OFFSET));
+  MrcData->uart_mmio_base = RegData32 & 0xFFFFFFF0;
 }
 
 /**
@@ -254,7 +201,6 @@ MrcConfigureFromInfoHob (
   return EFI_SUCCESS;
 }
 
-
 /**
 
   Configure ECC scrub
@@ -267,27 +213,27 @@ EccScrubSetup(
   const MRC_PARAMS *MrcData
   )
 {
-	UINT32 BgnAdr = 0;
-	UINT32 EndAdr = MrcData->mem_size;
-	UINT32 BlkSize = PcdGet8(PcdEccScrubBlkSize) & SCRUB_CFG_BLOCKSIZE_MASK;
-	UINT32 Interval = PcdGet8(PcdEccScrubInterval) & SCRUB_CFG_INTERVAL_MASK;
+  UINT32 BgnAdr = 0;
+  UINT32 EndAdr = MrcData->mem_size;
+  UINT32 BlkSize = PcdGet8(PcdEccScrubBlkSize) & SCRUB_CFG_BLOCKSIZE_MASK;
+  UINT32 Interval = PcdGet8(PcdEccScrubInterval) & SCRUB_CFG_INTERVAL_MASK;
 
-	if( MrcData->ecc_enables == 0 || MrcData->boot_mode == bmS3 || Interval == 0) {
-		// No scrub configuration needed if ECC not enabled
-		// On S3 resume reconfiguration is done as part of resume
-		// script, see SNCS3Save.c ==> SaveRuntimeScriptTable()
-		// Also if PCD disables scrub, then we do nothing.
-		return;
-	}
+  if( MrcData->ecc_enables == 0 || MrcData->boot_mode == bmS3 || Interval == 0) {
+    // No scrub configuration needed if ECC not enabled
+    // On S3 resume reconfiguration is done as part of resume
+    // script, see SNCS3Save.c ==> SaveRuntimeScriptTable()
+    // Also if PCD disables scrub, then we do nothing.
+    return;
+  }
 
-	QNCPortWrite (QUARK_NC_RMU_SB_PORT_ID, QUARK_NC_ECC_SCRUB_END_MEM_REG, EndAdr);
-	QNCPortWrite (QUARK_NC_RMU_SB_PORT_ID, QUARK_NC_ECC_SCRUB_START_MEM_REG, BgnAdr);
-	QNCPortWrite (QUARK_NC_RMU_SB_PORT_ID, QUARK_NC_ECC_SCRUB_NEXT_READ_REG, BgnAdr);
-	QNCPortWrite (QUARK_NC_RMU_SB_PORT_ID, QUARK_NC_ECC_SCRUB_CONFIG_REG,
-	  Interval << SCRUB_CFG_INTERVAL_SHIFT |
-	  BlkSize << SCRUB_CFG_BLOCKSIZE_SHIFT);
+  QNCPortWrite (QUARK_NC_RMU_SB_PORT_ID, QUARK_NC_ECC_SCRUB_END_MEM_REG, EndAdr);
+  QNCPortWrite (QUARK_NC_RMU_SB_PORT_ID, QUARK_NC_ECC_SCRUB_START_MEM_REG, BgnAdr);
+  QNCPortWrite (QUARK_NC_RMU_SB_PORT_ID, QUARK_NC_ECC_SCRUB_NEXT_READ_REG, BgnAdr);
+  QNCPortWrite (QUARK_NC_RMU_SB_PORT_ID, QUARK_NC_ECC_SCRUB_CONFIG_REG,
+    Interval << SCRUB_CFG_INTERVAL_SHIFT |
+    BlkSize << SCRUB_CFG_BLOCKSIZE_SHIFT);
 
-    McD0PciCfg32 (QNC_ACCESS_PORT_MCR) = SCRUB_RESUME_MSG();
+  McD0PciCfg32 (QNC_ACCESS_PORT_MCR) = SCRUB_RESUME_MSG();
 }
 
 /** Post InstallS3Memory / InstallEfiMemory tasks given MrcData context.
@@ -479,8 +425,8 @@ MemoryInit (
 
   PmswAdr = (UINT16)(LpcPciCfg32 (R_QNC_LPC_GPE0BLK) & 0xFFFF) + R_QNC_GPE0BLK_PMSW;
   if( IoRead32 (PmswAdr) & B_QNC_GPE0BLK_PMSW_DRAM_INIT) {
-	  // MRC did not complete last execution, force cold boot path
-	  MrcData.boot_mode = bmCold;
+    // MRC did not complete last execution, force cold boot path
+    MrcData.boot_mode = bmCold;
   }
 
   // Mark MRC pending
@@ -679,7 +625,6 @@ LoadConfig (
   IN OUT  MRC_PARAMS                              *MrcData
   )
 {
-
   EFI_STATUS                            Status;
   UINTN                                 BufferSize;
   PLATFORM_VARIABLE_MEMORY_CONFIG_DATA  VarData;
@@ -699,7 +644,6 @@ LoadConfig (
   }
   return Status;
 }
-
 
 /**
 
@@ -1044,7 +988,7 @@ InstallEfiMemory (
     &DescriptorAcpiVariable,
     sizeof (EFI_SMRAM_DESCRIPTOR)
     );
-  
+
   //
   // Build a HOB describing memory layout and state
   //
@@ -1185,7 +1129,7 @@ InstallS3Memory (
       SmramIndex++;
     }
   }
-  
+
   //
   // Build a HOB with the location of the reserved memory range.
   //
@@ -1196,16 +1140,16 @@ InstallS3Memory (
     &DescriptorAcpiVariable,
     sizeof (EFI_SMRAM_DESCRIPTOR)
     );
-  
+
   //
   // Get the location and size of the S3 memory range in the reserved page and
   // install it as PEI Memory.
   //
-  
+
   DEBUG ((EFI_D_INFO, "TSEG Base = 0x%08x\n", SmramHobDescriptorBlock->Descriptor[SmramRanges-1].PhysicalStart));
   S3MemoryRangeData = (RESERVED_ACPI_S3_RANGE*)(UINTN)
     (SmramHobDescriptorBlock->Descriptor[SmramRanges-1].PhysicalStart + RESERVED_ACPI_S3_RANGE_OFFSET);
-  
+
   S3MemoryBase  = (UINTN) (S3MemoryRangeData->AcpiReservedMemoryBase);
   DEBUG ((EFI_D_INFO, "S3MemoryBase = 0x%08x\n", S3MemoryBase));
   S3MemorySize  = (UINTN) (S3MemoryRangeData->AcpiReservedMemorySize);
@@ -1236,8 +1180,6 @@ InstallS3Memory (
 
   return EFI_SUCCESS;
 }
-
-
 
 /**
 
@@ -1637,7 +1579,7 @@ BaseMemoryTest (
 
     TempAddress += SpanSize;
   }
-	
+
 Done:
   return EFI_SUCCESS;
 }
@@ -1682,78 +1624,80 @@ SetPlatformImrPolicy (
     }
   }
 
-  //
-  // Add IMR0 protection for the 'PeiMemory'
-  //
-  QncImrWrite (
-            QUARK_NC_MEMORY_MANAGER_IMR0,
-            (UINT32)(((RShiftU64(PeiMemoryBaseAddress, 8)) & IMRL_MASK) | IMR_EN),
-            (UINT32)((RShiftU64((PeiMemoryBaseAddress+PeiMemoryLength-RequiredMemSize + EFI_PAGES_TO_SIZE(EDKII_DXE_MEM_SIZE_PAGES-1) - 1), 8)) & IMRL_MASK),
-            (UINT32)(CPU_SNOOP + CPU0_NON_SMM),
-            (UINT32)(CPU_SNOOP + CPU0_NON_SMM)
-        );
+  if(FeaturePcdGet (PcdEnableSecureLock)) {
+    //
+    // Add IMR0 protection for the 'PeiMemory'
+    //
+    QncImrWrite (
+              QUARK_NC_MEMORY_MANAGER_IMR0,
+              (UINT32)(((RShiftU64(PeiMemoryBaseAddress, 8)) & IMRL_MASK) | IMR_EN),
+              (UINT32)((RShiftU64((PeiMemoryBaseAddress+PeiMemoryLength-RequiredMemSize + EFI_PAGES_TO_SIZE(EDKII_DXE_MEM_SIZE_PAGES-1) - 1), 8)) & IMRL_MASK),
+              (UINT32)(CPU_SNOOP + CPU0_NON_SMM),
+              (UINT32)(CPU_SNOOP + CPU0_NON_SMM)
+          );
 
-  //
-  // Add IMR2 protection for shadowed RMU binary.
-  //
-  QncImrWrite (
-            QUARK_NC_MEMORY_MANAGER_IMR2,
-            (UINT32)(((RShiftU64((PeiMemoryBaseAddress+PeiMemoryLength), 8)) & IMRH_MASK) | IMR_EN),
-            (UINT32)((RShiftU64((PeiMemoryBaseAddress+PeiMemoryLength+PcdGet32(PcdFlashQNCMicrocodeSize)-1), 8)) & IMRH_MASK),
-            (UINT32)(CPU_SNOOP + RMU + CPU0_NON_SMM),
-            (UINT32)(CPU_SNOOP + RMU + CPU0_NON_SMM)
-        );
+    //
+    // Add IMR2 protection for shadowed RMU binary.
+    //
+    QncImrWrite (
+              QUARK_NC_MEMORY_MANAGER_IMR2,
+              (UINT32)(((RShiftU64((PeiMemoryBaseAddress+PeiMemoryLength), 8)) & IMRH_MASK) | IMR_EN),
+              (UINT32)((RShiftU64((PeiMemoryBaseAddress+PeiMemoryLength+PcdGet32(PcdFlashQNCMicrocodeSize)-1), 8)) & IMRH_MASK),
+              (UINT32)(CPU_SNOOP + RMU + CPU0_NON_SMM),
+              (UINT32)(CPU_SNOOP + RMU + CPU0_NON_SMM)
+          );
 
-  //
-  // Add IMR3 protection for the default SMRAM.
-  //
-  QncImrWrite (
-            QUARK_NC_MEMORY_MANAGER_IMR3,
-            (UINT32)(((RShiftU64((SMM_DEFAULT_SMBASE), 8)) & IMRL_MASK) | IMR_EN),
-            (UINT32)((RShiftU64((SMM_DEFAULT_SMBASE+SMM_DEFAULT_SMBASE_SIZE_BYTES-1), 8)) & IMRH_MASK),
-            (UINT32)(CPU_SNOOP + CPU0_NON_SMM),
-            (UINT32)(CPU_SNOOP + CPU0_NON_SMM)
-        );
+    //
+    // Add IMR3 protection for the default SMRAM.
+    //
+    QncImrWrite (
+              QUARK_NC_MEMORY_MANAGER_IMR3,
+              (UINT32)(((RShiftU64((SMM_DEFAULT_SMBASE), 8)) & IMRL_MASK) | IMR_EN),
+              (UINT32)((RShiftU64((SMM_DEFAULT_SMBASE+SMM_DEFAULT_SMBASE_SIZE_BYTES-1), 8)) & IMRH_MASK),
+              (UINT32)(CPU_SNOOP + CPU0_NON_SMM),
+              (UINT32)(CPU_SNOOP + CPU0_NON_SMM)
+          );
 
-  //
-  // Add IMR5 protection for the legacy S3 and AP Startup Vector region (below 1MB).
-  //
-  QncImrWrite (
-            QUARK_NC_MEMORY_MANAGER_IMR5,
-            (UINT32)(((RShiftU64(AP_STARTUP_VECTOR, 8)) & IMRL_MASK) | IMR_EN),
-            (UINT32)((RShiftU64((AP_STARTUP_VECTOR + EFI_PAGE_SIZE - 1), 8)) & IMRH_MASK),
-            (UINT32)(CPU_SNOOP + CPU0_NON_SMM),
-            (UINT32)(CPU_SNOOP + CPU0_NON_SMM)
-        );
+    //
+    // Add IMR5 protection for the legacy S3 and AP Startup Vector region (below 1MB).
+    //
+    QncImrWrite (
+              QUARK_NC_MEMORY_MANAGER_IMR5,
+              (UINT32)(((RShiftU64(AP_STARTUP_VECTOR, 8)) & IMRL_MASK) | IMR_EN),
+              (UINT32)((RShiftU64((AP_STARTUP_VECTOR + EFI_PAGE_SIZE - 1), 8)) & IMRH_MASK),
+              (UINT32)(CPU_SNOOP + CPU0_NON_SMM),
+              (UINT32)(CPU_SNOOP + CPU0_NON_SMM)
+          );
 
-  //
-  // Add IMR6 protection for the ACPI Reclaim/ACPI/Runtime Services.
-  //
-  QncImrWrite (
-            QUARK_NC_MEMORY_MANAGER_IMR6,
-            (UINT32)(((RShiftU64((PeiMemoryBaseAddress+PeiMemoryLength-RequiredMemSize+EFI_PAGES_TO_SIZE(EDKII_DXE_MEM_SIZE_PAGES-1)), 8)) & IMRL_MASK) | IMR_EN),
-            (UINT32)((RShiftU64((PeiMemoryBaseAddress+PeiMemoryLength-EFI_PAGE_SIZE-1), 8)) & IMRH_MASK),
-            (UINT32)(CPU_SNOOP + CPU0_NON_SMM),
-            (UINT32)(CPU_SNOOP + CPU0_NON_SMM)
-        );
+    //
+    // Add IMR6 protection for the ACPI Reclaim/ACPI/Runtime Services.
+    //
+    QncImrWrite (
+              QUARK_NC_MEMORY_MANAGER_IMR6,
+              (UINT32)(((RShiftU64((PeiMemoryBaseAddress+PeiMemoryLength-RequiredMemSize+EFI_PAGES_TO_SIZE(EDKII_DXE_MEM_SIZE_PAGES-1)), 8)) & IMRL_MASK) | IMR_EN),
+              (UINT32)((RShiftU64((PeiMemoryBaseAddress+PeiMemoryLength-EFI_PAGE_SIZE-1), 8)) & IMRH_MASK),
+              (UINT32)(CPU_SNOOP + CPU0_NON_SMM),
+              (UINT32)(CPU_SNOOP + CPU0_NON_SMM)
+          );
 
-  //
-  // Enable IMR4 protection of eSRAM.
-  //
-  QncImrWrite (
-            QUARK_NC_MEMORY_MANAGER_IMR4,
-            (UINT32)(((RShiftU64((UINTN)FixedPcdGet32 (PcdEsramStage1Base), 8)) & IMRL_MASK) | IMR_EN),
-            (UINT32)((RShiftU64(((UINTN)FixedPcdGet32 (PcdEsramStage1Base) + (UINTN)FixedPcdGet32 (PcdESramMemorySize) - 1), 8)) & IMRH_MASK),
-            (UINT32)(CPU_SNOOP + CPU0_NON_SMM),
-            (UINT32)(CPU_SNOOP + CPU0_NON_SMM)
-        );
+    //
+    // Enable IMR4 protection of eSRAM.
+    //
+    QncImrWrite (
+              QUARK_NC_MEMORY_MANAGER_IMR4,
+              (UINT32)(((RShiftU64((UINTN)FixedPcdGet32 (PcdEsramStage1Base), 8)) & IMRL_MASK) | IMR_EN),
+              (UINT32)((RShiftU64(((UINTN)FixedPcdGet32 (PcdEsramStage1Base) + (UINTN)FixedPcdGet32 (PcdESramMemorySize) - 1), 8)) & IMRH_MASK),
+              (UINT32)(CPU_SNOOP + CPU0_NON_SMM),
+              (UINT32)(CPU_SNOOP + CPU0_NON_SMM)
+          );
 
-  //
-  // Enable Interrupt on IMR/SMM Violation
-  //
-  QNCPortWrite (QUARK_NC_MEMORY_MANAGER_SB_PORT_ID, QUARK_NC_MEMORY_MANAGER_BIMRVCTL, (UINT32)(EnableIMRInt));
-  if (DeviceId == QUARK2_MC_DEVICE_ID) {
-    QNCPortWrite (QUARK_NC_MEMORY_MANAGER_SB_PORT_ID, QUARK_NC_MEMORY_MANAGER_BSMMVCTL, (UINT32)(EnableSMMInt));
+    //
+    // Enable Interrupt on IMR/SMM Violation
+    //
+    QNCPortWrite (QUARK_NC_MEMORY_MANAGER_SB_PORT_ID, QUARK_NC_MEMORY_MANAGER_BIMRVCTL, (UINT32)(EnableIMRInt));
+    if (DeviceId == QUARK2_MC_DEVICE_ID) {
+      QNCPortWrite (QUARK_NC_MEMORY_MANAGER_SB_PORT_ID, QUARK_NC_MEMORY_MANAGER_BSMMVCTL, (UINT32)(EnableSMMInt));
+    }
   }
 
   //

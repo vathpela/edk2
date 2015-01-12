@@ -807,9 +807,7 @@ Returns:
   // When entering a power-managed state like S3,
   // PERST# must be asserted in advance of power-off.
   //
-  if (mPlatformType != GalileoFabE) {
-    PlatformPERSTAssert (mPlatformType);
-  }
+  PlatformPERSTAssert (mPlatformType);
 
   return EFI_SUCCESS;
 }

@@ -439,8 +439,9 @@
     <Command.MSFT, Command.INTEL>
         "$(PP)" $(PP_FLAGS) $(INC) ${src} > ${d_path}(+)${s_base}.i
         Trim --source-code --convert-hex -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.i
-        "$(ASM16)" /nologo /c /omf $(INC) /Fo$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj ${d_path}(+)${s_base}.iii
-        "$(ASMLINK)" $(ASMLINK_FLAGS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj,${dst},,,,
+        "$(ASM16)" $(ASM16_FLAGS) $(INC) /Fo$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj ${d_path}(+)${s_base}.iii
+        "$(ASMLINK)" $(ASMLINK_FLAGS) /OUT:$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.exe $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
+        "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.com -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.exe
 
     <Command.GCC>
       "$(PP)" $(PP_FLAGS) $(INC) ${src} > ${d_path}(+)${s_base}.i

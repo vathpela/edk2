@@ -51,7 +51,7 @@
 # Include Section - list of Include Paths that are provided by this package.
 #                   Comments are used for Keywords and Module Types.
 #
-# Supported Module Types: 
+# Supported Module Types:
 #  SEC PEIM DXE_DRIVER DXE_RUNTIME_DRIVER DXE_SMM_DRIVER DXE_SAL_DRIVER UEFI_DRIVER
 #
 ################################################################################
@@ -84,7 +84,7 @@
   gEfiMemoryConfigDataGuid       = { 0x80dbd530, 0xb74c, 0x4f11, { 0x8c, 0x03, 0x41, 0x86, 0x65, 0x53, 0x28, 0x31 }}
   gPowerManagementAcpiTableStorageGuid = { 0xc0cc43bd, 0xc920, 0x4064, { 0x93, 0x5b, 0x93, 0xb4, 0x47, 0x37, 0x94, 0x70 }}
   gSignalBeforeEnterSetupGuid   = { 0xd9f1669a, 0xf505, 0x48bd, { 0xa8, 0x92, 0x94, 0xb7, 0xca, 0x90, 0x30, 0x31 }}
-  gEfiSetupVariableGuid = {0xec87d643, 0xeba4, 0x4bb5, {0xa1, 0xe5, 0x3f, 0x3e, 0x36, 0xb2, 0xd, 0xa9 }} 
+  gEfiSetupVariableGuid = {0xec87d643, 0xeba4, 0x4bb5, {0xa1, 0xe5, 0x3f, 0x3e, 0x36, 0xb2, 0xd, 0xa9 }}
   gEfiFlashMapHobGuid = {0xb091e7d2, 0x5a0, 0x4198, {0x94, 0xf0, 0x74, 0xb7, 0xb8, 0xc5, 0x54, 0x59}}
   gPeiCapsuleOnFatFloppyDiskGuid = {0x2e3d2e75, 0x9b2e, 0x412d, {0xb4, 0xb1, 0x70, 0x41, 0x6b, 0x87, 0x0, 0xff }}
   gPeiCapsuleOnFatIdeDiskGuid = {0xb38573b6, 0x6200, 0x4ac5, {0xb5, 0x1d, 0x82, 0xe6, 0x59, 0x38, 0xd7, 0x83 }}
@@ -143,8 +143,8 @@
   gQuarkPlatformTokenSpaceGuid.PcdShortformBootSupport|TRUE|BOOLEAN|0x00000002
 
 [PcdsFixedAtBuild]
-  gQuarkPlatformTokenSpaceGuid.PcdFlashAreaBaseAddress|0xFFC00000|UINT32|0x20000001
-  gQuarkPlatformTokenSpaceGuid.PcdFlashAreaSize|0x400000|UINT32|0x20000002 
+  gQuarkPlatformTokenSpaceGuid.PcdFlashAreaBaseAddress|0xFF800000|UINT32|0x20000001
+  gQuarkPlatformTokenSpaceGuid.PcdFlashAreaSize|0x800000|UINT32|0x20000002
   gQuarkPlatformTokenSpaceGuid.PcdFlashNvStorageBase|0xFFF30000|UINT32|0x20000003
   gQuarkPlatformTokenSpaceGuid.PcdFlashNvStorageSize|0x00020000|UINT32|0x20000004
   gQuarkPlatformTokenSpaceGuid.PcdFlashFvRecovery2Base|0xFFEF0400|UINT32|0x2000001C
@@ -153,10 +153,10 @@
   gQuarkPlatformTokenSpaceGuid.PcdPlatformDataBaseAddress|0xFFF10000|UINT32|0x2000001E
   gQuarkPlatformTokenSpaceGuid.PcdPlatformDataMaxLen|0x20000|UINT32|0x2000001F
   gQuarkPlatformTokenSpaceGuid.PcdHpetEnable|TRUE|BOOLEAN|0x20000018
-  gQuarkPlatformTokenSpaceGuid.PcdMemorySize|0x80000000|UINT32|0x20000032 
-  gQuarkPlatformTokenSpaceGuid.PcdFvSecurityHeaderSize|0x400|UINT32|0x20000036  
-  # ECC scrub interval in miliseconds 1..255 (0 works as feature disable) 
-  gQuarkPlatformTokenSpaceGuid.PcdEccScrubInterval|0x00|UINT8|0x20000037 
+  gQuarkPlatformTokenSpaceGuid.PcdMemorySize|0x80000000|UINT32|0x20000032
+  gQuarkPlatformTokenSpaceGuid.PcdFvSecurityHeaderSize|0x400|UINT32|0x20000036
+  # ECC scrub interval in miliseconds 1..255 (0 works as feature disable)
+  gQuarkPlatformTokenSpaceGuid.PcdEccScrubInterval|0x00|UINT8|0x20000037
   # Number of 32B blocks read for ECC scrub 2..16
   gQuarkPlatformTokenSpaceGuid.PcdEccScrubBlkSize|0x02|UINT8|0x20000038
   gQuarkPlatformTokenSpaceGuid.PcdFlashNvMfh|0xFFF08000|UINT32|0x20000039
@@ -183,7 +183,7 @@
   gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable0SourceIrq|0x00|UINT8|0xA0000101
   gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable0Polarity|0x00|UINT8|0xA0000102
   gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable0TrigerMode|0x00|UINT8|0xA0000103
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable0GlobalIrq|0x02|UINT32|0xA0000104  
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable0GlobalIrq|0x02|UINT32|0xA0000104
 
   # Madt Table Initialize settings.
   # Defines a flag to Enable/Disable interrupt override setting table1,
@@ -201,7 +201,7 @@
   gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable2SourceIrq|0x0|UINT8|0xA0000110
   gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable2Polarity|0x0|UINT8|0xA0000111
   gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable2TrigerMode|0x0|UINT8|0xA0000112
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable2GlobalIrq|0x0|UINT32|0xA0000113  
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable2GlobalIrq|0x0|UINT32|0xA0000113
 
   # Madt Table Initialize settings.
   # Defines a flag to Enable/Disable interrupt override setting table3,
@@ -340,7 +340,7 @@
   gQuarkPlatformTokenSpaceGuid.PcdLocalApicSettingTrigerMode|0x01|UINT8|0xA000017A
   gQuarkPlatformTokenSpaceGuid.PcdLocalApicSettingLocalApicLint|0x01|UINT8|0xA000017B
   gQuarkPlatformTokenSpaceGuid.PcdLocalApicAddressOverride|0x00|UINT64|0xA000017C
-  
+
   # PCDs for auto provisioning of UEFI 2.3.1 SecureBoot.
   gQuarkPlatformTokenSpaceGuid.PcdPkX509File |{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }|VOID*|0xA000017D
   gQuarkPlatformTokenSpaceGuid.PcdKekX509File |{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }|VOID*|0xA000017E
@@ -358,9 +358,9 @@
   # String number of the BIOS Vendors Name
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSBiosVendor|"Intel Corp."|VOID*|0xA0000033
   # String number of the BIOS Release Data
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSBiosReleaseDate|"01/01/2014"|VOID*|0xA0000035 
-  # Segment location of BIOS starting address. 
-  # Note: The size of the runtime BIOS image can be computed by subtracting the Starting Address Segment from 10000h and multiplying the result by 16.  
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSBiosReleaseDate|"01/01/2014"|VOID*|0xA0000035
+  # Segment location of BIOS starting address.
+  # Note: The size of the runtime BIOS image can be computed by subtracting the Starting Address Segment from 10000h and multiplying the result by 16.
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSBiosStartAddress|0xE000|UINT16|0xA0000036
   #Defines which functions the BIOS supports. PCI, PCMCIA, Flash, etc. See 3.3.1.1.
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSBiosChar|0x03037C099880|UINT64|0xA0000037
@@ -375,10 +375,10 @@
   # System Product String
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemProductName|"QUARK"|VOID*|0xA000003B
   # System Version
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemVersion|"1.0"|VOID*|0xA000003C 
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemVersion|"1.0"|VOID*|0xA000003C
   # System SerialNumber String
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSerialNumber|"Unknown"|VOID*|0xA000003D 
-  # System UUID 
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSerialNumber|"Unknown"|VOID*|0xA000003D
+  # System UUID
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemUuid|{0x23, 0xef, 0xff, 0x13,0x54, 0x86, 0xda, 0x46, 0xa4, 0x7, 0x39, 0xc9, 0x12, 0x2, 0xd3, 0x56}|VOID*|0xA000003E
   # Manufacturer String
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSKUNumber|"System SKUNumber"|VOID*|0xA000003F
@@ -418,12 +418,12 @@
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSChassisHeight|0x0|UINT8|0xA000004D
   # Identifies the number of power cords associated with the enclosure or chassis. A value of 00h indicates that the number is unspecified.
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSChassisNumberPowerCords|0x0|UINT8|0xA000004E
-  # Identifies the number of Contained Element records that follow, in the range 0 to 255. 
-  # Each Contained Element group comprises m bytes, as specified by the Contained Element Record Length field that follows. 
+  # Identifies the number of Contained Element records that follow, in the range 0 to 255.
+  # Each Contained Element group comprises m bytes, as specified by the Contained Element Record Length field that follows.
   # If no Contained Elements are included, this field is set to 0.
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSChassisElementCount|0x0|UINT8|0xA000004F
   # Identifies the byte length of each Contained Element record that follow, in the range 0 to 255.
-  # If no Contained Elements are included, this field is set to 0. For v2.3.2 and later of this specification, 
+  # If no Contained Elements are included, this field is set to 0. For v2.3.2 and later of this specification,
   # this field is set to at least 03h when Contained Elements are specified.
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSChassisElementRecordLength|0x0|UINT8|0xA0000050
 
@@ -657,24 +657,24 @@
 
   # Defines the number of the slots existent on board
   # The valid range is between 0 and 14
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlotNumber|5|UINT8|0xA000023F  
-  # Defines the designation of system slot1 
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot1Designation|"PCI SLOT1"|VOID*|0xA0000240    
-  # Defines the type of system slot1 
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlotNumber|5|UINT8|0xA000023F
+  # Defines the designation of system slot1
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot1Designation|"PCI SLOT1"|VOID*|0xA0000240
+  # Defines the type of system slot1
   # The valid range is between 0x01 to 0xA5, and 0x06 here means EfiSlotTypePci
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot1Type|0x6|UINT8|0xA0000241 
-  # Defines the data bus width of system slot1 
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot1Type|0x6|UINT8|0xA0000241
+  # Defines the data bus width of system slot1
   # The valid range is between 0x01 to 0x07, and 0x05 here means EfiSlotDataBusWidth32Bit
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot1DataBusWidth|0x5|UINT8|0xA0000242 
-  # Defines the usage of system slot1 
-  # The valid range is between 0x01 to 0x04, and 0x03 here means EfiSlotUsageAvailable    
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot1DataBusWidth|0x5|UINT8|0xA0000242
+  # Defines the usage of system slot1
+  # The valid range is between 0x01 to 0x04, and 0x03 here means EfiSlotUsageAvailable
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot1Usage|0x3|UINT8|0xA0000243
-  # Defines the length of system slot1 
-  # The valid range is between 0x01 to 0x04, and 0x04 here means EfiSlotLengthLong  
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot1Length|0x4|UINT8|0xA0000244 
-  # Defines the ID of system slot1, a number of UINT16  
+  # Defines the length of system slot1
+  # The valid range is between 0x01 to 0x04, and 0x04 here means EfiSlotLengthLong
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot1Length|0x4|UINT8|0xA0000244
+  # Defines the ID of system slot1, a number of UINT16
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot1Id|0x01|UINT16|0xA0000245
-  # Defines the characteristics of system slot1 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS 
+  # Defines the characteristics of system slot1 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS
   # typedef struct {
   #   UINT32  CharacteristicsUnknown  :1;
   #   UINT32  Provides50Volts         :1;
@@ -691,252 +691,252 @@
   # } EFI_MISC_SLOT_CHARACTERISTICS;
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot1Characteristics|0x504|UINT32|0xA0000246
 
-  # Defines the designation of system slot2 
+  # Defines the designation of system slot2
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot2Designation|"PCI-Express 1"|VOID*|0xA0000247
 
-  # Defines the type of system slot2 
+  # Defines the type of system slot2
   # The valid range is between 0x01 to 0xA5, and 0x06 here means EfiSlotTypePci
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot2Type|0xA5|UINT8|0xA0000248
-  # Defines the data bus width of system slot2 
+  # Defines the data bus width of system slot2
   # The valid range is between 0x01 to 0x07, and 0x05 here means EfiSlotDataBusWidth32Bit
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot2DataBusWidth|0x5|UINT8|0xA0000249
-  # Defines the usage of system slot2 
-  # The valid range is between 0x01 to 0x04, and 0x03 here means EfiSlotUsageAvailable    
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot2Usage|0x3|UINT8|0xA000024A 
-  # Defines the length of system slot2 
-  # The valid range is between 0x01 to 0x04, and 0x04 here means EfiSlotLengthLong  
+  # Defines the usage of system slot2
+  # The valid range is between 0x01 to 0x04, and 0x03 here means EfiSlotUsageAvailable
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot2Usage|0x3|UINT8|0xA000024A
+  # Defines the length of system slot2
+  # The valid range is between 0x01 to 0x04, and 0x04 here means EfiSlotLengthLong
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot2Length|0x4|UINT8|0xA000024B
-  # Defines the ID of system slot2, a number of UINT16  
+  # Defines the ID of system slot2, a number of UINT16
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot2Id|0x02|UINT16|0xA000024C
-  # Defines the characteristics of system slot2 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS 
+  # Defines the characteristics of system slot2 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot2Characteristics|0x504|UINT32|0xA000024D
 
-  # Defines the designation of system slot3 
+  # Defines the designation of system slot3
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot3Designation|"PCI-Express 2"|VOID*|0xA000024E
-  # Defines the type of system slot3 
+  # Defines the type of system slot3
   # The valid range is between 0x01 to 0xA5, and 0x06 here means EfiSlotTypePci
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot3Type|0xA5|UINT8|0xA000024F 
-  # Defines the data bus width of system slot3 
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot3Type|0xA5|UINT8|0xA000024F
+  # Defines the data bus width of system slot3
   # The valid range is between 0x01 to 0x07, and 0x05 here means EfiSlotDataBusWidth32Bit
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot3DataBusWidth|0x5|UINT8|0xA0000250
-  # Defines the usage of system slot3 
-  # The valid range is between 0x01 to 0x04, and 0x03 here means EfiSlotUsageAvailable    
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot3Usage|0x3|UINT8|0xA0000251 
-  # Defines the length of system slot3 
-  # The valid range is between 0x01 to 0x04, and 0x04 here means EfiSlotLengthLong  
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot3Length|0x4|UINT8|0xA0000252 
-  # Defines the ID of system slot3, a number of UINT16  
+  # Defines the usage of system slot3
+  # The valid range is between 0x01 to 0x04, and 0x03 here means EfiSlotUsageAvailable
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot3Usage|0x3|UINT8|0xA0000251
+  # Defines the length of system slot3
+  # The valid range is between 0x01 to 0x04, and 0x04 here means EfiSlotLengthLong
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot3Length|0x4|UINT8|0xA0000252
+  # Defines the ID of system slot3, a number of UINT16
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot3Id|0x03|UINT16|0xA0000253
-  # Defines the characteristics of system slot3 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS 
+  # Defines the characteristics of system slot3 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot3Characteristics|0x504|UINT32|0xA000254
 
-  # Defines the designation of system slot4 
+  # Defines the designation of system slot4
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot4Designation|"PCI-Express 3"|VOID*|0xA0000255
   # Defines the type of system slot4
   # The valid range is between 0x01 to 0xA5, and 0xA5 here means EfiSlotTypePciExpress
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot4Type|0xA5|UINT8|0xA0000256 
-  # Defines the data bus width of system slot4 
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot4Type|0xA5|UINT8|0xA0000256
+  # Defines the data bus width of system slot4
   # The valid range is between 0x01 to 0x07, and 0x05 here means EfiSlotDataBusWidth32Bit
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot4DataBusWidth|0x5|UINT8|0xA0000257
-  # Defines the usage of system slot4 
-  # The valid range is between 0x01 to 0x04, and 0x03 here means EfiSlotUsageAvailable    
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot4Usage|0x3|UINT8|0xA0000258 
+  # Defines the usage of system slot4
+  # The valid range is between 0x01 to 0x04, and 0x03 here means EfiSlotUsageAvailable
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot4Usage|0x3|UINT8|0xA0000258
   # Defines the length of system slot4
-  # The valid range is between 0x01 to 0x04, and 0x04 here means EfiSlotLengthLong  
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot4Length|0x4|UINT8|0xA0000259 
-  # Defines the ID of system slot4, a number of UINT16  
+  # The valid range is between 0x01 to 0x04, and 0x04 here means EfiSlotLengthLong
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot4Length|0x4|UINT8|0xA0000259
+  # Defines the ID of system slot4, a number of UINT16
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot4Id|0x04|UINT16|0xA0000260
-  # Defines the characteristics of system slot4 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS 
+  # Defines the characteristics of system slot4 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot4Characteristics|0x504|UINT32|0xA0000261
 
-  # Defines the designation of system slot5 
+  # Defines the designation of system slot5
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot5Designation|"Mini PCI-E"|VOID*|0xA0000262
-  # Defines the type of system slot5 
+  # Defines the type of system slot5
   # The valid range is between 0x01 to 0xA5, and 0xA5 here means EfiSlotTypePciExpress
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot5Type|0xA5|UINT8|0xA0000263 
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot5Type|0xA5|UINT8|0xA0000263
   # Defines the data bus width of system slot5
   # The valid range is between 0x01 to 0x07, and 0x05 here means EfiSlotDataBusWidth32Bit
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot5DataBusWidth|0x5|UINT8|0xA0000264
-  # Defines the usage of system slot5 
-  # The valid range is between 0x01 to 0x04, and 0x03 here means EfiSlotUsageAvailable    
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot5Usage|0x3|UINT8|0xA0000265 
-  # Defines the length of system slot5 
-  # The valid range is between 0x01 to 0x04, and 0x04 here means EfiSlotLengthLong  
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot5Length|0x4|UINT8|0xA0000266 
-  # Defines the ID of system slot5, a number of UINT16  
+  # Defines the usage of system slot5
+  # The valid range is between 0x01 to 0x04, and 0x03 here means EfiSlotUsageAvailable
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot5Usage|0x3|UINT8|0xA0000265
+  # Defines the length of system slot5
+  # The valid range is between 0x01 to 0x04, and 0x04 here means EfiSlotLengthLong
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot5Length|0x4|UINT8|0xA0000266
+  # Defines the ID of system slot5, a number of UINT16
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot5Id|0x05|UINT16|0xA0000267
-  # Defines the characteristics of system slot5 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS 
+  # Defines the characteristics of system slot5 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot5Characteristics|0x504|UINT32|0xA0000268
 
-  # Defines the designation of system slot6 
+  # Defines the designation of system slot6
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot6Designation|"NONE"|VOID*|0xA0000269
-  # Defines the type of system slot6 
+  # Defines the type of system slot6
   # The valid range is between 0x01 to 0xA5, and 0x02 here means EfiSlotTypeUnknown
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot6Type|0x2|UINT8|0xA000026A
-  # Defines the data bus width of system slot6 
+  # Defines the data bus width of system slot6
   # The valid range is between 0x01 to 0x07, and 0x02 here means EfiSlotDataBusWidthUnknown
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot6DataBusWidth|0x2|UINT8|0xA000026B 
-  # Defines the usage of system slot6 
-  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotUsageUnknown    
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot6Usage|0x2|UINT8|0xA000026C 
-  # Defines the length of system slot6 
-  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotLengthUnknown  
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot6Length|0x2|UINT8|0xA000026D 
-  # Defines the ID of system slot6, a number of UINT16  
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot6DataBusWidth|0x2|UINT8|0xA000026B
+  # Defines the usage of system slot6
+  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotUsageUnknown
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot6Usage|0x2|UINT8|0xA000026C
+  # Defines the length of system slot6
+  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotLengthUnknown
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot6Length|0x2|UINT8|0xA000026D
+  # Defines the ID of system slot6, a number of UINT16
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot6Id|0x0|UINT16|0xA000026E
-  # Defines the characteristics of system slot6 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS 
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot6Characteristics|0x0|UINT32|0xA000026F  
+  # Defines the characteristics of system slot6 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot6Characteristics|0x0|UINT32|0xA000026F
 
-  # Defines the designation of system slot7 
+  # Defines the designation of system slot7
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot7Designation|"NONE"|VOID*|0xA0000270
-  # Defines the type of system slot7 
+  # Defines the type of system slot7
   # The valid range is between 0x01 to 0xA5, and 0x02 here means EfiSlotTypeUnknown
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot7Type|0x2|UINT8|0xA0000271 
-  # Defines the data bus width of system slot7 
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot7Type|0x2|UINT8|0xA0000271
+  # Defines the data bus width of system slot7
   # The valid range is between 0x01 to 0x07, and 0x02 here means EfiSlotDataBusWidthUnknown
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot7DataBusWidth|0x2|UINT8|0xA0000272 
-  # Defines the usage of system slot7 
-  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotUsageUnknown    
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot7Usage|0x2|UINT8|0xA0000273 
-  # Defines the length of system slot7 
-  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotLengthUnknown  
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot7Length|0x2|UINT8|0xA0000274 
-  # Defines the ID of system slot7, a number of UINT16  
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot7DataBusWidth|0x2|UINT8|0xA0000272
+  # Defines the usage of system slot7
+  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotUsageUnknown
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot7Usage|0x2|UINT8|0xA0000273
+  # Defines the length of system slot7
+  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotLengthUnknown
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot7Length|0x2|UINT8|0xA0000274
+  # Defines the ID of system slot7, a number of UINT16
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot7Id|0x0|UINT16|0xA0000275
-  # Defines the characteristics of system slot7 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS 
+  # Defines the characteristics of system slot7 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot7Characteristics|0x0|UINT32|0xA0000276
 
-  # Defines the designation of system slot8 
+  # Defines the designation of system slot8
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot8Designation|"NONE"|VOID*|0xA0000277
-  # Defines the type of system slot8 
+  # Defines the type of system slot8
   # The valid range is between 0x01 to 0xA5, and 0x02 here means EfiSlotTypeUnknown
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot8Type|0x2|UINT8|0xA0000278 
-  # Defines the data bus width of system slot8 
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot8Type|0x2|UINT8|0xA0000278
+  # Defines the data bus width of system slot8
   # The valid range is between 0x01 to 0x07, and 0x02 here means EfiSlotDataBusWidthUnknown
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot8DataBusWidth|0x2|UINT8|0xA0000279 
-  # Defines the usage of system slot8 
-  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotUsageUnknown    
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot8DataBusWidth|0x2|UINT8|0xA0000279
+  # Defines the usage of system slot8
+  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotUsageUnknown
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot8Usage|0x2|UINT8|0xA000027A
-  # Defines the length of system slot8 
-  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotLengthUnknown  
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot8Length|0x2|UINT8|0xA000027B 
-  # Defines the ID of system slot8, a number of UINT16  
+  # Defines the length of system slot8
+  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotLengthUnknown
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot8Length|0x2|UINT8|0xA000027B
+  # Defines the ID of system slot8, a number of UINT16
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot8Id|0x0|UINT16|0xA000027C
-  # Defines the characteristics of system slot8 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS 
+  # Defines the characteristics of system slot8 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot8Characteristics|0x0|UINT32|0xA000027D
 
-  # Defines the designation of system slot9 
+  # Defines the designation of system slot9
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot9Designation|"NONE"|VOID*|0xA000027E
-  # Defines the type of system slot9 
+  # Defines the type of system slot9
   # The valid range is between 0x01 to 0xA5, and 0x02 here means EfiSlotTypeUnknown
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot9Type|0x2|UINT8|0xA000027F 
-  # Defines the data bus width of system slot9 
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot9Type|0x2|UINT8|0xA000027F
+  # Defines the data bus width of system slot9
   # The valid range is between 0x01 to 0x07, and 0x02 here means EfiSlotDataBusWidthUnknown
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot9DataBusWidth|0x2|UINT8|0xA0000280 
-  # Defines the usage of system slot9 
-  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotUsageUnknown    
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot9Usage|0x2|UINT8|0xA0000281 
-  # Defines the length of system slot9 
-  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotLengthUnknown  
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot9Length|0x2|UINT8|0xA0000282 
-  # Defines the ID of system slot9, a number of UINT16  
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot9DataBusWidth|0x2|UINT8|0xA0000280
+  # Defines the usage of system slot9
+  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotUsageUnknown
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot9Usage|0x2|UINT8|0xA0000281
+  # Defines the length of system slot9
+  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotLengthUnknown
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot9Length|0x2|UINT8|0xA0000282
+  # Defines the ID of system slot9, a number of UINT16
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot9Id|0x0|UINT16|0xA0000283
-  # Defines the characteristics of system slot9 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS 
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot9Characteristics|0x0|UINT32|0xA0000284  
+  # Defines the characteristics of system slot9 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot9Characteristics|0x0|UINT32|0xA0000284
 
-  # Defines the designation of system slot10 
+  # Defines the designation of system slot10
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot10Designation|"None"|VOID*|0xA0000285
-  # Defines the type of system slot10 
+  # Defines the type of system slot10
   # The valid range is between 0x01 to 0xA5, and 0x02 here means EfiSlotTypeUnknown
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot10Type|0x2|UINT8|0xA0000286 
-  # Defines the data bus width of system slot10 
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot10Type|0x2|UINT8|0xA0000286
+  # Defines the data bus width of system slot10
   # The valid range is between 0x01 to 0x07, and 0x02 here means EfiSlotDataBusWidthUnknown
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot10DataBusWidth|0x2|UINT8|0xA0000287 
-  # Defines the usage of system slot10 
-  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotUsageUnknown    
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot10Usage|0x2|UINT8|0xA0000288 
-  # Defines the length of system slot10 
-  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotLengthUnknown  
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot10Length|0x2|UINT8|0xA0000289 
-  # Defines the ID of system slot10, a number of UINT16  
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot10DataBusWidth|0x2|UINT8|0xA0000287
+  # Defines the usage of system slot10
+  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotUsageUnknown
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot10Usage|0x2|UINT8|0xA0000288
+  # Defines the length of system slot10
+  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotLengthUnknown
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot10Length|0x2|UINT8|0xA0000289
+  # Defines the ID of system slot10, a number of UINT16
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot10Id|0x0|UINT16|0xA000028A
-  # Defines the characteristics of system slot10 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS 
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot10Characteristics|0x0|UINT32|0xA000028B  
+  # Defines the characteristics of system slot10 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot10Characteristics|0x0|UINT32|0xA000028B
 
-  # Defines the designation of system slot11 
+  # Defines the designation of system slot11
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot11Designation|"None"|VOID*|0xA000028C
-  # Defines the type of system slot11 
+  # Defines the type of system slot11
   # The valid range is between 0x01 to 0xA5, and 0x02 here means EfiSlotTypeUnknown
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot11Type|0x2|UINT8|0xA000028D 
-  # Defines the data bus width of system slot11 
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot11Type|0x2|UINT8|0xA000028D
+  # Defines the data bus width of system slot11
   # The valid range is between 0x01 to 0x07, and 0x02 here means EfiSlotDataBusWidthUnknown
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot11DataBusWidth|0x2|UINT8|0xA000028E 
-  # Defines the usage of system slot11 
-  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotUsageUnknown    
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot11Usage|0x2|UINT8|0xA000028F 
-  # Defines the length of system slot11 
-  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotLengthUnknown  
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot11Length|0x2|UINT8|0xA0000290 
-  # Defines the ID of system slot11, a number of UINT16  
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot11DataBusWidth|0x2|UINT8|0xA000028E
+  # Defines the usage of system slot11
+  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotUsageUnknown
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot11Usage|0x2|UINT8|0xA000028F
+  # Defines the length of system slot11
+  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotLengthUnknown
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot11Length|0x2|UINT8|0xA0000290
+  # Defines the ID of system slot11, a number of UINT16
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot11Id|0x0|UINT16|0xA00000EE
-  # Defines the characteristics of system slot11 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS 
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot11Characteristics|0x0|UINT32|0xA0000291 
+  # Defines the characteristics of system slot11 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot11Characteristics|0x0|UINT32|0xA0000291
 
-  # Defines the designation of system slot12 
+  # Defines the designation of system slot12
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot12Designation|"None"|VOID*|0xA0000292
-  # Defines the type of system slot12 
+  # Defines the type of system slot12
   # The valid range is between 0x01 to 0xA5, and 0x02 here means EfiSlotTypeUnknown
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot12Type|0x2|UINT8|0xA0000293 
-  # Defines the data bus width of system slot12 
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot12Type|0x2|UINT8|0xA0000293
+  # Defines the data bus width of system slot12
   # The valid range is between 0x01 to 0x07, and 0x02 here means EfiSlotDataBusWidthUnknown
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot12DataBusWidth|0x2|UINT8|0xA0000294 
-  # Defines the usage of system slot12 
-  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotUsageUnknown    
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot12Usage|0x2|UINT8|0xA0000295 
-  # Defines the length of system slot12 
-  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotLengthUnknown  
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot12Length|0x2|UINT8|0xA0000296 
-  # Defines the ID of system slot12, a number of UINT16  
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot12DataBusWidth|0x2|UINT8|0xA0000294
+  # Defines the usage of system slot12
+  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotUsageUnknown
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot12Usage|0x2|UINT8|0xA0000295
+  # Defines the length of system slot12
+  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotLengthUnknown
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot12Length|0x2|UINT8|0xA0000296
+  # Defines the ID of system slot12, a number of UINT16
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot12Id|0x0|UINT16|0xA0000297
-  # Defines the characteristics of system slot12 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS 
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot12Characteristics|0x0|UINT32|0xA0000298  
+  # Defines the characteristics of system slot12 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot12Characteristics|0x0|UINT32|0xA0000298
 
-  # Defines the designation of system slot13 
+  # Defines the designation of system slot13
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot13Designation|"None"|VOID*|0xA0000299
-  # Defines the type of system slot13 
+  # Defines the type of system slot13
   # The valid range is between 0x01 to 0xA5, and 0x02 here means EfiSlotTypeUnknown
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot13Type|0x2|UINT8|0xA000029A 
-  # Defines the data bus width of system slot13 
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot13Type|0x2|UINT8|0xA000029A
+  # Defines the data bus width of system slot13
   # The valid range is between 0x01 to 0x07, and 0x02 here means EfiSlotDataBusWidthUnknown
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot13DataBusWidth|0x2|UINT8|0xA000029B 
-  # Defines the usage of system slot13 
-  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotUsageUnknown    
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot13Usage|0x2|UINT8|0xA000029C 
-  # Defines the length of system slot13 
-  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotLengthUnknown  
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot13Length|0x2|UINT8|0xA000029D 
-  # Defines the ID of system slot13, a number of UINT16  
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot13DataBusWidth|0x2|UINT8|0xA000029B
+  # Defines the usage of system slot13
+  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotUsageUnknown
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot13Usage|0x2|UINT8|0xA000029C
+  # Defines the length of system slot13
+  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotLengthUnknown
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot13Length|0x2|UINT8|0xA000029D
+  # Defines the ID of system slot13, a number of UINT16
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot13Id|0x0|UINT16|0xA000029E
-  # Defines the characteristics of system slot13 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS 
+  # Defines the characteristics of system slot13 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot13Characteristics|0x0|UINT32|0xA000029F
 
-  # Defines the designation of system slot14 
+  # Defines the designation of system slot14
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot14Designation|"None"|VOID*|0xA00002A0
-  # Defines the type of system slot14 
+  # Defines the type of system slot14
   # The valid range is between 0x01 to 0xA5, and 0x02 here means EfiSlotTypeUnknown
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot14Type|0x2|UINT8|0xA00002A1 
-  # Defines the data bus width of system slot14 
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot14Type|0x2|UINT8|0xA00002A1
+  # Defines the data bus width of system slot14
   # The valid range is between 0x01 to 0x07, and 0x02 here means EfiSlotDataBusWidthUnknown
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot14DataBusWidth|0x2|UINT8|0xA00002A2 
-  # Defines the usage of system slot14 
-  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotUsageUnknown    
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot14Usage|0x2|UINT8|0xA00002A3 
-  # Defines the length of system slot14 
-  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotLengthUnknown  
-  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot14Length|0x2|UINT8|0xA00002A4 
-  # Defines the ID of system slot14, a number of UINT16  
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot14DataBusWidth|0x2|UINT8|0xA00002A2
+  # Defines the usage of system slot14
+  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotUsageUnknown
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot14Usage|0x2|UINT8|0xA00002A3
+  # Defines the length of system slot14
+  # The valid range is between 0x01 to 0x04, and 0x02 here means EfiSlotLengthUnknown
+  gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot14Length|0x2|UINT8|0xA00002A4
+  # Defines the ID of system slot14, a number of UINT16
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot14Id|0x0|UINT16|0xA00002A5
-  # Defines the characteristics of system slot14 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS 
+  # Defines the characteristics of system slot14 , a bit mask of EFI_MISC_SLOT_CHARACTERISTICS
   gQuarkPlatformTokenSpaceGuid.PcdSMBIOSSystemSlot14Characteristics|0x0|UINT32|0xA00002A6
 
 [PcdsDynamic, PcdsDynamicEx]

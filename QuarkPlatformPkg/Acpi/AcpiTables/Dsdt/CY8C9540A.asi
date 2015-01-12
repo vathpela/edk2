@@ -1,7 +1,4 @@
-/** @file
-
-  The Infineon SLB9645 TPM ACPI definition block.
-  Provides TPM device info. and TPM presence check only.
+/*++
 
   Copyright (c) 2013 Intel Corporation.
 
@@ -31,39 +28,50 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-**/
+  Module Name:
 
-Device (TPM)
+    CY8C9540A.asi
+
+  Abstract:
+
+    CY8C9540A 40 Bit I/O Expander with EEPROM.
+
+--*/
+
+Device(CY8C)
 {
-  //
-  // Define _HID as Infineon TPM Device, _CID as "PNP0C31" (defined in
-  // "Secure Startup-FVE and TPM Admin BIOS and Platform Requirements").
-  //
-  Name(_HID ,EISAID("INT3493"))
-  Name(_CID, EISAID("PNP0C31"))
+    Name(_HID, "INT3490") // Cypress CY8C9540A Io Expander Function.
+    Name(_CID, "INT3490")
 
-  //
-  // Readable name of this device.
-  //
-  Name (_STR, Unicode ("Infineon TPM 1.2 Device (SLB9645TT1.2)"))
-
-  //
-  // Return the resource consumed by TPM device.
-  //
-  Name (_CRS, ResourceTemplate () {
-    I2cSerialBus (0x20, ControllerInitiated, 0x00061A80, AddressingMode7Bit, "\\_SB.PCI0.GIP0.I2C_", 0, ResourceConsumer,,)
-  })
-
-  //
-  // Check if TPM present.
-  //
-  Method (_STA, 0)
-  {
-    if (LEqual (TPMP, 0))
+    Name(RBUF, ResourceTemplate()
     {
-      return (0)
+        I2CSerialBus(0x20, ControllerInitiated, 100000, AddressingMode7Bit, "\\_SB.PCI0.GIP0.I2C_", 0, ResourceConsumer, , )
+        GpioInt (Level, ActiveLow, Exclusive, PullDefault, , "\\_SB.PCI0.GIP0.GPO", 0, ResourceConsumer, , ) {QUARK_GPIO5_MAPPING} /* GPIO<5> is INT_S0 */
+    })
+    Method(_CRS, 0x0, NotSerialized)
+    {
+        CreateByteField(RBUF, 16, OB1)
+        if (LEqual (ALTS, 0))
+        {
+            Store(0x20, OB1)
+        }
+        Else
+        {
+            Store(0x21, OB1)
+        }
+        Return(RBUF)
     }
-    Return (0x0f)
-  }
-
+    Method(_STA, 0x0, NotSerialized)
+    {
+        //
+        // Only Galileo platform has this device.
+        // EFI_PLATFORM_TYPE enum value Galileo = 6.
+        //
+        If(LNotEqual(PTYP, 6))
+        {
+          return (0)
+        }
+        Return(0xf)
+    }
 }
+

@@ -59,485 +59,183 @@ Revision History
 #define SMM_DEFAULT_SMBASE_SIZE_BYTES       0x10000     // Size in bytes of default SMRAM
 
 BOOLEAN                       mMemCfgDone = FALSE;
-BOOLEAN                       mPciCfgDone = FALSE;
-BOARD_GPIO_CONTROLLER_CONFIG  mBoardGpioControllerConfigTable[]  = { PLATFORM_GPIO_CONTROLLER_CONFIG_DEFINITION };
-UINTN                         mBoardGpioControllerConfigTableLen = (sizeof(mBoardGpioControllerConfigTable) / sizeof(BOARD_GPIO_CONTROLLER_CONFIG));
 UINT8                         ChipsetDefaultMac [6] = {0xff,0xff,0xff,0xff,0xff,0xff};
 
 VOID
 EFIAPI
-SetLanControllerMacAddr (
-  IN CONST UINT8                          Bus,
-  IN CONST UINT8                          Device,
-  IN CONST UINT8                          Func,
-  IN CONST UINT8                          *MacAddr
-  )
-/*++
-
-Routine Description:
-
-  Set Mac address on chipset ethernet device.
-
-Arguments:
-  Bus         - PCI Bus number of chipset ethernet device.
-  Device      - PCI Device number of chipset ethernet device.
-  Func        - PCI Function number of chipset ethernet device.
-  MacAddr     - MAC Address to set.
-
-Returns:
-  None.
-
---*/
-{
-  UINT32                            Data32;
-  UINT8                             PciCmd;
-  UINT8                             Value8;
-  UINT16                            PciVid;
-  UINT16                            PciDid;
-  UINT32                            Bar0;
-  UINT32                            Addr;
-  UINT32                            MacVer;
-  volatile UINT8                    *Wrote;
-
-  PciVid = IohMmPci16(0, Bus, Device, Func, PCI_REG_VID);
-  PciDid = IohMmPci16(0, Bus, Device, Func, PCI_REG_DID);
-  //
-  // Read PCICMD.  Bus=0, Dev=0, Func=0, Reg=0x4
-  //
-  PciCmd = IohMmPci8(0, Bus, Device, Func, PCI_REG_PCICMD);
-
-  if((PciVid == V_IOH_MAC_VENDOR_ID) && (PciDid == V_IOH_MAC_DEVICE_ID)) {
-    //
-    // Enable MMIO Space(Bit1).
-    //
-    Value8 = PciCmd | B_IOH_MAC_COMMAND_MSE;
-    IohMmPci8(0, Bus, Device, Func, PCI_REG_PCICMD) = Value8;
-
-    //
-    // Read BAR0.  Bus=0, Dev=0, Func=0, Reg=0x10
-    //
-    Bar0 = IohMmPci32(0, Bus, Device, Func, R_IOH_MAC_MEMBAR) & B_IOH_MAC_MEMBAR_ADDRESS_MASK;
-
-    Addr =  Bar0 + R_IOH_MAC_GMAC_REG_8;
-    MacVer = *((volatile UINT32 *) (UINTN)(Addr));
-
-    DEBUG ((EFI_D_INFO, "Ioh MAC [B:%d, D:%d, F:%d] VER:%04x ADDR:",
-      (UINTN) Bus,
-      (UINTN) Device,
-      (UINTN) Func,
-      (UINTN) MacVer
-      ));
-
-    //
-    // Set MAC Address0 Low Register (GMAC_REG_17) ADDRLO bits.
-    //
-    Addr =  Bar0 + R_IOH_MAC_GMAC_REG_17;
-    Data32 = *((UINT32 *) (UINTN)(&MacAddr[0]));
-    *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
-    Wrote = (volatile UINT8 *) (UINTN)(Addr);
-    DEBUG ((EFI_D_INFO, "%02x-%02x-%02x-%02x-",
-      (UINTN) Wrote[0],
-      (UINTN) Wrote[1],
-      (UINTN) Wrote[2],
-      (UINTN) Wrote[3]
-      ));
-
-    //
-    // Set MAC Address0 High Register (GMAC_REG_16) ADDRHI bits
-    // and Address Enable (AE) bit.
-    //
-    Addr =  Bar0 + R_IOH_MAC_GMAC_REG_16;
-    Data32 = 
-      ((UINT32) MacAddr[4]) |
-      (((UINT32)MacAddr[5]) << 8) |
-      B_IOH_MAC_AE;
-    *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
-    Wrote = (volatile UINT8 *) (UINTN)(Addr);
-
-    DEBUG ((EFI_D_INFO, "%02x-%02x\n", (UINTN) Wrote[0], (UINTN) Wrote[1]));
-
-    //
-    // Return Cmd register to initial value.
-    //
-    IohMmPci8(0, Bus, Device, Func, PCI_REG_PCICMD) = PciCmd;
-
-  }
-}
-
-EFI_STATUS
-EFIAPI
-PlatformPcal9555Config (
-  IN CONST EFI_PLATFORM_TYPE              PlatformType
-  )
-/*++
-
-Routine Description:
-
-Arguments:
-  PlatformType - Set PCAL9555 IO Expander config for this platform.
-
-Returns:
-  EFI_STATUS
-
---*/
-{
-  EFI_STATUS                        Status;
-  UINTN                             WriteLength;
-  UINT8                             Data[3];
-  EFI_I2C_DEVICE_ADDRESS            I2CDeviceAddr;
-  EFI_I2C_ADDR_MODE                 I2CAddrMode;
-
-  if (PlatformType != GalileoFabE) {
-    return EFI_SUCCESS; // No error if plaform has no Pcal9555 IO Expander.
-  }
-
-  I2CDeviceAddr.I2CDeviceAddress = PCAL9555_GALILEO_GEN2_7BIT_SLAVE_ADDR;
-  I2CAddrMode = EfiI2CSevenBitAddrMode;
-
-  WriteLength = 3;
-  Data[0] = PCAL9555_REG_CFG_PORT0; // Write to both cfg registers.
-  Data[1] = PCAL9555_GALILEO_GEN2_PORT0_CFG;
-  Data[2] = PCAL9555_GALILEO_GEN2_PORT1_CFG;
-
-  Status = mI2cBus->WriteMultipleByte (
-                      mI2cBus,
-                      I2CDeviceAddr,
-                      I2CAddrMode,
-                      &WriteLength,
-                      &Data
-                      );
-  ASSERT_EFI_ERROR (Status);
-
-  WriteLength = 3;
-  Data[0] = PCAL9555_REG_OUT_PORT0; // Write to both output registers.
-  Data[1] = PCAL9555_GALILEO_GEN2_PORT0_DEFAULT_OUT;
-  Data[2] = PCAL9555_GALILEO_GEN2_PORT1_DEFAULT_OUT;
-
-  Status = mI2cBus->WriteMultipleByte (
-                      mI2cBus,
-                      I2CDeviceAddr,
-                      I2CAddrMode,
-                      &WriteLength,
-                      &Data
-                      );
-  ASSERT_EFI_ERROR (Status);
-
-  return EFI_SUCCESS;
-}
-
-VOID
-EFIAPI
-GpioControllerConfig (
+PlatformInitializeUart0MuxGalileo (
   VOID
   )
 /*++
 
-Routine Description:
-
-  Perform Gpio controller config.
-
-Arguments:
-  None.
-
-Returns:
-  None.
-
---*/
-{
-  UINT32                            IohGpioBase;
-  UINT32                            Data32;
-  UINT8                             Value8;
-  UINT8                             PciCmd;
-  UINT16                            PciVid;
-  UINT16                            PciDid;
-  UINT32                            Addr;
-  BOARD_GPIO_CONTROLLER_CONFIG      *GpioConfig;
-  UINT8                             Bus;
-  UINT8                             Device;
-  UINT8                             Func;
-  EFI_PLATFORM_TYPE_PROTOCOL        *PlatformType;
-
-  PlatformType = &mPrivatePlatformData.PlatformType;
-
-  Bus = IOH_I2C_GPIO_BUS_NUMBER;
-  Device = IOH_I2C_GPIO_DEVICE_NUMBER;
-  Func = IOH_I2C_GPIO_FUNCTION_NUMBER;
-
-  PciVid = IohMmPci16(0, Bus, Device, Func, PCI_REG_VID);
-  PciDid = IohMmPci16(0, Bus, Device, Func, PCI_REG_DID);
-
-  if((PciVid == V_IOH_I2C_GPIO_VENDOR_ID) && (PciDid == V_IOH_I2C_GPIO_DEVICE_ID)) {
-    //
-    // Read PCICMD.  Bus=0, Dev=0, Func=0, Reg=0x4
-    //
-    PciCmd = IohMmPci8(0, Bus, Device, Func, PCI_REG_PCICMD);
-
-    //
-    // Enable Bus Master(Bit2), MMIO Space(Bit1) & I/O Space(Bit0)
-    //
-    Value8 = PciCmd | 0x7;
-    IohMmPci8(0, Bus, Device, Func, PCI_REG_PCICMD) = Value8;
-
-    //
-    // Read MEM_BASE.  Bus=0, Dev=0, Func=0, Reg=0x14
-    //
-    IohGpioBase = IohMmPci32(0, Bus, Device, Func, R_IOH_GPIO_MEMBAR);
-
-    ASSERT ((UINTN) PlatformType->Type < mBoardGpioControllerConfigTableLen);
-    GpioConfig = &mBoardGpioControllerConfigTable[(UINTN) PlatformType->Type];
-    DEBUG ((EFI_D_INFO, "Ioh Gpio Controller Init for PlatType=0x%02x\n", (UINTN) PlatformType->Type));
-
-    //
-    // IEN- Interrupt Enable Register
-    //
-    Addr =  IohGpioBase + GPIO_INTEN;
-    Data32 = *((volatile UINT32 *) (UINTN)(Addr)) & 0xFFFFFF00; // Keep reserved bits [31:8]
-    Data32 |= (GpioConfig->IntEn & 0x000FFFFF);
-    *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
-
-    //
-    // ISTATUS- Interrupt Status Register
-    //
-    Addr =  IohGpioBase + GPIO_INTSTATUS;
-    Data32 = *((volatile UINT32 *) (UINTN)(Addr)) & 0xFFFFFF00; // Keep reserved bits [31:8]
-    *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
-
-    //
-    // GPIO SWPORTA Direction Register - GPIO_SWPORTA_DR
-    //
-    Addr =  IohGpioBase + GPIO_SWPORTA_DR;
-    Data32 = *((volatile UINT32 *) (UINTN)(Addr)) & 0xFFFFFF00; // Keep reserved bits [31:8]
-    Data32 |= (GpioConfig->PortADR & 0x000FFFFF);
-    *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
-
-    //
-    // GPIO SWPORTA Data Direction Register - GPIO_SWPORTA_DDR - default input
-    //
-    Addr =  IohGpioBase + GPIO_SWPORTA_DDR;
-    Data32 = *((volatile UINT32 *) (UINTN)(Addr)) & 0xFFFFFF00; // Keep reserved bits [31:8]
-    Data32 |= (GpioConfig->PortADir & 0x000FFFFF);
-    *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
-
-    //
-    // Interrupt Mask Register - GPIO_INTMASK - default interrupts unmasked
-    //
-    Addr =  IohGpioBase + GPIO_INTMASK;
-    Data32 = *((volatile UINT32 *) (UINTN)(Addr)) & 0xFFFFFF00; // Keep reserved bits [31:8]
-    Data32 |= (GpioConfig->IntMask & 0x000FFFFF);
-    *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
-
-    //
-    // Interrupt Level Type Register - GPIO_INTTYPE_LEVEL - default is level sensitive
-    //
-    Addr =  IohGpioBase + GPIO_INTTYPE_LEVEL;
-    Data32 = *((volatile UINT32 *) (UINTN)(Addr)) & 0xFFFFFF00; // Keep reserved bits [31:8]
-    Data32 |= (GpioConfig->IntType & 0x000FFFFF);
-    *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
-
-    //
-    // Interrupt Polarity Type Register - GPIO_INT_POLARITY - default is active low
-    //
-    Addr =  IohGpioBase + GPIO_INT_POLARITY;
-    Data32 = *((volatile UINT32 *) (UINTN)(Addr)) & 0xFFFFFF00; // Keep reserved bits [31:8]
-    Data32 |= (GpioConfig->IntPolarity & 0x000FFFFF);
-    *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
-
-    //
-    // Interrupt Debounce Type Register - GPIO_DEBOUNCE - default no debounce
-    //
-    Addr =  IohGpioBase + GPIO_DEBOUNCE;
-    Data32 = *((volatile UINT32 *) (UINTN)(Addr)) & 0xFFFFFF00; // Keep reserved bits [31:8]
-    Data32 |= (GpioConfig->Debounce & 0x000FFFFF);
-    *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
-
-    //
-    // Interrupt Clock Synchronisation Register - GPIO_LS_SYNC - default no sync with pclk_intr(APB bus clk)
-    //
-    Addr =  IohGpioBase + GPIO_LS_SYNC;
-    Data32 = *((volatile UINT32 *) (UINTN)(Addr)) & 0xFFFFFF00; // Keep reserved bits [31:8]
-    Data32 |= (GpioConfig->LsSync & 0x000FFFFF);
-    *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
-
-  }
-}
-
-VOID
-EFIAPI
-PlatformResetDevices (
-  VOID
-  )
-/*++
 
 Routine Description:
 
-  Performs any platform specific device resets 
+  This is the routine to initialize UART0 for DBG2 support. The hardware used in this process is a
+  Legacy Bridge (Legacy GPIO), I2C controller, a bi-directional MUX and a Cypress CY8C9540A chip.
 
 Arguments:
+
   None.
 
 Returns:
-  None.
 
---*/
-{
-  UINT32                            IohGpioBase;
-  UINT32                            Data32;
-  UINT8                             Value8;
-  UINT8                             PciCmd;
-  UINT16                            PciVid;
-  UINT16                            PciDid;
-  UINT32                            Addr;
-  UINT8                             Bus;
-  UINT8                             Device;
-  UINT8                             Func;
-  EFI_PLATFORM_TYPE_PROTOCOL        *PlatformType;
-
-  PlatformType = &mPrivatePlatformData.PlatformType;
-
-  if(PlatformType->Type == (EFI_PLATFORM_TYPE) Galileo) {
-
-    DEBUG ((EFI_D_INFO, "Resetting Cypress Expander\n"));
-
-    Bus = IOH_I2C_GPIO_BUS_NUMBER;
-    Device = IOH_I2C_GPIO_DEVICE_NUMBER;
-    Func = IOH_I2C_GPIO_FUNCTION_NUMBER;
-
-    PciVid = IohMmPci16(0, Bus, Device, Func, PCI_REG_VID);
-    PciDid = IohMmPci16(0, Bus, Device, Func, PCI_REG_DID);
-
-    if((PciVid == V_IOH_I2C_GPIO_VENDOR_ID) && (PciDid == V_IOH_I2C_GPIO_DEVICE_ID)) {
-        //
-        // Read PCICMD.  Bus=0, Dev=0, Func=0, Reg=0x4
-        //
-        PciCmd = IohMmPci8(0, Bus, Device, Func, PCI_REG_PCICMD);
-
-        //
-        // Enable Bus Master(Bit2), MMIO Space(Bit1) & I/O Space(Bit0)
-        //
-        Value8 = PciCmd | 0x7;
-        IohMmPci8(0, Bus, Device, Func, PCI_REG_PCICMD) = Value8;
-
-        //
-        // Read MEM_BASE.  Bus=0, Dev=0, Func=0, Reg=0x14
-        //
-        IohGpioBase = IohMmPci32(0, Bus, Device, Func, R_IOH_GPIO_MEMBAR);
-        ASSERT (IohGpioBase != 0xFFFFFFFF);
-
-        //
-        // Reset Cypress Expander on Galileo Platform
-        //
-        Addr = IohGpioBase + GPIO_SWPORTA_DR;
-        Data32 = *((volatile UINT32 *) (UINTN)(Addr)); 
-        Data32 |= BIT4;                                 // Cypress Reset line controlled by GPIO<4>
-        *((volatile UINT32 *) (UINTN)(Addr)) = Data32; 
- 
-        Data32 = *((volatile UINT32 *) (UINTN)(Addr)); 
-        Data32 &= ~BIT4;                                // Cypress Reset line controlled by GPIO<4>
-        *((volatile UINT32 *) (UINTN)(Addr)) = Data32; 
-    }
-  } 
-}
-
-VOID
-EFIAPI
-PlatformConfigOnPciEnumComplete (
-  IN  EFI_EVENT Event,
-  IN  VOID      *Context
-  )
-/*++
-
-Routine Description:
-
-  Function runs in PI-DXE to perform platform specific config when PCI enum
-  is complete.
-
-Arguments:
-  Event       - The event that occured.
-  Context     - For EFI compatiblity.  Not used.
-
-Returns:
   None.
 
 --*/
 {
   EFI_STATUS                        Status;
-  BOOLEAN                           SetMacAddr;
-  EFI_PLATFORM_TYPE_PROTOCOL        *PlatformType;
-  VOID                              *PciEnumProt = NULL;
+  EFI_I2C_DEVICE_ADDRESS            I2CSlaveAddress;
+  UINTN                             Length;
+  UINT8                             Buffer[2];
 
-  PlatformType = &mPrivatePlatformData.PlatformType;
-
-  Status = gBS->LocateProtocol (&gEfiPciEnumerationCompleteProtocolGuid, NULL, &PciEnumProt);
-  if (Status != EFI_SUCCESS){
-    DEBUG ((DEBUG_INFO, "gEfiPciEnumerationCompleteProtocolGuid triggered but not valid.\n"));
-    return;
-  }
-  if (mPciCfgDone) {
-    DEBUG ((DEBUG_INFO, "Platform DXE Pci config already done.\n"));
-    return;
-  }
-
-  GpioControllerConfig ();
-  PlatformResetDevices ();
-
-  //
-  // Set chipset MAC0 address if configured.
-  //
-  SetMacAddr =
-    (CompareMem (ChipsetDefaultMac, PlatformType->SysData.IohMac0Address, sizeof (ChipsetDefaultMac))) != 0;
-  if (SetMacAddr) {
-    if ((*(PlatformType->SysData.IohMac0Address) & BIT0) != 0) {
-      DEBUG ((EFI_D_ERROR, "HALT: Multicast Mac Address configured for Ioh MAC [B:%d, D:%d, F:%d]\n",
-        (UINTN) IOH_MAC0_BUS_NUMBER,
-        (UINTN) IOH_MAC0_DEVICE_NUMBER,
-        (UINTN) IOH_MAC0_FUNCTION_NUMBER
-        ));
-      ASSERT (FALSE);
-    } else {
-      SetLanControllerMacAddr (
-        IOH_MAC0_BUS_NUMBER,
-        IOH_MAC0_DEVICE_NUMBER,
-        IOH_MAC0_FUNCTION_NUMBER,
-        PlatformType->SysData.IohMac0Address
-        );
-    }
+  if (PlatformLegacyGpioGetLevel (R_QNC_GPIO_RGLVL_RESUME_WELL, GALILEO_DETERMINE_IOEXP_SLA_RESUMEWELL_GPIO)) {
+    I2CSlaveAddress.I2CDeviceAddress = GALILEO_IOEXP_J2HI_7BIT_SLAVE_ADDR;
   } else {
-    DEBUG ((EFI_D_WARN, "WARNING: Ioh MAC [B:%d, D:%d, F:%d] NO HW ADDR CONFIGURED!!!\n",
-      (UINTN) IOH_MAC0_BUS_NUMBER,
-      (UINTN) IOH_MAC0_DEVICE_NUMBER,
-      (UINTN) IOH_MAC0_FUNCTION_NUMBER
-      ));
+    I2CSlaveAddress.I2CDeviceAddress = GALILEO_IOEXP_J2LO_7BIT_SLAVE_ADDR;
   }
 
   //
-  // Set chipset MAC1 address if configured.
+  // Set GPIO_SUS<2> as an output, raise voltage to Vdd.
   //
-  SetMacAddr =
-    (CompareMem (ChipsetDefaultMac, PlatformType->SysData.IohMac1Address, sizeof (ChipsetDefaultMac))) != 0;
-  if (SetMacAddr) {
-    if ((*(PlatformType->SysData.IohMac1Address) & BIT0) != 0) {
-      DEBUG ((EFI_D_ERROR, "HALT: Multicast Mac Address configured for Ioh MAC [B:%d, D:%d, F:%d]\n",
-        (UINTN) IOH_MAC1_BUS_NUMBER,
-        (UINTN) IOH_MAC1_DEVICE_NUMBER,
-        (UINTN) IOH_MAC1_FUNCTION_NUMBER
-        ));
-      ASSERT (FALSE);
-    } else {
-        SetLanControllerMacAddr (
-          IOH_MAC1_BUS_NUMBER,
-          IOH_MAC1_DEVICE_NUMBER,
-          IOH_MAC1_FUNCTION_NUMBER,
-          PlatformType->SysData.IohMac1Address
-          );
-    }
-  } else {
-    DEBUG ((EFI_D_WARN, "WARNING: Ioh MAC [B:%d, D:%d, F:%d] NO HW ADDR CONFIGURED!!!\n",
-      (UINTN) IOH_MAC1_BUS_NUMBER,
-      (UINTN) IOH_MAC1_DEVICE_NUMBER,
-      (UINTN) IOH_MAC1_FUNCTION_NUMBER
-      ));
-  }
-  mPciCfgDone = TRUE;
+  PlatformLegacyGpioSetLevel (R_QNC_GPIO_RGLVL_RESUME_WELL, 2, TRUE);
+
+  //
+  // Select Port 3
+  //
+  Length = 2;
+  Buffer[0] = 0x18; //sub-address
+  Buffer[1] = 0x03; //data
+
+  Status = mI2cBus->WriteMultipleByte (
+                       mI2cBus,
+                       I2CSlaveAddress,
+                       EfiI2CSevenBitAddrMode,
+                       &Length,
+                       &Buffer
+                       );
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Set "Pin Direction" bit4 and bit5 as outputs
+  //
+  Length = 2;
+  Buffer[0] = 0x1C; //sub-address
+  Buffer[1] = 0xCF; //data
+
+  Status = mI2cBus->WriteMultipleByte (
+                       mI2cBus,
+                       I2CSlaveAddress,
+                       EfiI2CSevenBitAddrMode,
+                       &Length,
+                       &Buffer
+                       );
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Lower GPORT3 bit4 and bit5 to Vss
+  //
+  Length = 2;
+  Buffer[0] = 0x0B; //sub-address
+  Buffer[1] = 0xCF; //data
+
+  Status = mI2cBus->WriteMultipleByte (
+                       mI2cBus,
+                       I2CSlaveAddress,
+                       EfiI2CSevenBitAddrMode,
+                       &Length,
+                       &Buffer
+                       );
+  ASSERT_EFI_ERROR (Status);
+}
+
+VOID
+EFIAPI
+PlatformInitializeUart0MuxGalileoGen2 (
+  VOID
+  )
+/*++
+
+
+Routine Description:
+
+  This is the routine to initialize UART0 on GalileoGen2. The hardware used in this process is
+  I2C controller and the configuring the following IO Expander signal.
+
+  EXP1.P1_5 should be configured as an output & driven high.
+  EXP1.P0_0 should be configured as an output & driven high.
+  EXP0.P1_4 should be configured as an output, driven low.
+  EXP1.P0_1 pullup should be disabled.
+  EXP0.P1_5 Pullup should be disabled.
+
+Arguments:
+
+  None.
+
+Returns:
+
+  None.
+
+--*/
+
+{
+  //
+  //  EXP1.P1_5 should be configured as an output & driven high.
+  //
+  PlatformPcal9555GpioSetDir (
+    GALILEO_GEN2_IOEXP1_7BIT_SLAVE_ADDR,  // IO Expander 1.
+    13,                                   // P1-5.
+    TRUE
+    );
+  PlatformPcal9555GpioSetLevel (
+    GALILEO_GEN2_IOEXP1_7BIT_SLAVE_ADDR,  // IO Expander 1.
+    13,                                   // P1-5.
+    TRUE
+    );
+
+  //
+  // EXP1.P0_0 should be configured as an output & driven high.
+  //
+  PlatformPcal9555GpioSetDir (
+    GALILEO_GEN2_IOEXP0_7BIT_SLAVE_ADDR,  // IO Expander 0.
+    0,                                    // P0_0.
+    TRUE
+    );
+  PlatformPcal9555GpioSetLevel (
+    GALILEO_GEN2_IOEXP0_7BIT_SLAVE_ADDR,  // IO Expander 0.
+    0,                                    // P0_0.
+    TRUE
+    );
+
+  //
+  //  EXP0.P1_4 should be configured as an output, driven low.
+  //
+  PlatformPcal9555GpioSetDir (
+    GALILEO_GEN2_IOEXP0_7BIT_SLAVE_ADDR,  // IO Expander 0.
+    12,                                   // P1-4.
+    FALSE
+    );
+  PlatformPcal9555GpioSetLevel (          // IO Expander 0.
+    GALILEO_GEN2_IOEXP0_7BIT_SLAVE_ADDR,  // P1-4
+    12,
+    FALSE
+    );
+
+  //
+  // EXP1.P0_1 pullup should be disabled.
+  //
+  PlatformPcal9555GpioDisablePull (
+    GALILEO_GEN2_IOEXP1_7BIT_SLAVE_ADDR,  // IO Expander 1.
+    1                                     // P0-1.
+    );
+
+  //
+  // EXP0.P1_5 Pullup should be disabled.
+  //
+  PlatformPcal9555GpioDisablePull (
+    GALILEO_GEN2_IOEXP0_7BIT_SLAVE_ADDR,  // IO Expander 0.
+    13                                    // P1-5.
+    );
 }
 
 VOID
@@ -596,52 +294,54 @@ Returns:
   DEBUG ((EFI_D_INFO,"Locking HMBOUND at: = 0x%8x\n",NewValue));
   QNCPortWrite (QUARK_NC_HOST_BRIDGE_SB_PORT_ID, QUARK_NC_HOST_BRIDGE_HMBOUND_REG, (NewValue | HMBOUND_LOCK));
 
-  //
-  // Lock IMR5 now that HMBOUND is locked (legacy S3 region)
-  //
-  NewValue = QNCPortRead (QUARK_NC_MEMORY_MANAGER_SB_PORT_ID, QUARK_NC_MEMORY_MANAGER_IMR5+QUARK_NC_MEMORY_MANAGER_IMRXL);
-  NewValue |= IMR_LOCK;
-  QNCPortWrite (QUARK_NC_MEMORY_MANAGER_SB_PORT_ID, QUARK_NC_MEMORY_MANAGER_IMR5+QUARK_NC_MEMORY_MANAGER_IMRXL, NewValue);
+  if(FeaturePcdGet (PcdEnableSecureLock)) {
+    //
+    // Lock IMR5 now that HMBOUND is locked (legacy S3 region)
+    //
+    NewValue = QNCPortRead (QUARK_NC_MEMORY_MANAGER_SB_PORT_ID, QUARK_NC_MEMORY_MANAGER_IMR5+QUARK_NC_MEMORY_MANAGER_IMRXL);
+    NewValue |= IMR_LOCK;
+    QNCPortWrite (QUARK_NC_MEMORY_MANAGER_SB_PORT_ID, QUARK_NC_MEMORY_MANAGER_IMR5+QUARK_NC_MEMORY_MANAGER_IMRXL, NewValue);
 
-  //
-  // Lock IMR6 now that HMBOUND is locked (ACPI Reclaim/ACPI/Runtime services/Reserved)
-  //
-  NewValue = QNCPortRead (QUARK_NC_MEMORY_MANAGER_SB_PORT_ID, QUARK_NC_MEMORY_MANAGER_IMR6+QUARK_NC_MEMORY_MANAGER_IMRXL);
-  NewValue |= IMR_LOCK;
-  QNCPortWrite (QUARK_NC_MEMORY_MANAGER_SB_PORT_ID, QUARK_NC_MEMORY_MANAGER_IMR6+QUARK_NC_MEMORY_MANAGER_IMRXL, NewValue);
+    //
+    // Lock IMR6 now that HMBOUND is locked (ACPI Reclaim/ACPI/Runtime services/Reserved)
+    //
+    NewValue = QNCPortRead (QUARK_NC_MEMORY_MANAGER_SB_PORT_ID, QUARK_NC_MEMORY_MANAGER_IMR6+QUARK_NC_MEMORY_MANAGER_IMRXL);
+    NewValue |= IMR_LOCK;
+    QNCPortWrite (QUARK_NC_MEMORY_MANAGER_SB_PORT_ID, QUARK_NC_MEMORY_MANAGER_IMR6+QUARK_NC_MEMORY_MANAGER_IMRXL, NewValue);
 
-  //
-  // Disable IMR2 memory protection (RMU Main Binary)
-  //
-  QncImrWrite (
-            QUARK_NC_MEMORY_MANAGER_IMR2,
-            (UINT32)(IMRL_RESET & ~IMR_EN),
-            (UINT32)IMRH_RESET,
-            (UINT32)IMRX_ALL_ACCESS,
-            (UINT32)IMRX_ALL_ACCESS
-        );
+    //
+    // Disable IMR2 memory protection (RMU Main Binary)
+    //
+    QncImrWrite (
+              QUARK_NC_MEMORY_MANAGER_IMR2,
+              (UINT32)(IMRL_RESET & ~IMR_EN),
+              (UINT32)IMRH_RESET,
+              (UINT32)IMRX_ALL_ACCESS,
+              (UINT32)IMRX_ALL_ACCESS
+          );
 
-  //
-  // Disable IMR3 memory protection (Default SMRAM)
-  //
-  QncImrWrite (
-            QUARK_NC_MEMORY_MANAGER_IMR3,
-            (UINT32)(IMRL_RESET & ~IMR_EN),
-            (UINT32)IMRH_RESET,
-            (UINT32)IMRX_ALL_ACCESS,
-            (UINT32)IMRX_ALL_ACCESS
-        );
+    //
+    // Disable IMR3 memory protection (Default SMRAM)
+    //
+    QncImrWrite (
+              QUARK_NC_MEMORY_MANAGER_IMR3,
+              (UINT32)(IMRL_RESET & ~IMR_EN),
+              (UINT32)IMRH_RESET,
+              (UINT32)IMRX_ALL_ACCESS,
+              (UINT32)IMRX_ALL_ACCESS
+          );
 
-  //
-  // Disable IMR4 memory protection (eSRAM).
-  //
-  QncImrWrite (
-            QUARK_NC_MEMORY_MANAGER_IMR4,
-            (UINT32)(IMRL_RESET & ~IMR_EN),
-            (UINT32)IMRH_RESET,
-            (UINT32)IMRX_ALL_ACCESS,
-            (UINT32)IMRX_ALL_ACCESS
-        );
+    //
+    // Disable IMR4 memory protection (eSRAM).
+    //
+    QncImrWrite (
+              QUARK_NC_MEMORY_MANAGER_IMR4,
+              (UINT32)(IMRL_RESET & ~IMR_EN),
+              (UINT32)IMRH_RESET,
+              (UINT32)IMRX_ALL_ACCESS,
+              (UINT32)IMRX_ALL_ACCESS
+          );
+  }
 
   //
   // RTC:28208 - System hang/crash when entering probe mode(ITP) when relocating SMBASE
@@ -654,7 +354,7 @@ Returns:
                      CpuArchProtocol,
                      (EFI_PHYSICAL_ADDRESS) SMM_DEFAULT_SMBASE,
                      SMM_DEFAULT_SMBASE_SIZE_BYTES,
-                     EFI_MEMORY_WB 
+                     EFI_MEMORY_WB
                      );
 
   mMemCfgDone = TRUE;
@@ -684,6 +384,12 @@ Returns:
 {
   EFI_STATUS                        Status;
   VOID                              *SpiReadyProt = NULL;
+  EFI_PLATFORM_TYPE_PROTOCOL        *PlatformType;
+  EFI_BOOT_MODE                      BootMode;
+
+  BootMode = GetBootModeHob ();
+
+  PlatformType = &mPrivatePlatformData.PlatformType;
 
   Status = gBS->LocateProtocol (&gEfiSmmSpiReadyProtocolGuid, NULL, &SpiReadyProt);
   if (Status != EFI_SUCCESS){
@@ -696,6 +402,39 @@ Returns:
   //
   PlatformFlashLockPolicy (FALSE);
 
+  //
+  // Configurations and checks to be done when DXE tracing available.
+  //
+
+  //
+  // Platform specific Signal routing.
+  //
+
+  //
+  // Skip any signal not needed for recovery and flash update.
+  //
+  if (BootMode != BOOT_ON_FLASH_UPDATE && BootMode != BOOT_IN_RECOVERY_MODE) {
+
+    //
+    // Galileo Platform UART0 support.
+    //
+    if (PlatformType->Type == Galileo) {
+      //
+      // Use MUX to connect out UART0 pins.
+      //
+      PlatformInitializeUart0MuxGalileo ();
+    }
+
+    //
+    // GalileoGen2 Platform UART0 support.
+    //
+    if (PlatformType->Type == GalileoGen2) {
+      //
+      // Use route out UART0 pins.
+      //
+      PlatformInitializeUart0MuxGalileoGen2 ();
+    }
+  }
 }
 
 EFI_STATUS
@@ -716,10 +455,8 @@ Returns:
 --*/
 {
   EFI_EVENT   EventSmmCfg;
-  EFI_EVENT   EventPci;
   EFI_EVENT   EventSpiReady;
   VOID        *RegistrationSmmCfg;
-  VOID        *RegistrationPci;
   VOID        *RegistrationSpiReady;
 
   //
@@ -733,19 +470,6 @@ Returns:
                   &RegistrationSmmCfg
                   );
   ASSERT (EventSmmCfg != NULL);
-
-  //
-  // Schedule callback to setup IOH GPIO controller registers when PCI enum
-  // complete (MEMBASE assigned).
-  //
-  EventPci = EfiCreateProtocolNotifyEvent (
-               &gEfiPciEnumerationCompleteProtocolGuid,
-               TPL_CALLBACK,
-               PlatformConfigOnPciEnumComplete,
-               NULL,
-               &RegistrationPci
-               );
-  ASSERT (EventPci != NULL);
 
   //
   // Schedule callback to setup SPI Flash Policy when SPI interface ready.

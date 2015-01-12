@@ -75,112 +75,114 @@
   UefiBootServicesTableLib
   UefiDriverEntryPoint
   DevicePathLib
+  PlatformHelperLib
 
 [Protocols]
   gEfiGlobalNvsAreaProtocolGuid                 # PROTOCOL ALWAYS_CONSUMED
   gEfiMpServiceProtocolGuid                     # PROTOCOL SOMETIMES_CONSUMED
   gEfiAcpiSdtProtocolGuid                       # PROTOCOL ALWAYS_CONSUMED
-  gEfiAcpiTableProtocolGuid                     # PROTOCOL ALWAYS_CONSUMED 
+  gEfiAcpiTableProtocolGuid                     # PROTOCOL ALWAYS_CONSUMED
+  gEfiPlatformTypeProtocolGuid                  # PROTOCOL ALWAYS_CONSUMED
 
 [FixedPcd]
   gUefiCpuPkgTokenSpaceGuid.PcdCpuLocalApicBaseAddress
 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable0Enable   
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable0SourceIrq 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable0Polarity  
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable0Enable
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable0SourceIrq
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable0Polarity
   gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable0TrigerMode
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable0GlobalIrq 
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable0GlobalIrq
 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable1Enable    
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable1SourceIrq 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable1Polarity  
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable1Enable
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable1SourceIrq
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable1Polarity
   gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable1TrigerMode
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable1GlobalIrq    
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable1GlobalIrq
 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable2Enable    
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable2SourceIrq 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable2Polarity  
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable2Enable
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable2SourceIrq
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable2Polarity
   gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable2TrigerMode
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable2GlobalIrq          
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable2GlobalIrq
 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable3Enable    
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable3SourceIrq 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable3Polarity  
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable3Enable
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable3SourceIrq
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable3Polarity
   gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable3TrigerMode
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable3GlobalIrq    
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable3GlobalIrq
 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable4Enable    
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable4SourceIrq 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable4Polarity  
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable4Enable
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable4SourceIrq
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable4Polarity
   gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable4TrigerMode
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable4GlobalIrq 
-                                                                             
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable5Enable    
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable5SourceIrq 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable5Polarity  
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable4GlobalIrq
+
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable5Enable
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable5SourceIrq
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable5Polarity
   gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable5TrigerMode
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable5GlobalIrq    
-                                                                            
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable6Enable    
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable6SourceIrq 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable6Polarity  
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable5GlobalIrq
+
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable6Enable
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable6SourceIrq
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable6Polarity
   gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable6TrigerMode
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable6GlobalIrq          
-                                                                             
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable7Enable    
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable7SourceIrq 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable7Polarity  
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable6GlobalIrq
+
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable7Enable
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable7SourceIrq
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable7Polarity
   gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable7TrigerMode
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable7GlobalIrq    
-                                                                             
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable8Enable    
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable8SourceIrq 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable8Polarity  
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable7GlobalIrq
+
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable8Enable
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable8SourceIrq
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable8Polarity
   gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable8TrigerMode
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable8GlobalIrq 
-                                                                            
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable9Enable    
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable9SourceIrq 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable9Polarity  
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable8GlobalIrq
+
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable9Enable
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable9SourceIrq
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable9Polarity
   gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable9TrigerMode
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable9GlobalIrq    
-                                                                             
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable10Enable     
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable10SourceIrq  
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable10Polarity   
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable10TrigerMode 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable10GlobalIrq              
-                                                                               
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable11Enable     
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable11SourceIrq  
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable11Polarity   
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable11TrigerMode 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable11GlobalIrq        
-                                                                               
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable12Enable     
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable12SourceIrq  
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable12Polarity   
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable12TrigerMode 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable12GlobalIrq  
-                                                                               
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable13Enable     
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable13SourceIrq  
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable13Polarity   
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable13TrigerMode 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable13GlobalIrq        
-                                                                               
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable14Enable     
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable14SourceIrq  
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable14Polarity   
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable14TrigerMode 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable14GlobalIrq              
-                                                                               
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable15Enable     
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable15SourceIrq  
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable15Polarity   
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable15TrigerMode 
-  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable15GlobalIrq        
-                                                    
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable9GlobalIrq
+
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable10Enable
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable10SourceIrq
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable10Polarity
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable10TrigerMode
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable10GlobalIrq
+
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable11Enable
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable11SourceIrq
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable11Polarity
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable11TrigerMode
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable11GlobalIrq
+
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable12Enable
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable12SourceIrq
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable12Polarity
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable12TrigerMode
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable12GlobalIrq
+
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable13Enable
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable13SourceIrq
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable13Polarity
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable13TrigerMode
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable13GlobalIrq
+
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable14Enable
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable14SourceIrq
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable14Polarity
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable14TrigerMode
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable14GlobalIrq
+
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable15Enable
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable15SourceIrq
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable15Polarity
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable15TrigerMode
+  gQuarkPlatformTokenSpaceGuid.PcdInterruptOverrideSettingTable15GlobalIrq
+
   gEfiQuarkNcSocIdTokenSpaceGuid.PcdIoApicBaseAddress
   gQuarkPlatformTokenSpaceGuid.PcdIoApicSettingIoApicAddress
   gQuarkPlatformTokenSpaceGuid.PcdIoApicSettingGlobalInterruptBase
@@ -188,7 +190,7 @@
   gQuarkPlatformTokenSpaceGuid.PcdIoApicSettingNmiEnable
   gQuarkPlatformTokenSpaceGuid.PcdIoApicSettingNmiSource
   gQuarkPlatformTokenSpaceGuid.PcdIoApicSettingPolarity
-  gQuarkPlatformTokenSpaceGuid.PcdIoApicSettingTrigerMode  
+  gQuarkPlatformTokenSpaceGuid.PcdIoApicSettingTrigerMode
   gQuarkPlatformTokenSpaceGuid.PcdLocalApicSettingNmiEnabelApicIdMask
   gQuarkPlatformTokenSpaceGuid.PcdLocalApicSettingAddressOverrideEnable
   gQuarkPlatformTokenSpaceGuid.PcdLocalApicSettingPolarity
@@ -209,8 +211,7 @@
   gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress
   gEfiQuarkNcSocIdTokenSpaceGuid.PcdPciExpressSize
   gEfiQuarkNcSocIdTokenSpaceGuid.PcdRcbaMmioBaseAddress
-  gEfiQuarkNcSocIdTokenSpaceGuid.PcdRcbaMmioSize    
-  gEfiQuarkNcSocIdTokenSpaceGuid.PcdSpiDmaIoBaseAddress
+  gEfiQuarkNcSocIdTokenSpaceGuid.PcdRcbaMmioSize
   gEfiQuarkNcSocIdTokenSpaceGuid.PcdWdtbaIoBaseAddress
   gQuarkPlatformTokenSpaceGuid.PcdHpetEnable
   gEfiQuarkNcSocIdTokenSpaceGuid.PcdDeviceEnables

@@ -61,6 +61,10 @@ Abstract:
 #ifndef _PLATFORM_DATA_FILE_NAME_GUIDS_H_
 #define _PLATFORM_DATA_FILE_NAME_GUIDS_H_
 
+//
+// Known platform file name Guids.
+//
+
 #define SVP_PDAT_FILE_NAME_GUID \
   { 0xa975562, 0xdf47, 0x4dc3, { 0x8a, 0xb0, 0x3b, 0xa2, 0xc3, 0x52, 0x23, 0x2 } }
 
@@ -75,9 +79,6 @@ Abstract:
 
 #define GALILEO_PDAT_FILE_NAME_GUID \
   { 0xe4ad87c8, 0xd20e, 0x40ce, { 0x97, 0xf5, 0x97, 0x56, 0xfd, 0xe, 0x81, 0xd4 } }
-
-#define GALILEO_FABE_PDAT_FILE_NAME_GUID \
-  { 0xe27ada6a, 0x9f8a, 0x4f2e, { 0xb0, 0x9e, 0x4c, 0xcd, 0xd8, 0x2c, 0x2f, 0x54 } }
 
 #define GALILEO_GEN2_PDAT_FILE_NAME_GUID \
   { 0x23b3c10d, 0x46e3, 0x4a78, { 0x8a, 0xaa, 0x21, 0x7b, 0x6a, 0x39, 0xef, 0x4 } }
@@ -94,8 +95,6 @@ Abstract:
   CLANTONHILL_PDAT_FILE_NAME_GUID,\
   /* EFI_PLATFORM_TYPE - Galileo*/\
   GALILEO_PDAT_FILE_NAME_GUID,\
-  /* EFI_PLATFORM_TYPE - GalileoFabE*/\
-  GALILEO_FABE_PDAT_FILE_NAME_GUID,\
   /* EFI_PLATFORM_TYPE - GalileoGen2*/\
   GALILEO_GEN2_PDAT_FILE_NAME_GUID,\
 

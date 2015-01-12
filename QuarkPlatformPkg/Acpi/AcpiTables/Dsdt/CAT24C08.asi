@@ -1,7 +1,4 @@
-/** @file
-
-  The Infineon SLB9645 TPM ACPI definition block.
-  Provides TPM device info. and TPM presence check only.
+/*++
 
   Copyright (c) 2013 Intel Corporation.
 
@@ -31,39 +28,38 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-**/
+  Module Name:
 
-Device (TPM)
+    CAT24C08.asi
+
+  Abstract:
+
+    ONSEMI CAT24C08 I2C 8KB EEPROM.
+
+--*/
+
+Device(EEP2)
 {
-  //
-  // Define _HID as Infineon TPM Device, _CID as "PNP0C31" (defined in
-  // "Secure Startup-FVE and TPM Admin BIOS and Platform Requirements").
-  //
-  Name(_HID ,EISAID("INT3493"))
-  Name(_CID, EISAID("PNP0C31"))
+    Name(_HID, "INT3499") // ONSEMI CAT24C08 I2C 8KB EEPROM.
+    Name(_CID, "INT3499")
 
-  //
-  // Readable name of this device.
-  //
-  Name (_STR, Unicode ("Infineon TPM 1.2 Device (SLB9645TT1.2)"))
-
-  //
-  // Return the resource consumed by TPM device.
-  //
-  Name (_CRS, ResourceTemplate () {
-    I2cSerialBus (0x20, ControllerInitiated, 0x00061A80, AddressingMode7Bit, "\\_SB.PCI0.GIP0.I2C_", 0, ResourceConsumer,,)
-  })
-
-  //
-  // Check if TPM present.
-  //
-  Method (_STA, 0)
-  {
-    if (LEqual (TPMP, 0))
+    Name(RBUF, ResourceTemplate()
     {
-      return (0)
+        I2CSerialBus(0x54, ControllerInitiated, 400000, AddressingMode7Bit, "\\_SB.PCI0.GIP0.I2C_", 0, ResourceConsumer, , )
+    })
+    Method(_CRS, 0x0, NotSerialized)
+    {
+        Return(RBUF)
     }
-    Return (0x0f)
-  }
-
+    Method(_STA, 0x0, NotSerialized)
+    {
+        //
+        // Only Platform Type / Id 8 has this device.
+        //
+        If(LNotEqual(PTYP, 8))
+        {
+          return (0)
+        }
+        Return(0xf)
+    }
 }

@@ -78,7 +78,7 @@ Device(LNKA)            // PCI IRQ link A
         Or(PIRA, 0x80, PIRA)
     }
 
-    Method(_CRS,0,NotSerialized)
+    Method(_CRS,0,Serialized)
     {
         Name(BUF0,
             ResourceTemplate()
@@ -145,7 +145,7 @@ Device(LNKB)            // PCI IRQ link B
         Or(PIRB, 0x80,PIRB)
     }
 
-    Method(_CRS,0,NotSerialized)
+    Method(_CRS,0,Serialized)
     {
         Name(BUF0,
             ResourceTemplate()
@@ -211,7 +211,7 @@ Device(LNKC)                                    // PCI IRQ link C
         Or(PIRC, 0x80,PIRC)
     }
 
-    Method(_CRS,0,NotSerialized)
+    Method(_CRS,0,Serialized)
     {
         Name(BUF0,
             ResourceTemplate()
@@ -275,7 +275,7 @@ Device(LNKD)                                        // PCI IRQ link D
         Or(PIRD, 0x80,PIRD)
     }
 
-    Method(_CRS,0,NotSerialized)
+    Method(_CRS,0,Serialized)
     {
         Name(BUF0,
             ResourceTemplate()
@@ -340,7 +340,7 @@ Device(LNKE)           // PCI IRQ link E
         Or(PIRE, 0x80, PIRE)
     }
 
-    Method(_CRS,0,NotSerialized)
+    Method(_CRS,0,Serialized)
     {
         Name(BUF0,
             ResourceTemplate()
@@ -407,7 +407,7 @@ Device(LNKF)            // PCI IRQ link F
         Or(PIRB, 0x80,PIRF)
     }
 
-    Method(_CRS,0,NotSerialized)
+    Method(_CRS,0,Serialized)
     {
         Name(BUF0,
             ResourceTemplate()
@@ -473,7 +473,7 @@ Device(LNKG)                                            // PCI IRQ link G
         Or(PIRG, 0x80,PIRG)
     }
 
-    Method(_CRS,0,NotSerialized)
+    Method(_CRS,0,Serialized)
     {
         Name(BUF0,
             ResourceTemplate()
@@ -537,7 +537,7 @@ Device(LNKH)                                        // PCI IRQ link H
         Or(PIRH, 0x80,PIRH)
     }
 
-    Method(_CRS,0,NotSerialized)
+    Method(_CRS,0,Serialized)
     {
         Name(BUF0,
             ResourceTemplate()

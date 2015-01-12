@@ -55,7 +55,7 @@ buildOptionRelease = "RELEASE"
 QuarkRomBaseAddress = 4294836224
 
 #NVRAM definitions
-nvramLocation = 0x330000
+nvramLocation = 0x730000
 nvramSize = 0x20000
 
 # Root Directory

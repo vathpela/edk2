@@ -1,5 +1,5 @@
 /** @file
-	Library that provides Soc specific library services in PEI phase
+  Library that provides Soc specific library services for SouthCluster devices.
 
 Copyright (c) 2013 Intel Corporation.
 
@@ -42,6 +42,12 @@ EFIAPI
 EnableUsbMemIoBusMaster (
    IN UINT8   UsbBusNumber
   );
-  
+
+UINT32
+EFIAPI
+ReadIohGpioValues (
+  VOID
+  );
+
 #endif
 

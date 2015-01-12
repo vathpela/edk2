@@ -67,6 +67,9 @@ BOOLEAN ImageInMemory = FALSE;
 
 BOARD_LEGACY_GPIO_CONFIG      mBoardLegacyGpioConfigTable[]  = { PLATFORM_LEGACY_GPIO_TABLE_DEFINITION };
 UINTN                         mBoardLegacyGpioConfigTableLen = (sizeof(mBoardLegacyGpioConfigTable) / sizeof(BOARD_LEGACY_GPIO_CONFIG));
+BOARD_GPIO_CONTROLLER_CONFIG  mBoardGpioControllerConfigTable[]  = { PLATFORM_GPIO_CONTROLLER_CONFIG_DEFINITION };
+UINTN                         mBoardGpioControllerConfigTableLen = (sizeof(mBoardGpioControllerConfigTable) / sizeof(BOARD_GPIO_CONTROLLER_CONFIG));
+UINT8                         ChipsetDefaultMac [6] = {0xff,0xff,0xff,0xff,0xff,0xff};
 
 STATIC EFI_PEI_PPI_DESCRIPTOR mPpiBootMode[1] = {
   {
@@ -74,7 +77,7 @@ STATIC EFI_PEI_PPI_DESCRIPTOR mPpiBootMode[1] = {
     &gEfiPeiMasterBootModePpiGuid,
     NULL
   }
-};  
+};
 
 EFI_PEI_NOTIFY_DESCRIPTOR mMemoryDiscoveredNotifyList[1] = {
   { 
@@ -106,8 +109,110 @@ EFI_PEI_PPI_DESCRIPTOR mPpiStall[1] = {
 };
 
 /**
+  Set Mac address on chipset ethernet device.
+
+  @param  Bus      PCI Bus number of chipset ethernet device.
+  @param  Device   Device number of chipset ethernet device.
+  @param  Func     PCI Function number of chipset ethernet device.
+  @param  MacAddr  MAC Address to set.
+
+**/
+VOID
+EFIAPI
+SetLanControllerMacAddr (
+  IN CONST UINT8                          Bus,
+  IN CONST UINT8                          Device,
+  IN CONST UINT8                          Func,
+  IN CONST UINT8                          *MacAddr,
+  IN CONST UINT32                         Bar0
+  )
+{
+  UINT32                            Data32;
+  UINT16                            PciVid;
+  UINT16                            PciDid;
+  UINT32                            Addr;
+  UINT32                            MacVer;
+  volatile UINT8                    *Wrote;
+  UINT32                            DevPcieAddr;
+  UINT16                            SaveCmdReg;
+  UINT32                            SaveBarReg;
+
+  DevPcieAddr = PCI_LIB_ADDRESS (
+                  Bus,
+                  Device,
+                  Func,
+                  0
+                  );
+
+  //
+  // Do nothing if not a supported device.
+  //
+  PciVid = PciRead16 (DevPcieAddr + PCI_VENDOR_ID_OFFSET);
+  PciDid = PciRead16 (DevPcieAddr + PCI_DEVICE_ID_OFFSET);
+  if((PciVid != V_IOH_MAC_VENDOR_ID) || (PciDid != V_IOH_MAC_DEVICE_ID)) {
+    return;
+  }
+
+  //
+  // Save current settings for PCI CMD/BAR registers
+  //
+  SaveCmdReg = PciRead16 (DevPcieAddr + PCI_COMMAND_OFFSET);
+  SaveBarReg = PciRead32 (DevPcieAddr + R_IOH_MAC_MEMBAR);
+
+  //
+  // Use predefined tempory memory resource
+  //
+  PciWrite32 ( DevPcieAddr + R_IOH_MAC_MEMBAR, Bar0);
+  PciWrite8 ( DevPcieAddr + PCI_COMMAND_OFFSET, EFI_PCI_COMMAND_MEMORY_SPACE); 
+
+  Addr =  Bar0 + R_IOH_MAC_GMAC_REG_8;
+  MacVer = *((volatile UINT32 *) (UINTN)(Addr));
+
+  DEBUG ((EFI_D_INFO, "Ioh MAC [B:%d, D:%d, F:%d] VER:%04x ADDR:",
+    (UINTN) Bus,
+    (UINTN) Device,
+    (UINTN) Func,
+    (UINTN) MacVer
+    ));
+
+  //
+  // Set MAC Address0 Low Register (GMAC_REG_17) ADDRLO bits.
+  //
+  Addr =  Bar0 + R_IOH_MAC_GMAC_REG_17;
+  Data32 = *((UINT32 *) (UINTN)(&MacAddr[0]));
+  *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
+  Wrote = (volatile UINT8 *) (UINTN)(Addr);
+  DEBUG ((EFI_D_INFO, "%02x-%02x-%02x-%02x-",
+    (UINTN) Wrote[0],
+    (UINTN) Wrote[1],
+    (UINTN) Wrote[2],
+    (UINTN) Wrote[3]
+    ));
+
+  //
+  // Set MAC Address0 High Register (GMAC_REG_16) ADDRHI bits
+  // and Address Enable (AE) bit.
+  //
+  Addr =  Bar0 + R_IOH_MAC_GMAC_REG_16;
+  Data32 =
+    ((UINT32) MacAddr[4]) |
+    (((UINT32)MacAddr[5]) << 8) |
+    B_IOH_MAC_AE;
+  *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
+  Wrote = (volatile UINT8 *) (UINTN)(Addr);
+
+  DEBUG ((EFI_D_INFO, "%02x-%02x\n", (UINTN) Wrote[0], (UINTN) Wrote[1]));
+
+  //
+  // Restore settings for PCI CMD/BAR registers
+  //
+  PciWrite32 ((DevPcieAddr + R_IOH_MAC_MEMBAR), SaveBarReg);
+  PciWrite16 (DevPcieAddr + PCI_COMMAND_OFFSET, SaveCmdReg);
+}
+
+/**
   This is the entrypoint of PEIM
-  
+
   @param  FileHandle  Handle of the file being invoked.
   @param  PeiServices Describes the list of possible PEI Services.
 
@@ -149,9 +254,9 @@ PeiInitPlatform (
   );
 
   //
-  // Do any early platform specific initialisation
+  // Do any early platform specific initialisation.
   //
-  EarlyPlatformInit (PlatformType);
+  EarlyPlatformInit (PlatformInfo);
 
   //
   // This is a second path on entry, in recovery boot path the Stall PPI need to be memory-based
@@ -229,12 +334,11 @@ PeiInitPlatform (
   MemoryInit ((EFI_PEI_SERVICES**)PeiServices);
 
   //
-  // Do Early PCIe init if not GalileoFabE Platform.
+  // Do Early PCIe init.
   //
-  if (PlatformType != GalileoFabE) {
-    DEBUG ((EFI_D_INFO, "Early PCIe controller initialisation\n"));
-    PlatformPciExpressEarlyInit (PlatformType);
-  }
+  DEBUG ((EFI_D_INFO, "Early PCIe controller initialisation\n"));
+  PlatformPciExpressEarlyInit (PlatformType);
+
 
   DEBUG ((EFI_D_INFO, "Platform Erratas After MRC\n"));
   PlatformErratasPostMrc ();
@@ -282,7 +386,7 @@ EndOfPeiSignalPpiNotifyCallback (
   WriteBackInvalidateDataCacheRange (
     (VOID *) (UINTN) PcdGet32 (PcdFlashAreaBaseAddress),
     PcdGet32 (PcdFlashAreaSize)
-  );    
+  );
 
   Status = MtrrSetMemoryAttribute (PcdGet32 (PcdFlashAreaBaseAddress), PcdGet32 (PcdFlashAreaSize), CacheUncacheable);
   ASSERT_EFI_ERROR (Status);
@@ -452,33 +556,34 @@ EarlyPlatformInfoMessages (
 
   DEBUG ((EFI_D_INFO, "************************************************************\n\n"));
 
-  DEBUG ((EFI_D_INFO, "MFH Flash Item List:\n"));
-  FlashItem = MfhLibFindFirstWithFilter (
-                MFH_FIND_ANY_FIT_FILTER,
-                FALSE,
-                &MfhFindContext
-                );
-  while (FlashItem != NULL) {
-    DEBUG ((EFI_D_INFO, "****  Quark 0x%08X:0x%08X %s ****\n", FlashItem->FlashAddress, FlashItem->LengthBytes, MfhLibFlashItemTypePrintString(FlashItem->Type)));
-    FlashItem = MfhLibFindNextWithFilter (
+  if (!PlatformIsBootWithRecoveryStage1()) {
+    DEBUG ((EFI_D_INFO, "MFH Flash Item List:\n"));
+    FlashItem = MfhLibFindFirstWithFilter (
                   MFH_FIND_ANY_FIT_FILTER,
+                  FALSE,
                   &MfhFindContext
                   );
-  }
-  DEBUG ((EFI_D_INFO, "MFH Boot Priority List:\n"));
-  FlashItem = MfhLibFindFirstWithFilter (
-                MFH_FIND_ALL_STAGE1_FILTER,
-                TRUE,
-                &MfhFindContext
-                );
-  while (FlashItem != NULL) {
-    DEBUG ((EFI_D_INFO, "****  Quark 0x%08X:0x%08X %s ****\n", FlashItem->FlashAddress, FlashItem->LengthBytes, MfhLibFlashItemTypePrintString(FlashItem->Type)));
-    FlashItem = MfhLibFindNextWithFilter (
+    while (FlashItem != NULL) {
+      DEBUG ((EFI_D_INFO, "****  Quark 0x%08X:0x%08X %s ****\n", FlashItem->FlashAddress, FlashItem->LengthBytes, MfhLibFlashItemTypePrintString(FlashItem->Type)));
+      FlashItem = MfhLibFindNextWithFilter (
+                    MFH_FIND_ANY_FIT_FILTER,
+                    &MfhFindContext
+                    );
+    }
+    DEBUG ((EFI_D_INFO, "MFH Boot Priority List:\n"));
+    FlashItem = MfhLibFindFirstWithFilter (
                   MFH_FIND_ALL_STAGE1_FILTER,
+                  TRUE,
                   &MfhFindContext
                   );
+    while (FlashItem != NULL) {
+      DEBUG ((EFI_D_INFO, "****  Quark 0x%08X:0x%08X %s ****\n", FlashItem->FlashAddress, FlashItem->LengthBytes, MfhLibFlashItemTypePrintString(FlashItem->Type)));
+      FlashItem = MfhLibFindNextWithFilter (
+                    MFH_FIND_ALL_STAGE1_FILTER,
+                    &MfhFindContext
+                    );
+    }
   }
-
   DEBUG ((EFI_D_INFO, "\nPlatform Data Item List in System Area:\n"));
   Item = PDatLibFindFirstWithFilter (NULL, PDAT_FIND_ANY_ITEM_FILTER, &PDatFindContext, NULL);
   if (Item != NULL) {
@@ -544,15 +649,20 @@ CheckForResetDueToErrors (
 /**
   This function provides early platform initialisation.
 
-  @param  PlatformType  Platform type to init.
+  @param  PlatformInfo  Pointer to platform Info structure.
 
 **/
 VOID
 EFIAPI
 EarlyPlatformInit (
-  IN CONST EFI_PLATFORM_TYPE              PlatformType
+  IN CONST EFI_PLATFORM_INFO              *PlatformInfo
   )
 {
+  EFI_PLATFORM_TYPE                 PlatformType;
+
+  PlatformType = (EFI_PLATFORM_TYPE) PlatformInfo->Type;
+
+  DEBUG ((EFI_D_INFO, "EarlyPlatformInit for PlatType=0x%02x\n", (UINTN) PlatformType));
 
   //
   // Check if system reset due to error condition.
@@ -570,15 +680,21 @@ EarlyPlatformInit (
   EarlyPlatformInfoMessages ();
 
   //
-  // Early Gpio Init.
+  // Early Legacy Gpio Init.
   //
-  EarlyPlatformGpioInit (PlatformType);
+  EarlyPlatformLegacyGpioInit (PlatformType);
 
   //
-  // Early platform GPIO manipulation depending on GPIOs
-  // setup by EarlyPlatformGpioInit.
+  // Early platform Legacy GPIO manipulation depending on GPIOs
+  // setup by EarlyPlatformLegacyGpioInit.
   //
-  EarlyPlatformGpioManipulation (PlatformType);
+  EarlyPlatformLegacyGpioManipulation (PlatformType);
+
+  //
+  // Early platform specific GPIO Controller init & manipulation.
+  // Combined for sharing of temp. memory bar.
+  //
+  EarlyPlatformGpioCtrlerInitAndManipulation (PlatformType);
 
   //
   // Early Thermal Sensor Init.
@@ -586,21 +702,30 @@ EarlyPlatformInit (
   EarlyPlatformThermalSensorInit ();
 
   //
+  // Early Lan Ethernet Mac Init.
+  //
+  EarlyPlatformMacInit (
+    PlatformInfo->SysData.IohMac0Address,
+    PlatformInfo->SysData.IohMac1Address
+    );
+
+  //
   // Init Redirect PEI services.
   //
   RedirectServicesInit ();
 
+
 }
 
 /**
-  This function provides early platform GPIO initialisation.
+  This function provides early platform Legacy GPIO initialisation.
 
   @param  PlatformType  Platform type for GPIO init.
 
 **/
 VOID
 EFIAPI
-EarlyPlatformGpioInit (
+EarlyPlatformLegacyGpioInit (
   IN CONST EFI_PLATFORM_TYPE              PlatformType
   )
 {
@@ -612,9 +737,7 @@ EarlyPlatformGpioInit (
   // Assert if platform type outside table range.
   //
   ASSERT ((UINTN) PlatformType < mBoardLegacyGpioConfigTableLen);
-
   LegacyGpioConfig = &mBoardLegacyGpioConfigTable[(UINTN) PlatformType];
-  DEBUG ((EFI_D_INFO, "EarlyPlatformGpioInit for PlatType=0x%02x\n", (UINTN) PlatformType));
 
   GpioBaseAddress = (UINT32)PcdGet16 (PcdGbaIoBaseAddress);
 
@@ -662,14 +785,14 @@ EarlyPlatformGpioInit (
 }
 
 /**
-  Performs any early platform specific GPIO manipulation.
+  Performs any early platform specific Legacy GPIO manipulation.
 
   @param  PlatformType  Platform type GPIO manipulation.
 
 **/
 VOID
 EFIAPI
-EarlyPlatformGpioManipulation (
+EarlyPlatformLegacyGpioManipulation (
   IN CONST EFI_PLATFORM_TYPE              PlatformType
   )
 {
@@ -699,5 +822,238 @@ EarlyPlatformGpioManipulation (
     MicroSecondDelay (150000);
   }
 
+}
+
+/**
+  Performs any early platform specific GPIO Controller init & manipulation.
+
+  @param  PlatformType  Platform type for GPIO init & manipulation.
+
+**/
+VOID
+EFIAPI
+EarlyPlatformGpioCtrlerInitAndManipulation (
+  IN CONST EFI_PLATFORM_TYPE              PlatformType
+  )
+{
+  UINT32                            IohGpioBase;
+  UINT32                            Data32;
+  UINT32                            Addr;
+  BOARD_GPIO_CONTROLLER_CONFIG      *GpioConfig;
+  UINT32                            DevPcieAddr;
+  UINT16                            SaveCmdReg;
+  UINT32                            SaveBarReg;
+  UINT16                            PciVid;
+  UINT16                            PciDid;
+
+  ASSERT ((UINTN) PlatformType < mBoardGpioControllerConfigTableLen);
+  GpioConfig = &mBoardGpioControllerConfigTable[(UINTN) PlatformType];
+
+  IohGpioBase = (UINT32) FixedPcdGet64 (PcdIohGpioMmioBase);
+
+  DevPcieAddr = PCI_LIB_ADDRESS (
+                  FixedPcdGet8 (PcdIohGpioBusNumber),
+                  FixedPcdGet8 (PcdIohGpioDevNumber),
+                  FixedPcdGet8 (PcdIohGpioFunctionNumber), 
+                  0
+                  );
+
+  //
+  // Do nothing if not a supported device.
+  //
+  PciVid = PciRead16 (DevPcieAddr + PCI_VENDOR_ID_OFFSET);
+  PciDid = PciRead16 (DevPcieAddr + PCI_DEVICE_ID_OFFSET);
+  if((PciVid != V_IOH_I2C_GPIO_VENDOR_ID) || (PciDid != V_IOH_I2C_GPIO_DEVICE_ID)) {
+    return;
+  }
+
+  //
+  // Save current settings for PCI CMD/BAR registers.
+  //
+  SaveCmdReg = PciRead16 (DevPcieAddr + PCI_COMMAND_OFFSET);
+  SaveBarReg = PciRead32 (DevPcieAddr + FixedPcdGet8 (PcdIohGpioBarRegister));
+
+  //
+  // Use predefined tempory memory resource.
+  //
+  PciWrite32 ( DevPcieAddr + FixedPcdGet8 (PcdIohGpioBarRegister), IohGpioBase); 
+  PciWrite8 ( DevPcieAddr + PCI_COMMAND_OFFSET, EFI_PCI_COMMAND_MEMORY_SPACE); 
+
+  //
+  // Gpio Controller Init Tasks.
+  //
+
+  //
+  // IEN- Interrupt Enable Register
+  //
+  Addr =  IohGpioBase + GPIO_INTEN;
+  Data32 = *((volatile UINT32 *) (UINTN)(Addr)) & 0xFFFFFF00; // Keep reserved bits [31:8]
+  Data32 |= (GpioConfig->IntEn & 0x000FFFFF);
+  *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
+
+  //
+  // ISTATUS- Interrupt Status Register
+  //
+  Addr =  IohGpioBase + GPIO_INTSTATUS;
+  Data32 = *((volatile UINT32 *) (UINTN)(Addr)) & 0xFFFFFF00; // Keep reserved bits [31:8]
+  *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
+
+  //
+  // GPIO SWPORTA Direction Register - GPIO_SWPORTA_DR
+  //
+  Addr =  IohGpioBase + GPIO_SWPORTA_DR;
+  Data32 = *((volatile UINT32 *) (UINTN)(Addr)) & 0xFFFFFF00; // Keep reserved bits [31:8]
+  Data32 |= (GpioConfig->PortADR & 0x000FFFFF);
+  *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
+
+  //
+  // GPIO SWPORTA Data Direction Register - GPIO_SWPORTA_DDR - default input
+  //
+  Addr =  IohGpioBase + GPIO_SWPORTA_DDR;
+  Data32 = *((volatile UINT32 *) (UINTN)(Addr)) & 0xFFFFFF00; // Keep reserved bits [31:8]
+  Data32 |= (GpioConfig->PortADir & 0x000FFFFF);
+  *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
+
+  //
+  // Interrupt Mask Register - GPIO_INTMASK - default interrupts unmasked
+  //
+  Addr =  IohGpioBase + GPIO_INTMASK;
+  Data32 = *((volatile UINT32 *) (UINTN)(Addr)) & 0xFFFFFF00; // Keep reserved bits [31:8]
+  Data32 |= (GpioConfig->IntMask & 0x000FFFFF);
+  *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
+
+  //
+  // Interrupt Level Type Register - GPIO_INTTYPE_LEVEL - default is level sensitive
+  //
+  Addr =  IohGpioBase + GPIO_INTTYPE_LEVEL;
+  Data32 = *((volatile UINT32 *) (UINTN)(Addr)) & 0xFFFFFF00; // Keep reserved bits [31:8]
+  Data32 |= (GpioConfig->IntType & 0x000FFFFF);
+  *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
+
+  //
+  // Interrupt Polarity Type Register - GPIO_INT_POLARITY - default is active low
+  //
+  Addr =  IohGpioBase + GPIO_INT_POLARITY;
+  Data32 = *((volatile UINT32 *) (UINTN)(Addr)) & 0xFFFFFF00; // Keep reserved bits [31:8]
+  Data32 |= (GpioConfig->IntPolarity & 0x000FFFFF);
+  *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
+
+  //
+  // Interrupt Debounce Type Register - GPIO_DEBOUNCE - default no debounce
+  //
+  Addr =  IohGpioBase + GPIO_DEBOUNCE;
+  Data32 = *((volatile UINT32 *) (UINTN)(Addr)) & 0xFFFFFF00; // Keep reserved bits [31:8]
+  Data32 |= (GpioConfig->Debounce & 0x000FFFFF);
+  *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
+
+  //
+  // Interrupt Clock Synchronisation Register - GPIO_LS_SYNC - default no sync with pclk_intr(APB bus clk)
+  //
+  Addr =  IohGpioBase + GPIO_LS_SYNC;
+  Data32 = *((volatile UINT32 *) (UINTN)(Addr)) & 0xFFFFFF00; // Keep reserved bits [31:8]
+  Data32 |= (GpioConfig->LsSync & 0x000FFFFF);
+  *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
+
+  //
+  // Gpio Controller Manipulation Tasks.
+  //
+
+  if (PlatformType == (EFI_PLATFORM_TYPE) Galileo) {
+    //
+    // Reset Cypress Expander on Galileo Platform
+    //
+    Addr = IohGpioBase + GPIO_SWPORTA_DR;
+    Data32 = *((volatile UINT32 *) (UINTN)(Addr));
+    Data32 |= BIT4;                                 // Cypress Reset line controlled by GPIO<4>
+    *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
+
+    Data32 = *((volatile UINT32 *) (UINTN)(Addr));
+    Data32 &= ~BIT4;                                // Cypress Reset line controlled by GPIO<4>
+    *((volatile UINT32 *) (UINTN)(Addr)) = Data32;
+
+  }
+
+  //
+  // Restore settings for PCI CMD/BAR registers
+  //
+  PciWrite32 ((DevPcieAddr + FixedPcdGet8 (PcdIohGpioBarRegister)), SaveBarReg);
+  PciWrite16 (DevPcieAddr + PCI_COMMAND_OFFSET, SaveCmdReg);
+}
+
+/**
+  Performs any early platform init of SoC Ethernet Mac devices.
+
+  @param  IohMac0Address  Mac address to program into Mac0 device.
+  @param  IohMac1Address  Mac address to program into Mac1 device.
+
+**/
+VOID
+EFIAPI
+EarlyPlatformMacInit (
+  IN CONST UINT8                          *IohMac0Address,
+  IN CONST UINT8                          *IohMac1Address
+  )
+{
+  BOOLEAN                           SetMacAddr;
+
+  //
+  // Set chipset MAC0 address if configured.
+  //
+  SetMacAddr =
+    (CompareMem (ChipsetDefaultMac, IohMac0Address, sizeof (ChipsetDefaultMac))) != 0;
+  if (SetMacAddr) {
+    if ((*(IohMac0Address) & BIT0) != 0) {
+      DEBUG ((EFI_D_ERROR, "HALT: Multicast Mac Address configured for Ioh MAC [B:%d, D:%d, F:%d]\n",
+        (UINTN) IOH_MAC0_BUS_NUMBER,
+        (UINTN) IOH_MAC0_DEVICE_NUMBER,
+        (UINTN) IOH_MAC0_FUNCTION_NUMBER
+        ));
+      ASSERT (FALSE);
+    } else {
+      SetLanControllerMacAddr (
+        IOH_MAC0_BUS_NUMBER,
+        IOH_MAC0_DEVICE_NUMBER,
+        IOH_MAC0_FUNCTION_NUMBER,
+        IohMac0Address,
+        (UINT32) FixedPcdGet64(PcdIohMac0MmioBase)
+        );
+    }
+  } else {
+    DEBUG ((EFI_D_WARN, "WARNING: Ioh MAC [B:%d, D:%d, F:%d] NO HW ADDR CONFIGURED!!!\n",
+      (UINTN) IOH_MAC0_BUS_NUMBER,
+      (UINTN) IOH_MAC0_DEVICE_NUMBER,
+      (UINTN) IOH_MAC0_FUNCTION_NUMBER
+      ));
+  }
+
+  //
+  // Set chipset MAC1 address if configured.
+  //
+  SetMacAddr =
+    (CompareMem (ChipsetDefaultMac, IohMac1Address, sizeof (ChipsetDefaultMac))) != 0;
+  if (SetMacAddr) {
+    if ((*(IohMac1Address) & BIT0) != 0) {
+      DEBUG ((EFI_D_ERROR, "HALT: Multicast Mac Address configured for Ioh MAC [B:%d, D:%d, F:%d]\n",
+        (UINTN) IOH_MAC1_BUS_NUMBER,
+        (UINTN) IOH_MAC1_DEVICE_NUMBER,
+        (UINTN) IOH_MAC1_FUNCTION_NUMBER
+        ));
+      ASSERT (FALSE);
+    } else {
+        SetLanControllerMacAddr (
+          IOH_MAC1_BUS_NUMBER,
+          IOH_MAC1_DEVICE_NUMBER,
+          IOH_MAC1_FUNCTION_NUMBER,
+          IohMac1Address,
+          (UINT32) FixedPcdGet64(PcdIohMac1MmioBase)
+          );
+    }
+  } else {
+    DEBUG ((EFI_D_WARN, "WARNING: Ioh MAC [B:%d, D:%d, F:%d] NO HW ADDR CONFIGURED!!!\n",
+      (UINTN) IOH_MAC1_BUS_NUMBER,
+      (UINTN) IOH_MAC1_DEVICE_NUMBER,
+      (UINTN) IOH_MAC1_FUNCTION_NUMBER
+      ));
+  }
 }
 

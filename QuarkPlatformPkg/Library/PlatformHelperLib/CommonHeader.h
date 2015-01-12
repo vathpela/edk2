@@ -45,6 +45,8 @@
 #include <Library/PlatformDataLib.h>
 #include <Library/IntelQNCLib.h>
 #include <Platform.h>
+#include <PlatformBoards.h>
+#include <Pcal9555.h>
 #include "FlashLayout.h"
 #include <CommonIncludes.h>
 #include <QNCAccess.h>
@@ -64,6 +66,14 @@ WriteFirstFreeSpiProtect (
   IN CONST UINT32                         BaseAddress,
   IN CONST UINT32                         Length,
   OUT UINT32                              *OffsetPtr
+  );
+
+VOID
+Pcal9555SetPortRegBit (
+  IN CONST UINT32                         Pcal9555SlaveAddr,
+  IN CONST UINT32                         GpioNum,
+  IN CONST UINT8                          RegBase,
+  IN CONST BOOLEAN                        LogicOne
   );
 
 #endif

@@ -152,23 +152,19 @@ EnableI2CMmioSpace (
 
 }
 
-
 /**
   The DisableI2CController() functions disables I2C Controller.
 
-  @retval EFI_SUCCESS           I2C Controller disabled successfully.
-
-  @retval EFI_DEVICE_ERROR      I2C Controller could not be disabled.
-
 **/
-EFI_STATUS
+VOID
 DisableI2CController (
+  VOID
   )
 {
-  UINTN   I2CIoPortBaseAddress;
-  UINT32  Addr;
-  UINT32  Data;
-  UINT8   PollCount;
+  UINTN       I2CIoPortBaseAddress;
+  UINT32      Addr;
+  UINT32      Data;
+  UINT8       PollCount;
 
   PollCount = 0;
 
@@ -191,28 +187,30 @@ DisableI2CController (
   Data = 0xFF;
   Addr = I2CIoPortBaseAddress + I2C_REG_ENABLE_STATUS;
   Data = *((volatile UINT32 *) (UINTN)(Addr)) & I2C_REG_ENABLE_STATUS;
-
-  if (Data == 0) {
-    return EFI_SUCCESS;
-  }
-
-  //
-  // Poll the IC_ENABLE_STATUS.IC_EN Bit to check if Controller is disabled, until timeout (TI2C_POLL*MAX_T_POLL_COUNT).
-  //
-PollIcEn:
-  PollCount++;
-  if (PollCount >= MAX_T_POLL_COUNT) {
-    return EFI_DEVICE_ERROR;
-  } else {
+  while (Data != 0) {
+    //
+    // Poll the IC_ENABLE_STATUS.IC_EN Bit to check if Controller is disabled, until timeout (TI2C_POLL*MAX_T_POLL_COUNT).
+    //
+    PollCount++;
+    if (PollCount >= MAX_T_POLL_COUNT) {
+      break;
+    }
     gBS->Stall(TI2C_POLL);
     Data = *((volatile UINT32 *) (UINTN)(Addr));
     Data &= I2C_REG_ENABLE_STATUS;
-    if (Data == 0) {
-      return EFI_SUCCESS;
-    } else {
-        goto PollIcEn;
-    }
   }
+
+  //
+  // Asset if controller does not enter Disabled state.
+  //
+  ASSERT (PollCount < MAX_T_POLL_COUNT);
+
+  //
+  // Read IC_CLR_INTR register to automatically clear the combined interrupt,
+  // all individual interrupts and the IC_TX_ABRT_SOURCE register.
+  //
+  Addr = I2CIoPortBaseAddress + I2C_REG_CLR_INT;
+  Data = *((volatile UINT32 *) (UINTN)(Addr));
 
 }
 
@@ -222,6 +220,7 @@ PollIcEn:
 **/
 VOID
 EnableI2CController (
+  VOID
   )
 {
   UINTN   I2CIoPortBaseAddress;
@@ -235,11 +234,21 @@ EnableI2CController (
 
   //
   // Enable the I2C Controller by setting IC_ENABLE.ENABLE to 1
-  //    
+  //
   Addr = I2CIoPortBaseAddress + I2C_REG_ENABLE;
   Data = *((volatile UINT32 *) (UINTN)(Addr));
   Data |= B_I2C_REG_ENABLE;
   *((volatile UINT32 *) (UINTN)(Addr)) = Data;
+
+  //
+  // Clear overflow and abort error status bits before transactions.
+  //
+  Addr = I2CIoPortBaseAddress + I2C_REG_CLR_RX_OVER;
+  Data = *((volatile UINT32 *) (UINTN)(Addr));
+  Addr = I2CIoPortBaseAddress + I2C_REG_CLR_TX_OVER;
+  Data = *((volatile UINT32 *) (UINTN)(Addr));
+  Addr = I2CIoPortBaseAddress + I2C_REG_CLR_TX_ABRT;
+  Data = *((volatile UINT32 *) (UINTN)(Addr));
 
 }
 
@@ -247,14 +256,26 @@ EnableI2CController (
   The WaitForStopDet() function waits until I2C STOP Condition occurs,
   indicating transfer completion.
 
+  @retval EFI_SUCCESS           Stop detected.
+  @retval EFI_TIMEOUT           Timeout while waiting for stop condition.
+  @retval EFI_ABORTED           Tx abort signaled in HW status register.
+  @retval EFI_DEVICE_ERROR      Tx or Rx overflow detected.
+
 **/
-VOID
+EFI_STATUS
 WaitForStopDet (
+  VOID
   )
 {
-  UINTN   I2CIoPortBaseAddress;
-  UINT32  Addr;
-  UINT32  Data;
+  UINTN       I2CIoPortBaseAddress;
+  UINT32      Addr;
+  UINT32      Data;
+  UINT8       PollCount;
+  EFI_STATUS  Status;
+
+  Status = EFI_SUCCESS;
+
+  PollCount = 0;
 
   //
   // Get I2C Memory Mapped registers base address.
@@ -266,14 +287,34 @@ WaitForStopDet (
   //
   Addr = I2CIoPortBaseAddress + I2C_REG_RAW_INTR_STAT;
 
-PollStopDet:
-  Data = *((volatile UINT32 *) (UINTN)(Addr));
-  Data &= I2C_REG_RAW_INTR_STAT_STOP_DET;
-  if (Data == 0) {
+  do {
+    Data = *((volatile UINT32 *) (UINTN)(Addr));
+    if ((Data & I2C_REG_RAW_INTR_STAT_TX_ABRT) != 0) {
+      Status = EFI_ABORTED;
+      break;
+    }
+    if ((Data & I2C_REG_RAW_INTR_STAT_TX_OVER) != 0) {
+      Status = EFI_DEVICE_ERROR;
+      break;
+    }
+    if ((Data & I2C_REG_RAW_INTR_STAT_RX_OVER) != 0) {
+      Status = EFI_DEVICE_ERROR;
+      break;
+    }
+    if ((Data & I2C_REG_RAW_INTR_STAT_STOP_DET) != 0) {
+      Status = EFI_SUCCESS;
+      break;
+    }
     gBS->Stall(TI2C_POLL);
-    goto PollStopDet;
-  }
+    PollCount++;
+    if (PollCount >= MAX_STOP_DET_POLL_COUNT) {
+      Status = EFI_TIMEOUT;
+      break;
+    }
 
+  } while (TRUE);
+
+  return Status;
 }
 
 /**
@@ -284,9 +325,6 @@ PollStopDet:
   @param AddrMode     I2C Addressing Mode: 7-bit or 10-bit address.
 
   @retval EFI_SUCCESS           I2C Operation completed successfully.
-
-  @retval EFI_DEVICE_ERROR      The request was not completed due to error
-                                accessing the slave device.
 
 **/
 EFI_STATUS
@@ -309,10 +347,7 @@ InitializeInternal (
   //
   // Disable I2C Controller initially
   //
-  Status = DisableI2CController ();
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
+  DisableI2CController ();
 
   //
   // Get I2C Memory Mapped registers base address.
@@ -370,24 +405,25 @@ InitializeInternal (
 
   @param  I2CAddress      I2C Slave device address
   @param  Value           The 8-bit value to write.
-  @param  Status          Return status for the executed command (EFI_SUCCESS or EFI_DEVICE_ERROR).
-                          This is an optional parameter and may be NULL.
 
-  @return Data written to I2C Slave device, as read from I2C Data CMD register.
+  @retval EFI_SUCCESS           Transfer success.
+  @retval EFI_UNSUPPORTED       Unsupported input param.
+  @retval EFI_TIMEOUT           Timeout while waiting xfer.
+  @retval EFI_ABORTED           Controller aborted xfer.
+  @retval EFI_DEVICE_ERROR      Device error detected by controller.
 
 **/
-UINT8
+EFI_STATUS
 EFIAPI
 WriteByte (
   IN  UINTN          I2CAddress,
-  IN  UINT8          Value,
-  OUT RETURN_STATUS  *Status        OPTIONAL
+  IN  UINT8          Value
   )
 {
-  UINTN   I2CIoPortBaseAddress;
-  UINTN   Addr;
-  UINT32  Data;
-  UINT8   ReturnData;
+  UINTN       I2CIoPortBaseAddress;
+  UINTN       Addr;
+  UINT32      Data;
+  EFI_STATUS  Status;
 
   //
   // Get I2C Memory Mapped registers base address
@@ -423,17 +459,14 @@ WriteByte (
   //
   // Wait for transfer completion.
   //
-  WaitForStopDet ();
+  Status = WaitForStopDet ();
 
   //
-  // Return write data byte from TX/RX buffer (IC_DATA_CMD[7:0]).
-  // 
-  Data = *((volatile UINT32 *) (UINTN)(Addr));
-  Data &= 0x000000FF;
-  ReturnData = (UINT8)Data;
+  // Ensure I2C Controller disabled.
+  //
+  DisableI2CController();
 
-  return ReturnData;
-
+  return Status;
 }
 
 /**
@@ -443,23 +476,26 @@ WriteByte (
   sub-addresses), as defined in the I2C Specification.
 
   @param  I2CAddress      I2C Slave device address
-  @param  Status          Return status for the executed command (EFI_SUCCESS or EFI_DEVICE_ERROR).
-                          This is an optional parameter and may be NULL.
+  @param  ReturnDataPtr   Pointer to location to receive read byte.
 
-  @return Data read from the I2C Slave device.
+  @retval EFI_SUCCESS           Transfer success.
+  @retval EFI_UNSUPPORTED       Unsupported input param.
+  @retval EFI_TIMEOUT           Timeout while waiting xfer.
+  @retval EFI_ABORTED           Controller aborted xfer.
+  @retval EFI_DEVICE_ERROR      Device error detected by controller.
 
-**/ 
-UINT8
+**/
+EFI_STATUS
 EFIAPI
 ReadByte (
   IN  UINTN          I2CAddress,
-  OUT RETURN_STATUS  *Status        OPTIONAL
+  OUT UINT8          *ReturnDataPtr
   )
 {
-  UINTN   I2CIoPortBaseAddress;
-  UINTN   Addr;
-  UINT32  Data;
-  UINT8   ReturnData;
+  UINTN       I2CIoPortBaseAddress;
+  UINTN       Addr;
+  UINT32      Data;
+  EFI_STATUS  Status;
 
   //
   // Get I2C Memory Mapped registers base address.
@@ -494,17 +530,37 @@ ReadByte (
   //
   // Wait for transfer completion
   //
-  WaitForStopDet ();
+  Status = WaitForStopDet ();
+  if (!EFI_ERROR(Status)) {
+
+    //
+    // Clear RX underflow before reading IC_DATA_CMD.
+    //
+    Addr = I2CIoPortBaseAddress + I2C_REG_CLR_RX_UNDER;
+    Data = *((volatile UINT32 *) (UINTN)(Addr));
+
+    //
+    // Obtain and return read data byte from RX buffer (IC_DATA_CMD[7:0]).
+    //
+    Addr = I2CIoPortBaseAddress + I2C_REG_DATA_CMD;
+    Data = *((volatile UINT32 *) (UINTN)(Addr));
+    Data &= 0x000000FF;
+    *ReturnDataPtr = (UINT8) Data;
+
+    Addr = I2CIoPortBaseAddress + I2C_REG_RAW_INTR_STAT;
+    Data = *((volatile UINT32 *) (UINTN)(Addr));
+    Data &= I2C_REG_RAW_INTR_STAT_RX_UNDER;
+    if (Data != 0) {
+      Status = EFI_DEVICE_ERROR;
+    }
+  }
 
   //
-  // Obtain and return read data byte from RX buffer (IC_DATA_CMD[7:0]).
+  // Ensure I2C Controller disabled.
   //
-  Data = *((volatile UINT32 *) (UINTN)(Addr));
-  Data &= 0x000000FF;
-  ReturnData = (UINT8)Data;
+  DisableI2CController ();
 
-  return ReturnData;
-
+  return Status;
 }
 
 /**
@@ -521,23 +577,30 @@ ReadByte (
 
   @param Length       No. of bytes to be written.
 
-  @param  Status      Return status for the executed command (EFI_SUCCESS or EFI_DEVICE_ERROR).
-                      This is an optional parameter and may be NULL.
+  @retval EFI_SUCCESS           Transfer success.
+  @retval EFI_UNSUPPORTED       Unsupported input param.
+  @retval EFI_TIMEOUT           Timeout while waiting xfer.
+  @retval EFI_ABORTED           Tx abort signaled in HW status register.
+  @retval EFI_DEVICE_ERROR      Tx overflow detected.
 
 **/
-VOID
+EFI_STATUS
 EFIAPI
 WriteMultipleByte (
   IN  UINTN          I2CAddress,
   IN  UINT8          *WriteBuffer,
-  IN  UINTN          Length,
-  OUT RETURN_STATUS  *Status        OPTIONAL
+  IN  UINTN          Length
   )
 {
-  UINTN   I2CIoPortBaseAddress;
-  UINTN   Index;
-  UINTN   Addr;
-  UINT32  Data;
+  UINTN       I2CIoPortBaseAddress;
+  UINTN       Index;
+  UINTN       Addr;
+  UINT32      Data;
+  EFI_STATUS  Status;
+
+  if (Length > I2C_FIFO_SIZE) {
+    return EFI_UNSUPPORTED;  // Routine does not handle xfers > fifo size.
+  }
 
   I2CIoPortBaseAddress = GetI2CIoPortBaseAddress ();
 
@@ -574,15 +637,20 @@ WriteMultipleByte (
   //
   // Wait for transfer completion
   //
-  WaitForStopDet ();
+  Status = WaitForStopDet ();
 
+  //
+  // Ensure I2C Controller disabled.
+  //
+  DisableI2CController ();
+  return Status;
 }
 
 /**
 
   The ReadMultipleByte() function provides a standard way to execute
   multiple byte writes to an IC2 device (e.g. when accessing sub-addresses or
-  when reading block of data), as defined in the I2C Specification (I2C combined 
+  when reading block of data), as defined in the I2C Specification (I2C combined
   write/read protocol).
 
   @param SlaveAddress The I2C slave address of the device
@@ -593,7 +661,7 @@ WriteMultipleByte (
 
   @param WriteLength  No. of bytes to be written. In this case data
                       written typically contains sub-address or sub-addresses
-                      in Hi-Lo format, that need to be read (I2C combined 
+                      in Hi-Lo format, that need to be read (I2C combined
                       write/read protocol).
 
   @param ReadLength   No. of bytes to be read. I
@@ -604,25 +672,32 @@ WriteMultipleByte (
   @param Buffer       Contains the value of byte data read from the
                       I2C slave device.
 
-  @param  Status      Return status for the executed command (EFI_SUCCESS or EFI_DEVICE_ERROR).
-                      This is an optional parameter and may be NULL.
+  @retval EFI_SUCCESS           Transfer success.
+  @retval EFI_UNSUPPORTED       Unsupported input param.
+  @retval EFI_TIMEOUT           Timeout while waiting xfer.
+  @retval EFI_ABORTED           Tx abort signaled in HW status register.
+  @retval EFI_DEVICE_ERROR      Rx underflow or Rx/Tx overflow detected.
 
 **/
-VOID
+EFI_STATUS
 EFIAPI
 ReadMultipleByte (
   IN  UINTN          I2CAddress,
   IN  OUT UINT8      *Buffer,
   IN  UINTN          WriteLength,
-  IN  UINTN          ReadLength,
-  OUT RETURN_STATUS  *Status        OPTIONAL
+  IN  UINTN          ReadLength
   )
 {
-  UINTN   I2CIoPortBaseAddress;
-  UINTN   Index;
-  UINTN   Addr;
-  UINT32  Data;
-  UINT8   PollCount;
+  UINTN       I2CIoPortBaseAddress;
+  UINTN       Index;
+  UINTN       Addr;
+  UINT32      Data;
+  UINT8       PollCount;
+  EFI_STATUS  Status;
+
+  if (WriteLength > I2C_FIFO_SIZE || ReadLength > I2C_FIFO_SIZE) {
+    return EFI_UNSUPPORTED;  // Routine does not handle xfers > fifo size.
+  }
 
   I2CIoPortBaseAddress = GetI2CIoPortBaseAddress ();
 
@@ -664,47 +739,76 @@ ReadMultipleByte (
     }
     *((volatile UINT32 *) (UINTN)(Addr)) = Data;
   }
-  
+
   //
   // Wait for STOP condition.
   //
-  WaitForStopDet ();
+  Status = WaitForStopDet ();
+  if (!EFI_ERROR(Status)) {
 
-  //
-  // Poll Receive FIFO Buffer Level register until valid (upto MAX_T_POLL_COUNT times).
-  //
-  Data = 0;
-  PollCount = 0;
-  Addr = I2CIoPortBaseAddress + I2C_REG_RXFLR;
-  Data = *((volatile UINT32 *) (UINTN)(Addr));
-  while ((Data != ReadLength) && (PollCount < MAX_T_POLL_COUNT)) {
-    gBS->Stall(TI2C_POLL);
-	PollCount++;
+    //
+    // Poll Receive FIFO Buffer Level register until valid (upto MAX_T_POLL_COUNT times).
+    //
+    Data = 0;
+    PollCount = 0;
+    Addr = I2CIoPortBaseAddress + I2C_REG_RXFLR;
     Data = *((volatile UINT32 *) (UINTN)(Addr));
-  }
-  
-  //
-  // If receive buffer valid output data, otherwise return device error.
-  //
-  if (PollCount == MAX_T_POLL_COUNT) {
-    *Status = EFI_DEVICE_ERROR;
-  } else {
-	*Status = EFI_SUCCESS;
-    Addr = I2CIoPortBaseAddress + I2C_REG_DATA_CMD;
-    for (Index = 0; Index < ReadLength; Index++) {
+    while ((Data != ReadLength) && (PollCount < MAX_T_POLL_COUNT)) {
+      gBS->Stall(TI2C_POLL);
+      PollCount++;
       Data = *((volatile UINT32 *) (UINTN)(Addr));
-      Data &= 0x000000FF;
-      *(Buffer+Index) = (UINT8)Data;  
+    }
+
+    Addr = I2CIoPortBaseAddress + I2C_REG_RAW_INTR_STAT;
+    Data = *((volatile UINT32 *) (UINTN)(Addr));
+
+    //
+    // If no timeout or device error then read rx data.
+    //
+    if (PollCount == MAX_T_POLL_COUNT) {
+      Status = EFI_TIMEOUT;
+    } else if ((Data & I2C_REG_RAW_INTR_STAT_RX_OVER) != 0) {
+      Status = EFI_DEVICE_ERROR;
+    } else {
+
+      //
+      // Clear RX underflow before reading IC_DATA_CMD.
+      //
+      Addr = I2CIoPortBaseAddress + I2C_REG_CLR_RX_UNDER;
+      Data = *((volatile UINT32 *) (UINTN)(Addr));
+
+      //
+      // Read data.
+      //
+      Addr = I2CIoPortBaseAddress + I2C_REG_DATA_CMD;
+      for (Index = 0; Index < ReadLength; Index++) {
+        Data = *((volatile UINT32 *) (UINTN)(Addr));
+        Data &= 0x000000FF;
+        *(Buffer+Index) = (UINT8)Data;
+      }
+      Addr = I2CIoPortBaseAddress + I2C_REG_RAW_INTR_STAT;
+      Data = *((volatile UINT32 *) (UINTN)(Addr));
+      Data &= I2C_REG_RAW_INTR_STAT_RX_UNDER;
+      if (Data != 0) {
+        Status = EFI_DEVICE_ERROR;
+      } else {
+        Status = EFI_SUCCESS;
+      }
     }
   }
 
-}
+  //
+  // Ensure I2C Controller disabled.
+  //
+  DisableI2CController ();
 
+  return Status;
+}
 
 /**
 
   The I2CWriteByte() function is a wrapper function for the WriteByte function.
-  Provides a standard way to execute a standard single byte write to an IC2 device 
+  Provides a standard way to execute a standard single byte write to an IC2 device
   (without accessing sub-addresses), as defined in the I2C Specification.
 
   @param This         A pointer to the EFI_I2C_PROTOCOL instance.
@@ -720,10 +824,12 @@ ReadMultipleByte (
                       I2C slave device.
 
 
-  @retval EFI_SUCCESS           I2C Operation completed successfully.
-
-  @retval EFI_DEVICE_ERROR      The request was not completed due to error
-                                accessing the slave device.
+  @retval EFI_SUCCESS           Transfer success.
+  @retval EFI_INVALID_PARAMETER  This or Buffer pointers are invalid.
+  @retval EFI_UNSUPPORTED       Unsupported input param.
+  @retval EFI_TIMEOUT           Timeout while waiting xfer.
+  @retval EFI_ABORTED           Controller aborted xfer.
+  @retval EFI_DEVICE_ERROR      Device error detected by controller.
 
 **/
 EFI_STATUS
@@ -732,12 +838,15 @@ I2CWriteByte (
   IN CONST  EFI_I2C_HC_PROTOCOL     *This,
   IN        EFI_I2C_DEVICE_ADDRESS  SlaveAddress,
   IN        EFI_I2C_ADDR_MODE       AddrMode,
-  IN UINTN                          *Length,
   IN OUT    VOID                    *Buffer
   )
 {
   EFI_STATUS Status;
   UINTN      I2CAddress;
+
+  if (This != &mI2CbusHc || Buffer == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
 
   ServiceEntry ();
 
@@ -746,11 +855,9 @@ I2CWriteByte (
   I2CAddress = SlaveAddress.I2CDeviceAddress;
 
   Status = InitializeInternal (AddrMode);
-  if (EFI_ERROR(Status)) {
-    return Status;
+  if (!EFI_ERROR(Status)) {
+    Status = WriteByte (I2CAddress, *(UINT8 *) Buffer);
   }
-
-  WriteByte (I2CAddress, *(UINT8 *) Buffer, &Status);
 
   ServiceExit ();
   return Status;
@@ -759,7 +866,7 @@ I2CWriteByte (
 /**
 
   The I2CReadByte() function is a wrapper function for the ReadByte function.
-  Provides a standard way to execute a standard single byte read to an IC2 device 
+  Provides a standard way to execute a standard single byte read to an IC2 device
   (without accessing sub-addresses), as defined in the I2C Specification.
 
   @param This         A pointer to the EFI_I2C_PROTOCOL instance.
@@ -769,16 +876,16 @@ I2CWriteByte (
 
   @param AddrMode     I2C Addressing Mode: 7-bit or 10-bit address.
 
-  @param Length       No. of bytes to be read.
-
   @param Buffer       Contains the value of byte data read from the
                       I2C slave device.
 
 
-  @retval EFI_SUCCESS           I2C Operation completed successfully.
+  @retval EFI_SUCCESS           Transfer success.
+  @retval EFI_INVALID_PARAMETER This or Buffer pointers are invalid.
+  @retval EFI_TIMEOUT           Timeout while waiting xfer.
+  @retval EFI_ABORTED           Controller aborted xfer.
+  @retval EFI_DEVICE_ERROR      Device error detected by controller.
 
-  @retval EFI_DEVICE_ERROR      The request was not completed due to error
-                                accessing the slave device.
 
 **/
 EFI_STATUS
@@ -787,12 +894,15 @@ I2CReadByte (
   IN CONST  EFI_I2C_HC_PROTOCOL     *This,
   IN        EFI_I2C_DEVICE_ADDRESS  SlaveAddress,
   IN        EFI_I2C_ADDR_MODE       AddrMode,
-  IN UINTN                          *Length,
   IN OUT    VOID                    *Buffer
   )
 {
   EFI_STATUS Status;
   UINTN      I2CAddress;
+
+  if (This != &mI2CbusHc || Buffer == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
 
   ServiceEntry ();
 
@@ -801,12 +911,9 @@ I2CReadByte (
   I2CAddress = SlaveAddress.I2CDeviceAddress;
 
   Status = InitializeInternal (AddrMode);
-  if (EFI_ERROR(Status)) {
-    return Status;
+  if (!EFI_ERROR(Status)) {
+    Status = ReadByte (I2CAddress, (UINT8 *) Buffer);
   }
-
-  *(UINT8 *) Buffer = ReadByte (I2CAddress, &Status);
-
   ServiceExit ();
   return Status;
 }
@@ -814,8 +921,8 @@ I2CReadByte (
 /**
 
   The I2CWriteMultipleByte() function is a wrapper function for the WriteMultipleByte() function.
-  Provides a standard way to execute multiple byte writes to an IC2 device 
-  (e.g. when accessing sub-addresses or writing block of data), as defined 
+  Provides a standard way to execute multiple byte writes to an IC2 device
+  (e.g. when accessing sub-addresses or writing block of data), as defined
   in the I2C Specification.
 
   @param This         A pointer to the EFI_I2C_PROTOCOL instance.
@@ -830,11 +937,12 @@ I2CReadByte (
   @param Buffer       Contains the value of byte to be written to the
                       I2C slave device.
 
-
-  @retval EFI_SUCCESS           I2C Operation completed successfully.
-
-  @retval EFI_DEVICE_ERROR      The request was not completed due to error
-                                accessing the slave device.
+  @retval EFI_SUCCESS            Transfer success.
+  @retval EFI_INVALID_PARAMETER  This, Length or Buffer pointers are invalid.
+  @retval EFI_UNSUPPORTED        Unsupported input param.
+  @retval EFI_TIMEOUT            Timeout while waiting xfer.
+  @retval EFI_ABORTED            Controller aborted xfer.
+  @retval EFI_DEVICE_ERROR       Device error detected by controller.
 
 **/
 EFI_STATUS
@@ -850,17 +958,19 @@ I2CWriteMultipleByte (
   EFI_STATUS Status;
   UINTN      I2CAddress;
 
+  if (This != &mI2CbusHc || Buffer == NULL || Length == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
   ServiceEntry ();
   Status = EFI_SUCCESS;
 
   I2CAddress = SlaveAddress.I2CDeviceAddress;
 
   Status = InitializeInternal (AddrMode);
-  if (EFI_ERROR(Status)) {
-    return Status;
+  if (!EFI_ERROR(Status)) {
+    Status = WriteMultipleByte (I2CAddress, Buffer, (*Length));
   }
-
-  WriteMultipleByte (I2CAddress, Buffer, (*Length), &Status);
 
   ServiceExit ();
   return Status;
@@ -869,8 +979,8 @@ I2CWriteMultipleByte (
 /**
 
   The I2CReadMultipleByte() function is a wrapper function for the ReadMultipleByte() function.
-  Provides a standard way to execute multiple byte writes to an IC2 device 
-  (e.g. when accessing sub-addresses or when reading block of data), as defined 
+  Provides a standard way to execute multiple byte writes to an IC2 device
+  (e.g. when accessing sub-addresses or when reading block of data), as defined
   in the I2C Specification (I2C combined write/read protocol).
 
   @param This         A pointer to the EFI_I2C_PROTOCOL instance.
@@ -882,20 +992,22 @@ I2CWriteMultipleByte (
 
   @param WriteLength  No. of bytes to be written. In this case data
                       written typically contains sub-address or sub-addresses
-                      in Hi-Lo format, that need to be read (I2C combined 
+                      in Hi-Lo format, that need to be read (I2C combined
                       write/read protocol).
 
-  @param ReadLength   No. of bytes to be read from I2C slave device. 
+  @param ReadLength   No. of bytes to be read from I2C slave device.
                       need to be read.
 
   @param Buffer       Contains the value of byte data read from the
                       I2C slave device.
 
-
-  @retval EFI_SUCCESS           I2C Operation completed successfully.
-
-  @retval EFI_DEVICE_ERROR      The request was not completed due to error
-                                accessing the slave device.
+  @retval EFI_SUCCESS            Transfer success.
+  @retval EFI_INVALID_PARAMETER  This, WriteLength, ReadLength or Buffer
+                                 pointers are invalid.
+  @retval EFI_UNSUPPORTED        Unsupported input param.
+  @retval EFI_TIMEOUT            Timeout while waiting xfer.
+  @retval EFI_ABORTED            Controller aborted xfer.
+  @retval EFI_DEVICE_ERROR       Device error detected by controller.
 
 **/
 EFI_STATUS
@@ -912,19 +1024,22 @@ I2CReadMultipleByte (
   EFI_STATUS Status;
   UINTN      I2CAddress;
 
+  if (This != &mI2CbusHc) {
+    return EFI_INVALID_PARAMETER;
+  }
+  if (Buffer == NULL || WriteLength == NULL || ReadLength == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
   ServiceEntry ();
 
   Status = EFI_SUCCESS;
 
   I2CAddress = SlaveAddress.I2CDeviceAddress;
-
   Status = InitializeInternal (AddrMode);
-  if (EFI_ERROR(Status)) {
-    return Status;
+  if (!EFI_ERROR(Status)) {
+    Status = ReadMultipleByte (I2CAddress, Buffer, (*WriteLength), (*ReadLength));
   }
-
-  ReadMultipleByte(I2CAddress, Buffer, (*WriteLength), (*ReadLength), &Status);
-
   ServiceExit ();
   return Status;
 }

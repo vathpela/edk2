@@ -101,17 +101,17 @@ USB_CLASS_FORMAT_DEVICE_PATH gUsbClassKeyboardDevicePath = {
       (UINT8) (sizeof (USB_CLASS_DEVICE_PATH)),
       (UINT8) ((sizeof (USB_CLASS_DEVICE_PATH)) >> 8)
     },
-    0xffff,           // VendorId 
-    0xffff,           // ProductId 
-    CLASS_HID,        // DeviceClass 
+    0xffff,           // VendorId
+    0xffff,           // ProductId
+    CLASS_HID,        // DeviceClass
     SUBCLASS_BOOT,    // DeviceSubClass
     PROTOCOL_KEYBOARD // DeviceProtocol
   },
 
-  { 
-    END_DEVICE_PATH_TYPE, 
-    END_ENTIRE_DEVICE_PATH_SUBTYPE, 
-    END_DEVICE_PATH_LENGTH, 
+  {
+    END_DEVICE_PATH_TYPE,
+    END_ENTIRE_DEVICE_PATH_SUBTYPE,
+    END_DEVICE_PATH_LENGTH,
     0
   }
 };
@@ -125,7 +125,7 @@ BDS_CONSOLE_CONNECT_ENTRY         gPlatformConsole[] = {
     (CONSOLE_OUT | CONSOLE_IN)
   },
   {
-    (EFI_DEVICE_PATH_PROTOCOL *) &gUsbClassKeyboardDevicePath, 
+    (EFI_DEVICE_PATH_PROTOCOL *) &gUsbClassKeyboardDevicePath,
     CONSOLE_IN
   },
   {
@@ -133,7 +133,7 @@ BDS_CONSOLE_CONNECT_ENTRY         gPlatformConsole[] = {
     0
   }
 };
- 
+
 //
 // Predefined platform specific perdict boot option
 //
@@ -147,16 +147,11 @@ EFI_DEVICE_PATH_PROTOCOL          *gPlatformBootOption[] = {
 EFI_DEVICE_PATH_PROTOCOL          *gPlatformDriverOption[] = { NULL };
 
 //
-// Predefined platform connect sequence
-//
-EFI_DEVICE_PATH_PROTOCOL          *gPlatformConnectSequence[] = { NULL };
-
-//
 // Platform specific USB controller device path
 //
 PLATFORM_USB_DEVICE_PATH gUsbDevicePath0 = {
   gPciRootBridge,
-  { 
+  {
     HARDWARE_DEVICE_PATH,
     HW_PCI_DP,
     (UINT8)(sizeof(PCI_DEVICE_PATH)),
@@ -172,7 +167,7 @@ PLATFORM_USB_DEVICE_PATH gUsbDevicePath0 = {
 //
 PLATFORM_USB_DEVICE_PATH gUsbDevicePath1 = {
   gPciRootBridge,
-  { 
+  {
     HARDWARE_DEVICE_PATH,
     HW_PCI_DP,
     (UINT8)(sizeof(PCI_DEVICE_PATH)),
@@ -195,3 +190,12 @@ EFI_DEVICE_PATH_PROTOCOL* gUserAuthenticationDevice[] = {
   NULL
 };
 
+//
+// Predefined platform connect sequence
+//
+EFI_DEVICE_PATH_PROTOCOL          *gPlatformConnectSequence[] = {
+  (EFI_DEVICE_PATH_PROTOCOL*)&gPlatformRootBridge0,  // Force PCI enumer before Legacy OpROM shadow
+  (EFI_DEVICE_PATH_PROTOCOL*)&gUsbDevicePath0,
+  (EFI_DEVICE_PATH_PROTOCOL*)&gUsbDevicePath1,
+  NULL
+};

@@ -89,8 +89,8 @@ FindNext (
       FlashItem = &FindContext->FlashItemList[*IdxPtr];
       if (*IdxPtr >= FlashItemCount || FlashItem->Type > 63) {
         //
-        // Index must < FlashItemCount
-        // and since filter is UINT64 the max type is 63 for BIT63.
+        // BootItems must have Index < FlashItemCount
+        // and type <= 63
         //
         ASSERT (FALSE);
       } else {
@@ -110,15 +110,11 @@ FindNext (
     }
 
     FlashItem = &FindContext->FlashItemList[*IdxPtr];
-    if (FlashItem->Type > 63) {
-      //
-      // Since Filter is UINT64 the max type is 63 for BIT63.
-      //
-      ASSERT (FALSE);
-    } else {
-      if (MFH_IS_FILTER_MATCH (ItemTypeFilter, FlashItem->Type)) {
-        break;
-      }
+    //
+    // Since filter is UINT64 then only check types with value < 64.
+    //
+    if (FlashItem->Type < 64 && MFH_IS_FILTER_MATCH (ItemTypeFilter, FlashItem->Type)) {
+      break;
     }
     (*IdxPtr)++;
   } while (TRUE);

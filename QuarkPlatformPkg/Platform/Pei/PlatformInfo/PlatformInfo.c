@@ -141,13 +141,88 @@ Returns:
 }
 
 EFI_STATUS
+CheckAndReadCriticalData (
+  IN  PDAT_AREA                           *Area,
+  OUT UINT16                              *TypePtr,
+  OUT PDAT_MRC_ITEM                       *MrcConfig OPTIONAL
+  )
+/*++
+Routine Description:
+
+  Check and read critical platfrom data items.
+
+Arguments:
+
+  Area             -  Pointer to system platform data area.
+  TypePtr          -  Store selected platform type at this address.
+  MrcConfig        -  Store mrc config for platform type at this address.
+
+Returns:
+
+  EFI_SUCCESS      -  User selected valid file.
+  EFI_NOT_FOUND    -  Critical item not found in area.
+  EFI_UNSUPPORTED  -  Unsupported platform type.
+  Other            -  Unexpected error.
+  TypePtr          -  Read platform type into this location.
+  MrcConfig        -  Optionally read mrc config into this buffer.
+
+--*/
+{
+  PDAT_ITEM                         *Item;
+  PDAT_MRC_ITEM                     *MrcItemData;
+  EFI_STATUS                        Status;
+
+  *TypePtr = (EFI_PLATFORM_TYPE) 0;
+  Item = PDatLibFindItem (Area, PDAT_ITEM_ID_PLATFORM_ID, FALSE, TypePtr);
+  if (Item == NULL) {
+     *TypePtr = TypeUnknown;
+     DEBUG ((EFI_D_ERROR, "SPI PDR missing does not contain a Platform ID item!!!!\n"));
+     return EFI_NOT_FOUND;
+  }
+
+  if (!PlatformIsSupportedPlatformType ((EFI_PLATFORM_TYPE) *TypePtr)) {
+   //
+    // Reading from SPI PDR Failed or a unknown platform identified
+    //
+    DEBUG ((EFI_D_WARN, "SPI PDR reports Platform ID as %x. This ID is not supported.\n", *TypePtr));
+    *TypePtr = TypeUnknown;
+    return EFI_UNSUPPORTED;
+  }
+
+  Item = PDatLibFindItem (Area, PDAT_ITEM_ID_MRC_VARS, TRUE, NULL);
+  if (Item == NULL) {
+    DEBUG ((EFI_D_ERROR, "Platform Info: Mrc Vars not found in Platform Data!!!!!\n"));
+    return EFI_NOT_FOUND;
+  }
+
+  Status = CheckMrcParams (*TypePtr, Item);
+  if (!EFI_ERROR (Status) && MrcConfig != NULL) {
+    MrcItemData = (PDAT_MRC_ITEM *) Item->Data;
+
+    CopyMem (
+      (VOID *) MrcConfig,
+      (VOID *) MrcItemData,
+      sizeof (PDAT_MRC_ITEM)
+      );
+
+    DEBUG (
+      (EFI_D_INFO,
+      "Platform Info: Platform Data Mrc Vars found: length %d version = %d\n",
+      (UINTN) Item->Header.Length,
+      (UINTN) Item->Header.Version
+      ));
+  }
+
+  return Status;
+}
+
+EFI_STATUS
 FindAndCheckPlatformDataFile (
   IN CONST EFI_GUID                 *FileNameGuid,
   OUT PDAT_AREA                     **AreaPtr,
   OUT UINTN                         *AreaSize,
-  OUT PDAT_ITEM                     **TypeItemPtr,
-  OUT PDAT_ITEM                     **MrcItemPtr,
-  OUT UINT16                        *TypePtr
+  OUT UINT16                        *TypePtr,
+  OUT PDAT_MRC_ITEM                 *MrcConfig OPTIONAL
   )
 /*++
 Routine Description:
@@ -159,9 +234,8 @@ Arguments:
   FileNameGuid     -  Platform data file to find.
   AreaPtr          -  Pointer to be pointed to platform data area.
   AreaSize         -  Update with size of platform data area.
-  TypeItemPtr      -  Update with address of platform type item.
-  MrcItemPtr       -  Update with address of mrc config item.
-  TypePtr          -  Store platform type at this address.
+  TypePtr          -  Read platform type into this location.
+  MrcConfig        -  Optionally read mrc config into this buffer.
 
 Returns:
 
@@ -170,9 +244,8 @@ Returns:
   EFI_INVALID_PARAMETER - File found but data in file invalid.
   AreaPtr          -  Pointing to platform data area in file.
   AreaSize         -  Updated with size of platform data area.
-  TypeItemPtr      -  Updated with address of platform type item.
-  MrcItemPtr       -  Updated with address of mrc config item.
   TypePtr          -  Updated with platform type.
+  MrcConfig        -  Optionally read mrc config into this buffer.
 
 --*/
 {
@@ -187,22 +260,7 @@ Returns:
     DEBUG ((EFI_D_INFO, "Platform Info: File %g has bad PDAT area %r\n", FileNameGuid, Status));
     return EFI_INVALID_PARAMETER;
   }
-  *TypeItemPtr = PDatLibFindItem (*AreaPtr, PDAT_ITEM_ID_PLATFORM_ID, FALSE, TypePtr);
-  if (*TypeItemPtr == NULL) {
-    DEBUG ((EFI_D_INFO, "Platform Info: File %g has no PID item\n", FileNameGuid));
-    return EFI_INVALID_PARAMETER;
-  }
-  if ((*TypePtr > TypeUnknown)  && (*TypePtr < TypePlatformMax)) {
-    *MrcItemPtr = PDatLibFindItem (*AreaPtr, PDAT_ITEM_ID_MRC_VARS, FALSE, NULL);
-    if (*MrcItemPtr == NULL) {
-      DEBUG ((EFI_D_INFO, "Platform Info: File %g has no MRCCFG item\n", FileNameGuid));
-      return EFI_INVALID_PARAMETER;
-    }
-  } else {
-    DEBUG ((EFI_D_INFO, "Platform Info: Invalid platform type %d\n", (UINTN) *TypePtr));
-    return EFI_INVALID_PARAMETER;
-  }
-  return CheckMrcParams (*TypePtr, *MrcItemPtr);
+  return CheckAndReadCriticalData (*AreaPtr, TypePtr, MrcConfig);
 }
 
 VOID
@@ -228,8 +286,6 @@ Returns:
   EFI_STATUS              Status;
   PDAT_AREA               *CurrArea;
   UINTN                   CurrAreaSize;
-  PDAT_ITEM               *CurrTypeItem;
-  PDAT_ITEM               *CurrMrcItem;
   UINT16                  CurrType;
   CHAR8                   KeyStrForIndex [4];
 
@@ -243,9 +299,8 @@ Returns:
                &mPDatFileNameTable[Index],
                &CurrArea,
                &CurrAreaSize,
-               &CurrTypeItem,
-               &CurrMrcItem,
-               &CurrType
+               &CurrType,
+               NULL
                );
 
     if (EFI_ERROR (Status)) {
@@ -256,7 +311,7 @@ Returns:
       (EFI_D_ERROR,
       "Type %a for '%s' [PID %d]\n",
       KeyStrForIndex,
-      PlatformTypeString (CurrType),
+      PlatformTypeString ((EFI_PLATFORM_TYPE) CurrType),
       (UINTN) CurrType
       ));
   }
@@ -296,8 +351,6 @@ Returns:
   CHAR8                   Key;
   EFI_STATUS              Status;
   UINTN                   AreaSize;
-  PDAT_ITEM               *TypeItem;
-  PDAT_ITEM               *MrcItem;
 
   //
   // Return error if no files to search for.
@@ -330,12 +383,10 @@ Returns:
                  &mPDatFileNameTable[Selected],
                  AreaPtr,
                  &AreaSize,
-                 &TypeItem,
-                 &MrcItem,
-                 TypePtr
+                 TypePtr,
+                 MrcConfig
                  );
       if (!EFI_ERROR (Status)) {
-
         //
         // Valid selection return to caller.
         //
@@ -343,17 +394,6 @@ Returns:
           PlatformDataFile,
           &mPDatFileNameTable[Selected]
           );
-        CopyMem (
-          (VOID *) MrcConfig,
-          (VOID *) MrcItem->Data,
-          sizeof (PDAT_MRC_ITEM)
-          );
-        // Use EFI_D_ERROR so user on release builds knows data found.
-        DEBUG ((EFI_D_ERROR, "Platform Info: Type = %x\n", (UINTN) *TypePtr));
-        DEBUG ((EFI_D_ERROR, "Platform Info: Platform Data Mrc Vars found: length %d version = %d\n",
-          (UINTN) MrcItem->Header.Length,
-          (UINTN) MrcItem->Header.Version
-          ));
         break;
       }
     }
@@ -414,8 +454,7 @@ Returns:
   PDAT_ITEM                         *Item;
   EFI_STATUS                        Status;
   PDAT_AREA                         *Area;
-  PDAT_MRC_ITEM                     *MrcItemData;
-  QUARK_EDKII_STAGE1_HEADER       *Edk2ImageHeader;
+  BOOLEAN                           RecoveryStage1;
 
   //
   // Set default values for information derived from platform data area.
@@ -423,94 +462,64 @@ Returns:
   PlatformInfoHob->Type = (EFI_PLATFORM_TYPE) TypeUnknown;
   SetMem (PlatformInfoHob->SysData.IohMac0Address, sizeof(PlatformInfoHob->SysData.IohMac0Address), 0xff);
   SetMem (PlatformInfoHob->SysData.IohMac1Address, sizeof(PlatformInfoHob->SysData.IohMac1Address), 0xff);
+  RecoveryStage1 = PlatformIsBootWithRecoveryStage1();
 
   //
-  // Return error if platform data CRC error, size error or other unexpected error.
-  // For Recovery boot => User selects 'safe embedded' platform data
+  // Get Spi flash platform data area.
   //
-  Edk2ImageHeader = (QUARK_EDKII_STAGE1_HEADER *) (FixedPcdGet32 (PcdEsramStage1Base) + FixedPcdGet32 (PcdFvSecurityHeaderSize));
-  switch ((UINT8)Edk2ImageHeader->ImageIndex & QUARK_STAGE1_IMAGE_TYPE_MASK) {
-  case QUARK_STAGE1_RECOVERY_IMAGE_TYPE:
-    //
-    // Recovery Boot
-    //
-    Status = UserSelectPlatformDataFile (
-      &Area,
-      &PlatformInfoHob->BiosPlatformDataFile,
-      &PlatformInfoHob->Type,
-      &PlatformInfoHob->MemData.MemMrcConfig
-      );
-    if (EFI_ERROR (Status)) {
-      ASSERT_EFI_ERROR (Status);
-      return Status;
-    }
-    break;
-  default:
-    //
-    // Normal Boot
-    //
-    Status = PDatLibGetSystemAreaPointer (TRUE, &Area);
-    if (EFI_ERROR (Status)) {
-      if (Status == EFI_NOT_FOUND) {
-        DEBUG ((EFI_D_ERROR, "System Platform Data Area Signature not found.\n"));
-      } else if (Status == EFI_CRC_ERROR) {
-        DEBUG ((EFI_D_ERROR, "System Platform Data Area CRC Error.\n"));
-      } else if (Status == EFI_BAD_BUFFER_SIZE) {
-        DEBUG ((EFI_D_ERROR, "System Platform Data Area length too large for this platform.\n"));
-      } else {
-        DEBUG ((EFI_D_ERROR, "System Platform Data Area get failed error = %r.\n", Status));
-      }
-      ASSERT (FeaturePcdGet (PcdEnableSecureLock) == FALSE);
-      Status = UserSelectPlatformDataFile (
-        &Area,
-        &PlatformInfoHob->BiosPlatformDataFile,
-        &PlatformInfoHob->Type,
-        &PlatformInfoHob->MemData.MemMrcConfig
-        );
-      if (EFI_ERROR (Status)) {
-        ASSERT_EFI_ERROR (Status);
-        return Status;
-      }
-
+  Status = PDatLibGetSystemAreaPointer (TRUE, &Area);
+  if (EFI_ERROR (Status)) {
+    if (Status == EFI_NOT_FOUND) {
+      DEBUG ((EFI_D_ERROR, "System Platform Data Area Signature not found.\n"));
+    } else if (Status == EFI_CRC_ERROR) {
+      DEBUG ((EFI_D_ERROR, "System Platform Data Area CRC Error.\n"));
+    } else if (Status == EFI_BAD_BUFFER_SIZE) {
+      DEBUG ((EFI_D_ERROR, "System Platform Data Area length too large for this platform.\n"));
     } else {
-      PlatformInfoHob->Type = (EFI_PLATFORM_TYPE) 0;
-      Item = PDatLibFindItem (Area, PDAT_ITEM_ID_PLATFORM_ID, FALSE, &PlatformInfoHob->Type);
-      if (Item == NULL) {
-        PlatformInfoHob->Type = TypeUnknown;
-        DEBUG ((EFI_D_ERROR, "SPI PDR missing does not contain a Platform ID item!!!!\n"));
-        ASSERT (FALSE);
-      }
-
-      if ((PlatformInfoHob->Type > TypeUnknown)  && (PlatformInfoHob->Type < TypePlatformMax)) {
-        //
-        // Valid Platform Identified
-        //
-        DEBUG ((EFI_D_INFO, "Platform Info: Type = %x\n", (UINTN) PlatformInfoHob->Type));
-      } else {
-        //
-        // Reading from SPI PDR Failed or a unknown platform identified
-        //
-        DEBUG ((EFI_D_WARN, "SPI PDR reports Platform ID as %x. This is unknown ID.\n", PlatformInfoHob->Type));
-        PlatformInfoHob->Type = TypeUnknown;
-        ASSERT (FALSE);
-      }
-      Item = PDatLibFindItem (Area, PDAT_ITEM_ID_MRC_VARS, TRUE, NULL);
-      if (Item == NULL) {
-        DEBUG ((EFI_D_ERROR, "Platform Info: Mrc Vars not found in Platform Data!!!!!\n"));
-        ASSERT (FALSE);
-      } else {
-        Status = CheckMrcParams (PlatformInfoHob->Type, Item);
-        ASSERT_EFI_ERROR (Status);
-        MrcItemData = (PDAT_MRC_ITEM *) Item->Data;
-        CopyMem ((VOID *) &PlatformInfoHob->MemData.MemMrcConfig, (VOID *) MrcItemData, sizeof (PlatformInfoHob->MemData.MemMrcConfig));
-        DEBUG ((EFI_D_INFO, "Platform Info: Platform Data Mrc Vars found: length %d version = %d\n",
-          (UINTN) Item->Header.Length,
-          (UINTN) Item->Header.Version
-          ));
-      }
+      DEBUG ((EFI_D_ERROR, "System Platform Data Area get failed error = %r.\n", Status));
     }
-    break;
+
+    if (FeaturePcdGet (PcdEnableSecureLock)) {
+      //
+      // On secure boot only recovery stage1 can continue if bad platform
+      // data area.
+      //
+      ASSERT (RecoveryStage1);
+    }
+
+  } else {
+    Status = CheckAndReadCriticalData (
+               Area,
+               &PlatformInfoHob->Type,
+               &PlatformInfoHob->MemData.MemMrcConfig
+               );
+
+    if (EFI_ERROR(Status)) {
+      //
+      // Only recovery image can continue if there is a problem with critical
+      // data items within the Spi flash Platform data area.
+      //
+      ASSERT (RecoveryStage1);
+    }
   }
+
+  //
+  // If problem with system data area then loop until user selects
+  // a valid built in platform data file.
+  //
+  while (EFI_ERROR(Status)) {
+    Status = UserSelectPlatformDataFile (
+               &Area,
+               &PlatformInfoHob->BiosPlatformDataFile,
+               &PlatformInfoHob->Type,
+               &PlatformInfoHob->MemData.MemMrcConfig
+               );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((EFI_D_ERROR, "User selection of platform data failed = %r. TRY AGAIN\n", Status));
+    }
+  }
+
+  DEBUG ((EFI_D_INFO, "Platform Info: Type = %x\n", (UINTN) PlatformInfoHob->Type));
 
   //
   // Read mac addresses configured in platform data flash area.

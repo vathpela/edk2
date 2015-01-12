@@ -53,7 +53,7 @@ Abstract:
 //
 #define EFI_ACPI_OEM_ID           'I','N','T','E','L',' '   // OEMID 6 bytes long
 #define EFI_ACPI_OEM_TABLE_ID     SIGNATURE_64('T','I','A','N','O',' ',' ',' ') // OEM table id 8 bytes long
-#define EFI_ACPI_OEM_REVISION     0x00000003
+#define EFI_ACPI_OEM_REVISION     0x00000004
 #define EFI_ACPI_CREATOR_ID       SIGNATURE_32('I','N','T','L')
 #define EFI_ACPI_CREATOR_REVISION 0x0100000D  
 

@@ -120,7 +120,7 @@ Abstract:
 #define QUARK_ECC_SCRUB_PAUSE          0xC3         // Quark Remote Management Unit "scrub pause" opcode
 
 //
-// QNC Message Ports and Registers 
+// QNC Message Ports and Registers
 //
 // Start of SB Port IDs
 #define QUARK_NC_MEMORY_ARBITER_SB_PORT_ID    0x00
@@ -178,7 +178,6 @@ Abstract:
 #define   V_WDT_CONTROL_DBL_ECC_BIT_ERR_WARM      (0x2 << B_WDT_CONTROL_DBL_ECC_BIT_ERR_BP)
 #define   V_WDT_CONTROL_DBL_ECC_BIT_ERR_SERR      (0x3 << B_WDT_CONTROL_DBL_ECC_BIT_ERR_BP)
 
-#define QUARK_NC_RMU_REG_SDMA                     0x7A        // Remote Management Unit SPI DMA config register
 #define QUARK_NC_RMU_REG_TS_MODE                  0xB0        // Remote Management Unit Thermal sensor mode register.
 #define   TS_ENABLE                               (BIT15)
 #define QUARK_NC_RMU_REG_TS_TRIP                  0xB2        // Remote Management Unit Thermal sensor programmable trip point register.
@@ -495,7 +494,7 @@ Abstract:
 
 #define R_QNC_LPC_GPE0BLK               0x4C
 #define   B_QNC_LPC_GPE0BLK_MASK          0x0000FFC0
-//        Suggested Value for GPE0BLK = 0x10C0 
+//        Suggested Value for GPE0BLK = 0x10C0
 //
 #define R_QNC_GPE0BLK_GPE0S             0x00          // General Purpose Event 0 Status
 #define  S_QNC_GPE0BLK_GPE0S             4
@@ -632,7 +631,7 @@ Abstract:
 #define R_APM_CNT                                       0xB2
 
 //
-// Reset Generator I/O Port 
+// Reset Generator I/O Port
 //
 #define RST_CNT                                       0xCF9
 #define   B_RST_CNT_COLD_RST                            (BIT3)     // Cold reset

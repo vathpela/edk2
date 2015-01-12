@@ -55,6 +55,22 @@ subst /d %SUBSTDRIVE%
 subst %SUBSTDRIVE% %CURRENTDIR%
 %SUBSTDRIVE%
 
+@REM ###########################################################################
+@REM ########################    PreSetup-processing      ######################
+@REM ###########################################################################
+if NOT exist %SUBSTDRIVE%\Conf (
+  mkdir %SUBSTDRIVE%\Conf
+)
+
+if NOT exist %SUBSTDRIVE%\Conf\tools_def.txt (
+  echo copying ... tools_def.template to %SUBSTDRIVE%\Conf\tools_def.txt
+  copy /Y %SUBSTDRIVE%\QuarkPlatformPkg\Override\BaseTools\Conf\tools_def.template %SUBSTDRIVE%\Conf\tools_def.txt > nul
+)
+if NOT exist %SUBSTDRIVE%\Conf\build_rule.txt (
+  echo copying ... build_rule.template to %SUBSTDRIVE%\Conf\build_rule.txt
+  copy /Y %SUBSTDRIVE%QuarkPlatformPkg\Override\BaseTools\Conf\build_rule.template %SUBSTDRIVE%\Conf\build_rule.txt > nul
+)  
+
 @if not defined WORKSPACE (
   call %SUBSTDRIVE%\edksetup.bat
 )
@@ -118,23 +134,13 @@ if %ERRORLEVEL% NEQ 0 (
 
 :GotCMC
 
-@REM ###############################################################################
-@REM ########################       PreBuild-processing       ######################
-@REM ###############################################################################
+@REM ###########################################################################
+@REM ########################   PreBuild-processing       ######################
+@REM ###########################################################################
 if NOT exist %WORKSPACE%\Conf (
   echo Error: Missing folder %WORKSPACE%\Conf\
   goto End
-) else (
-  if exist %WORKSPACE%\QuarkPlatformPkg\Override\BaseTools\Conf\tools_def.template (
-    echo copying ... tools_def.template to %WORKSPACE%\Conf\tools_def.txt
-    copy /Y %WORKSPACE%\QuarkPlatformPkg\Override\BaseTools\Conf\tools_def.template %WORKSPACE%\Conf\tools_def.txt > nul
-  )
-  if exist %WORKSPACE%\QuarkPlatformPkg\Override\BaseTools\Conf\build_rule.template (
-    echo copying ... build_rule.template to %WORKSPACE%\Conf\build_rule.txt
-    copy /Y %WORKSPACE%\QuarkPlatformPkg\Override\BaseTools\Conf\build_rule.template %WORKSPACE%\Conf\build_rule.txt > nul
-  )  
 )
-
 
 @if not exist Build\%PLATFORM%\%TARGET%_%VS_VERSION%%VS_X86%\IA32 (
   mkdir Build\%PLATFORM%\%TARGET%_%VS_VERSION%%VS_X86%\IA32
@@ -152,40 +158,45 @@ if %ERRORLEVEL% NEQ 0   ( set MY_ERROR_LVL=%ERRORLEVEL% & Goto End )
 @REM ###############################################################################
 .\QuarkPlatformPkg\Tools\QuarkSpiFixup\QuarkSpiFixup.py %PLATFORM% %TARGET% %VS_VERSION%%VS_X86%
 
+@REM ####################################################################################################################
+@REM ######         Perform EDKII build again after QuarkSpiFixup so that output .fd file usable.           #############
+@REM ######   Warning: parameters here are supposed to override any corresponding value in Conf/target.txt  #############
+@REM ####################################################################################################################
+build  -p %PLATFORM%Pkg\%PLATFORM%Pkg.dsc -b %TARGET% -a IA32 -n 4 -t %VS_VERSION%%VS_X86% -y Report.log %EDK_PARAMS% %DEBUG_PRINT_ERROR_LEVEL% %DEBUG_PROPERTY_MASK%
+if %ERRORLEVEL% NEQ 0   ( set MY_ERROR_LVL=%ERRORLEVEL% & Goto End )
+
+set OutputModulesDir=%WORKSPACE%\Build\%PLATFORM%\%TARGET%_%VS_VERSION%%VS_X86%\FV
+
+@REM Copy build output .fd file int0 FlashModules directory.
+@REM Use similar name to full Quark Spi Flash tools but emphasise only EDKII assets in bin file.
+copy /Y %OutputModulesDir%\QUARK.fd %OutputModulesDir%\FlashModules\Flash-EDKII-missingPDAT.bin
+
 @REM ###############################################################################
 @REM ########################     Image signing stage           ####################
 @REM ########################       (dummy signing)             ####################
 @REM ###############################################################################
-set OutputModulesDir=%WORKSPACE%\Build\%PLATFORM%\%TARGET%_%VS_VERSION%%VS_X86%\FV
-      
 %WORKSPACE%\QuarkPlatformPkg\Tools\SignTool\DummySignTool.exe %OutputModulesDir%\FlashModules\EDKII_BOOT_STAGE1_IMAGE1.Fv %OutputModulesDir%\EDKII_BOOT_STAGE1_IMAGE1.Fv.signed
 %WORKSPACE%\QuarkPlatformPkg\Tools\SignTool\DummySignTool.exe %OutputModulesDir%\FlashModules\EDKII_BOOT_STAGE1_IMAGE2.Fv %OutputModulesDir%\EDKII_BOOT_STAGE1_IMAGE2.Fv.signed
 %WORKSPACE%\QuarkPlatformPkg\Tools\SignTool\DummySignTool.exe %OutputModulesDir%\FlashModules\EDKII_BOOT_STAGE2_RECOVERY.Fv %OutputModulesDir%\EDKII_BOOT_STAGE2_RECOVERY.Fv.signed
 %WORKSPACE%\QuarkPlatformPkg\Tools\SignTool\DummySignTool.exe %OutputModulesDir%\FlashModules\EDKII_BOOT_STAGE2_COMPACT.Fv %OutputModulesDir%\EDKII_BOOT_STAGE2_COMPACT.Fv.signed
 %WORKSPACE%\QuarkPlatformPkg\Tools\SignTool\DummySignTool.exe %OutputModulesDir%\FlashModules\EDKII_BOOT_STAGE2.Fv %OutputModulesDir%\EDKII_BOOT_STAGE2.Fv.signed
 %WORKSPACE%\QuarkPlatformPkg\Tools\SignTool\DummySignTool.exe %OutputModulesDir%\FlashModules\EDKII_RECOVERY_IMAGE1.Fv %OutputModulesDir%\EDKII_RECOVERY_IMAGE1.Fv.signed
-%WORKSPACE%\QuarkPlatformPkg\Tools\SignTool\DummySignTool.exe %OutputModulesDir%\FlashModules\EDKII_RECOVERY_IMAGE2.Fv %OutputModulesDir%\EDKII_RECOVERY_IMAGE2.Fv.signed
 
 @REM ###############################################################################
 @REM ####################         Capsule creation stage            ################
 @REM ####################     (Recovery and Update capsules)        ################
 @REM ###############################################################################
 set CapsuleConfigFile=%WORKSPACE%\%PLATFORM%Pkg\Tools\CapsuleCreate\%PLATFORM%PkgCapsuleComponents.inf
-set CapsuleOutputFileNoReset=%OutputModulesDir%\%PLATFORM%PkgNoReset.Cap
 set CapsuleOutputFileReset=%OutputModulesDir%\%PLATFORM%PkgReset.Cap
 @REM CAPSULE_FLAGS_PERSIST_ACROSS_RESET          0x00010000
 @REM CAPSULE_FLAGS_INITIATE_RESET                0x00040000
-set CapsuleFlagsNoReset=0x00000000
 set CapsuleFlagsReset=0x00050000
 
-%WORKSPACE%\QuarkPlatformPkg\Tools\CapsuleCreate\CapsuleCreate.exe %CapsuleConfigFile% %OutputModulesDir% %CapsuleOutputFileNoReset% %CapsuleFlagsNoReset%
 %WORKSPACE%\QuarkPlatformPkg\Tools\CapsuleCreate\CapsuleCreate.exe %CapsuleConfigFile% %OutputModulesDir% %CapsuleOutputFileReset% %CapsuleFlagsReset%
 
 %WORKSPACE%\QuarkPlatformPkg\Tools\SignTool\DummySignTool.exe %CapsuleOutputFileReset% %CapsuleOutputFileReset%.signed
-%WORKSPACE%\QuarkPlatformPkg\Tools\SignTool\DummySignTool.exe %CapsuleOutputFileNoReset% %CapsuleOutputFileNoReset%.signed
-   
-copy /b /Y %OutputModulesDir%\EDKII_BOOT_STAGE2_RECOVERY.Fv.signed + %CapsuleOutputFileReset%.signed %OutputModulesDir%\FVMAIN.fv > nul
 
+copy /b /Y %OutputModulesDir%\EDKII_BOOT_STAGE2_RECOVERY.Fv.signed + %CapsuleOutputFileReset%.signed %OutputModulesDir%\FVMAIN.fv > nul
 
 @REM ###############################################################################
 @REM ################       Create useful output directories        ################
@@ -195,22 +206,22 @@ copy /b /Y %OutputModulesDir%\EDKII_BOOT_STAGE2_RECOVERY.Fv.signed + %CapsuleOut
 )
 
 @REM Copy the 'Recovery Capsule' and 'Update Capsules' to the RemediationModules directory
+@REM Use same/similar names in stand-alone builds compared to full Quark Spi Flash tools.
 copy /Y %OutputModulesDir%\FVMAIN.fv %OutputModulesDir%\RemediationModules\.
-copy /Y %CapsuleOutputFileReset%.signed %OutputModulesDir%\RemediationModules\.
-copy /Y %CapsuleOutputFileNoReset%.signed %OutputModulesDir%\RemediationModules\.
+copy /Y %CapsuleOutputFileReset%.signed %OutputModulesDir%\RemediationModules\Flash-EDKII.cap
 copy /Y %WORKSPACE%\QuarkPlatformPkg\Applications\CapsuleApp.efi %OutputModulesDir%\RemediationModules\.
 
 @if not exist %OutputModulesDir%\Tools (
   mkdir %OutputModulesDir%\Tools
 )
- 
+
 @REM Copy the 'CapsuleCreate.exe' tool to the Tools directory
 copy /Y %WORKSPACE%\QuarkPlatformPkg\Tools\CapsuleCreate\CapsuleCreate.exe %OutputModulesDir%\Tools\.
 
 @if not exist %OutputModulesDir%\Applications (
   mkdir %OutputModulesDir%\Applications
 )
- 
+
 @REM Copy the 'CapsuleApp.efi' application to the Applications directory
 copy /Y %WORKSPACE%\QuarkPlatformPkg\Applications\CapsuleApp.efi %OutputModulesDir%\Applications\.
 
@@ -228,5 +239,4 @@ goto End
 subst /d %SUBSTDRIVE%
 echo.
 exit /b %MY_ERROR_LVL%
-
 

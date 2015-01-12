@@ -172,7 +172,8 @@ TpmWriteByte (
                         );
 
     if (EFI_ERROR(Status)) {
-      DEBUG ((EFI_D_ERROR, "TpmWriteByte(): I2C Write to TPM address %0x failed\n", TpmAddress));
+      DEBUG ((EFI_D_ERROR, "TpmWriteByte(): I2C Write to TPM address %0x failed (%r)\n", TpmAddress, Status));
+      ASSERT (FALSE);  // Writes to TPM should always succeed.
     }
 
     mI2CPrevReadTransfer = FALSE;
@@ -184,7 +185,7 @@ TpmWriteByte (
   Reads single byte data from TPM specified by MMIO address.
 
   Read access to TPM is via MMIO or I2C (based on platform type).
-  
+
   Due to stability issues when using I2C combined write/read transfers (with
   RESTART) to TPM (specifically read from status register), a single write is 
   performed followed by single read (with STOP condition in between).
@@ -270,12 +271,11 @@ TpmReadByte (
                           mI2Cbus,
                           I2CDeviceAddr,
                           I2CAddrMode,
-                          NULL,
                           &Data
                           );
 
       if (EFI_ERROR(Status)) {
-        DEBUG ((EFI_D_INFO, "TpmReadByte(): write to TPM address %0x failed\n", TpmAddress));
+        DEBUG ((EFI_D_INFO, "TpmReadByte(): write to TPM address %0x failed (%r)\n", TpmAddress, Status));
       }
 
       mI2CPrevReadTransfer = FALSE;
@@ -288,12 +288,11 @@ TpmReadByte (
                           mI2Cbus,
                           I2CDeviceAddr,
                           I2CAddrMode,
-                          NULL,
                           &Data
                           );
 
       if (EFI_ERROR(Status)) {
-        DEBUG ((EFI_D_ERROR, "TpmReadByte(): read from TPM address %0x failed\n", TpmAddress));
+        DEBUG ((EFI_D_INFO, "TpmReadByte(): read from TPM address %0x failed (%r)\n", TpmAddress, Status));
         ReadData = 0xFF;
       } else {
         ReadData = Data[0]; 
@@ -310,6 +309,16 @@ TpmReadByte (
       }
 
       mI2CPrevReadTransfer = TRUE;
+    }
+
+    if (EFI_ERROR(Status)) {
+      //
+      //  Only reads to access register allowed to fail.
+      //
+      if (TpmAddress != INFINEON_TPM_ACCESS_0_ADDRESS_DEFAULT) {
+        DEBUG ((EFI_D_ERROR, "TpmReadByte(): read from TPM address %0x failed\n", TpmAddress));
+        ASSERT_EFI_ERROR (Status);
+      }
     }
 
   } else {

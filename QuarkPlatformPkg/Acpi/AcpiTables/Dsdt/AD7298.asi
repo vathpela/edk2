@@ -1,7 +1,4 @@
-/** @file
-
-  The Infineon SLB9645 TPM ACPI definition block.
-  Provides TPM device info. and TPM presence check only.
+/*++
 
   Copyright (c) 2013 Intel Corporation.
 
@@ -31,39 +28,42 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-**/
+  Module Name:
 
-Device (TPM)
+    AD7298.asi
+
+  Abstract:
+
+    Analog devices AD7298 ADC.
+
+--*/
+
+Device(ADC1)
 {
-  //
-  // Define _HID as Infineon TPM Device, _CID as "PNP0C31" (defined in
-  // "Secure Startup-FVE and TPM Admin BIOS and Platform Requirements").
-  //
-  Name(_HID ,EISAID("INT3493"))
-  Name(_CID, EISAID("PNP0C31"))
-
-  //
-  // Readable name of this device.
-  //
-  Name (_STR, Unicode ("Infineon TPM 1.2 Device (SLB9645TT1.2)"))
-
-  //
-  // Return the resource consumed by TPM device.
-  //
-  Name (_CRS, ResourceTemplate () {
-    I2cSerialBus (0x20, ControllerInitiated, 0x00061A80, AddressingMode7Bit, "\\_SB.PCI0.GIP0.I2C_", 0, ResourceConsumer,,)
-  })
-
-  //
-  // Check if TPM present.
-  //
-  Method (_STA, 0)
-  {
-    if (LEqual (TPMP, 0))
+    Name(_HID, "INT3494") // Galileo Version 1 Low-Speed ADC.
+    Name(_CID, "INT3494")
+    Name(RBUF, ResourceTemplate()
     {
-      return (0)
-    }
-    Return (0x0f)
-  }
+        // SPI0: mode 2, 4Mhz, 16-bit data length
+        SpiSerialBus (0x0000, PolarityLow, FourWireMode, 16, ControllerInitiated, 4000000, ClockPolarityHigh, ClockPhaseFirst, "\\_SB_.PCI0.SPI0",0x00, ResourceConsumer, ,)
 
+        // GPIO<0> is SPI0_CS_N
+        GpioIO(Shared, PullDefault, 0, 0, IoRestrictionNone, "\\_SB.PCI0.GIP0.GPO_", 0, ResourceConsumer, , ) {QUARK_GPIO0_MAPPING}
+    })
+    Method(_CRS, 0x0, NotSerialized)
+    {
+        Return(RBUF)
+    }
+    Method(_STA, 0x0, NotSerialized)
+    {
+        //
+        // Only Galileo platform has this device.
+        // EFI_PLATFORM_TYPE enum value Galileo = 6.
+        //
+        If(LNotEqual(PTYP, 6))
+        {
+          return (0)
+        }
+        Return(0xf)
+    }
 }
