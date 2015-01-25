@@ -41,7 +41,7 @@ flags="-DDEBUG_PRINT_ERROR_LEVEL=0x80000042 -DDEBUG_PROPERTY_MASK=0x27"
 ##
 # You probably have gcc 4.8 or 4.9, but this doesn't seem to matter
 toolchain=GCC47
-build -a IA32 -b ${type} -y Report.log -t ${toolchain} -p QuarkPlatformPkg/QuarkPlatformPkg.dsc ${flags} -DSECURE_BOOT
+build -a IA32 -b ${type} -y Report.log -t ${toolchain} -p QuarkPlatformPkg/QuarkPlatformPkg.dsc ${flags} -DSECURE_BOOT || exit 1
 # finally, the spi flash tools are going to need the capsule creator, so build it
 make -C QuarkPlatformPkg/Tools/CapsuleCreate
 #
