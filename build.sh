@@ -21,7 +21,7 @@ popd
 #
 # Need to apply patch for generating correct hashes on IA32
 if [ ! -f SecurityPkg/Library/DxeImageVerificationLib/DxeImageVerificationLib.c.orig ]; then
-    patch -p1 < DxeImageVerificationLib-fix.diff
+    patch -p1 -b < DxeImageVerificationLib-fix.diff
 fi
 # now initialise the edk2environment using the QuarkPlatformPkg Overrides
 cp .module/edk2/edksetup.sh .
