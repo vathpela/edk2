@@ -63,6 +63,7 @@ CpuDeadLoop (
 {
   volatile UINTN  Index;
 
+  DEBUG((EFI_D_ERROR,"\n\nCPU DEAD LOOP\n\n"));
   OemInitiateRecovery();
   for (Index = 0; Index == 0;);
 }
