@@ -13,7 +13,7 @@ fi
 if [ ! -d openssl-0.9.8w ]; then
     tar xfz openssl-0.9.8w.tar.gz
     cd openssl-0.9.8w
-    patch -p0 <../EDKII_openssl-0.9.8w.patch
+    patch -b -p0 <../EDKII_openssl-0.9.8w.patch
     cd ..
     sh ./Install.sh
 fi
