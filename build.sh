@@ -18,6 +18,11 @@ if [ ! -d openssl-0.9.8w ]; then
     sh ./Install.sh
 fi
 popd
+#
+# Need to apply patch for generating correct hashes on IA32
+if [ ! -f SecurityPkg/Library/DxeImageVerificationLib/DxeImageVerificationLib.c.orig ]; then
+    patch -p1 < DxeImageVerificationLib-fix.diff
+fi
 # now initialise the edk2environment using the QuarkPlatformPkg Overrides
 cp .module/edk2/edksetup.sh .
 mkdir Conf
@@ -36,7 +41,7 @@ flags="-DDEBUG_PRINT_ERROR_LEVEL=0x80000042 -DDEBUG_PROPERTY_MASK=0x27"
 ##
 # You probably have gcc 4.8 or 4.9, but this doesn't seem to matter
 toolchain=GCC47
-build -a IA32 -b ${type} -y Report.log -t ${toolchain} -p QuarkPlatformPkg/QuarkPlatformPkg.dsc ${flags}
+build -a IA32 -b ${type} -y Report.log -t ${toolchain} -p QuarkPlatformPkg/QuarkPlatformPkg.dsc ${flags} -DSECURE_BOOT
 # finally, the spi flash tools are going to need the capsule creator, so build it
 make -C QuarkPlatformPkg/Tools/CapsuleCreate
 #

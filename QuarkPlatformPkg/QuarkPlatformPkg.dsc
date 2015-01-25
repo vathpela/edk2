@@ -512,7 +512,7 @@
   !ifdef SECURE_BOOT
     SecurityPkg/VariableAuthenticated/RuntimeDxe/VariableSmmRuntimeDxe.inf
     SecurityPkg/VariableAuthenticated/RuntimeDxe/VariableSmm.inf
-    SecurityPkg/VariableAuthenticated/SecureBootConfigDxe/SecureBootConfigDxe.inf
+#    SecurityPkg/VariableAuthenticated/SecureBootConfigDxe/SecureBootConfigDxe.inf
   !else
     MdeModulePkg/Universal/Variable/RuntimeDxe/VariableSmmRuntimeDxe.inf
     QuarkPlatformPkg/Override/MdeModulePkg/Universal/Variable/RuntimeDxe/VariableSmm.inf

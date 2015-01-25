@@ -479,7 +479,9 @@ PlatformFlashLockPolicy (
                  (VOID *)NULL
                  );
 
-    ASSERT_EFI_ERROR (Status);
+    //ASSERT_EFI_ERROR (Status);
+
+    DEBUG((EFI_D_INFO, "No QUARK LOCK VARIABLE %s status %r\n", QUARK_VARIABLE_LOCK_NAME, Status));
   }
 }
 

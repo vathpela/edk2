@@ -490,7 +490,7 @@ PlatformValidateSecureBootVars (
         Stats.DbEnrolled,
         Stats.DbxEnrolled
         ));
-      ASSERT (Stats.PkEnrolled && Stats.KekEnrolled && Stats.DbEnrolled && Stats.DbxEnrolled);
+      //ASSERT (Stats.PkEnrolled && Stats.KekEnrolled && Stats.DbEnrolled && Stats.DbxEnrolled);
       DEBUG (
         (EFI_D_INFO, "ValidateSecureBoot: Attributes pk:kek:db:dbx 0x%08x:0x%08x:0x%08x:0x%08x\n",
         Stats.PkAttributes,
@@ -498,18 +498,18 @@ PlatformValidateSecureBootVars (
         Stats.DbAttributes,
         Stats.DbxAttributes
         ));
-      ASSERT (
-        ((Stats.PkAttributes & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) != 0) &&
-        ((Stats.KekAttributes & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) != 0) &&
-        ((Stats.DbAttributes & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) != 0) &&
-        ((Stats.DbxAttributes & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) != 0)
-        );
+      //ASSERT (
+      //((Stats.PkAttributes & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) != 0) &&
+      //((Stats.KekAttributes & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) != 0) &&
+      //((Stats.DbAttributes & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) != 0) &&
+      //((Stats.DbxAttributes & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) != 0)
+      //);
       DEBUG (
         (EFI_D_INFO, "ValidateSecureBoot: KekCertCounts X509:Rsa2048 %d:%d\n",
         Stats.KekX509CertCount,
         Stats.KekRsa2048CertCount
         ));
-      ASSERT (Stats.KekX509CertCount > 0 || Stats.KekRsa2048CertCount > 0);
+      //ASSERT (Stats.KekX509CertCount > 0 || Stats.KekRsa2048CertCount > 0);
     }
   }
 }

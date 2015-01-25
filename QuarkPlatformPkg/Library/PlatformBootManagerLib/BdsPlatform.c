@@ -318,7 +318,8 @@ PlatformBootManagerBeforeConsole (
     //
     // UEFI Secure boot not supported / validated for this firmware release.
     //
-    ASSERT (FALSE);
+    DEBUG ((EFI_D_INFO, "GOT PAST PLATFORM SECURE BOOT ASSERTION FAILURE"));
+    //ASSERT (FALSE);
 
   }
 

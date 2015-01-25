@@ -800,7 +800,7 @@ INF  QuarkPlatformPkg/Override/MdeModulePkg/Universal/FaultTolerantWriteDxe/Faul
 !ifdef SECURE_BOOT
 INF  SecurityPkg/VariableAuthenticated/RuntimeDxe/VariableSmmRuntimeDxe.inf
 INF  SecurityPkg/VariableAuthenticated/RuntimeDxe/VariableSmm.inf
-INF  SecurityPkg/VariableAuthenticated/SecureBootConfigDxe/SecureBootConfigDxe.inf
+#INF  SecurityPkg/VariableAuthenticated/SecureBootConfigDxe/SecureBootConfigDxe.inf
 !else
 INF  MdeModulePkg/Universal/Variable/RuntimeDxe/VariableSmmRuntimeDxe.inf
 INF  QuarkPlatformPkg/Override/MdeModulePkg/Universal/Variable/RuntimeDxe/VariableSmm.inf
