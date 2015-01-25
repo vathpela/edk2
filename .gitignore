@@ -1,2 +1,8 @@
-Build/
-tags/
+Build
+tags
+Conf
+Report.log
+edksetup.sh
+*.d
+*.o
+*~
