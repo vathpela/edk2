@@ -1,0 +1,49 @@
+## @file
+#  Fake Capsule Support Code.
+#
+#  Copyright 2015 Red Hat, Inc.
+#
+#  This program and the accompanying materials are licensed and made
+#  available under the terms and conditions of the BSD License which
+#  accompanies this distribution. The full text of the license may be
+#  found at http://opensource.org/licenses/bsd-license.php
+#
+#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR
+#  IMPLIED.
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = FakeCapsuleBase
+  FILE_GUID                      = 735f6e33-97fd-4796-b386-bbeabfad5b2f
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = FakeCapsuleBase
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64 IPF EBC
+#
+
+[Sources]
+  FakeCapsuleBase.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  MemoryAllocationLib
+  PrintLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  UefiRuntimeServicesTableLib
+
+[Guids]
+  gFakeCapsuleHeaderGuid
