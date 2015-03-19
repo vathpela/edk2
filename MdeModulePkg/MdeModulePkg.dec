@@ -62,6 +62,9 @@
   ##  @libraryclass  Defines a set of interfaces on how to process capusle image update.
   CapsuleLib|Include/Library/CapsuleLib.h
 
+  ##  @libraryclass  Defines a set of interfaces on how to create capusle image update options.
+  FakeCapsuleBase|Include/Library/FakeCapsuleBase.h
+
   ##  @libraryclass  Library for Deferred Procedure Calls.
   DpcLib|Include/Library/DpcLib.h
 
@@ -153,6 +156,14 @@
   ## Capsule update hob and variable guid
   #  Include/Guid/CapsuleVendor.h
   gEfiCapsuleVendorGuid          = { 0x711C703F, 0xC285, 0x4B10, { 0xA3, 0xB0, 0x36, 0xEC, 0xBD, 0x3C, 0x8B, 0xE2 }}
+
+  ## Fake capsule variable VendorGuid
+  #  Include/Guid/FakeCapsuleBase.h
+  gFakeCapsuleHeaderGuid          = {0x32e678e9, 0x263f, 0x4eae, {0xa2, 0x39, 0x38, 0xa3, 0xca, 0xd6, 0xa1, 0xb5}}
+
+  ## Guid for reporting capsule results
+  #  Include/Library/FakeCapsuleBase.h
+  gEfiCapsuleReportGuid           = {0x39b68c46, 0xf7fb, 0x441b, {0xb6, 0xec, 0x16, 0xb0, 0xf6, 0x98, 0x21, 0xf3}}
 
   ## Guid specifiy the device is the StdErr device.
   #  Include/Guid/StandardErrorDevice.h

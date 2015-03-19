@@ -17,6 +17,14 @@
 #ifndef _FAKE_CAPSULE_H
 #define _FAKE_CAPSULE_H
 
+typedef struct {
+  UINT32      VariableTotalSize;
+  UINT32      Reserved; //for alignment
+  EFI_GUID    CapsuleGuid;
+  EFI_TIME    CapsuleProcessed;
+  EFI_STATUS  CapsuleStatus;
+} EFI_CAPSULE_RESULT_VARIABLE_HEADER;
+
 EFI_STATUS
 EFIAPI
 FindEsrtVariableByCapsuleGuid (
