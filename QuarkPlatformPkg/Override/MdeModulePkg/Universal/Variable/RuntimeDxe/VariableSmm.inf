@@ -56,14 +56,19 @@
 
 
 [Sources]
-  ../../../../../../MdeModulePkg/Universal/Variable/RuntimeDxe/Reclaim.c
+  ../../../../../../SecurityPkg/VariableAuthenticated/RuntimeDxe/Reclaim.c
   Variable.c
-  ../../../../../../MdeModulePkg/Universal/Variable/RuntimeDxe/VariableSmm.c
-  ../../../../../../MdeModulePkg/Universal/Variable/RuntimeDxe/Variable.h
+  ../../../../../../SecurityPkg/VariableAuthenticated/RuntimeDxe/VariableSmm.c
+  ../../../../../../SecurityPkg/VariableAuthenticated/RuntimeDxe/AuthService.c
+  ../../../../../../SecurityPkg/VariableAuthenticated/RuntimeDxe/VarCheck.c
+  ../../../../../../SecurityPkg/VariableAuthenticated/RuntimeDxe/Variable.h
+  ../../../../../../SecurityPkg/VariableAuthenticated/RuntimeDxe/AuthService.h
 
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
+  CryptoPkg/CryptoPkg.dec
+  SecurityPkg/SecurityPkg.dec
   QuarkPlatformPkg/QuarkPlatformPkg.dec
 
 [LibraryClasses]
@@ -76,21 +81,75 @@
   BaseMemoryLib
   DebugLib
   DxeServicesTableLib
+  BaseCryptLib
+  PlatformSecureLib
   HobLib
+  PcdLib
+  DevicePathLib
+  SmmMemLib
 
 [Protocols]
   gEfiSmmFirmwareVolumeBlockProtocolGuid        ## SOMETIMES_CONSUMES
   gEfiSmmVariableProtocolGuid                   ## ALWAYS_PRODUCES
   gEfiSmmFaultTolerantWriteProtocolGuid         ## SOMETIMES_CONSUMES
+  gEfiSmmEndOfDxeProtocolGuid                   ## NOTIFY
+  gEdkiiSmmVarCheckProtocolGuid                 ## PRODUCES
 
 [Guids]
-  gEfiVariableGuid                              ## PRODUCES ## Configuration Table Guid 
-  gEfiGlobalVariableGuid                        ## PRODUCES ## Variable Guid
+  ## PRODUCES             ## GUID # Variable store header
+  ## CONSUMES             ## GUID # Variable store header
+  ## SOMETIMES_CONSUMES   ## HOB
+  gEfiAuthenticatedVariableGuid
+
+  ## SOMETIMES_CONSUMES   ## Variable:L"PlatformLang"
+  ## SOMETIMES_PRODUCES   ## Variable:L"PlatformLang"
+  ## SOMETIMES_CONSUMES   ## Variable:L"Lang"
+  ## SOMETIMES_PRODUCES   ## Variable:L"Lang"
+  ## SOMETIMES_CONSUMES   ## Variable:L"HwErrRecSupport"
+  ## CONSUMES             ## Variable:L"SetupMode"
+  ## PRODUCES             ## Variable:L"SetupMode"
+  ## SOMETIMES_CONSUMES   ## Variable:L"PK"
+  ## SOMETIMES_CONSUMES   ## Variable:L"KEK"
+  ## CONSUMES             ## Variable:L"SecureBoot"
+  ## PRODUCES             ## Variable:L"SecureBoot"
+  ## CONSUMES             ## Variable:L"SignatureSupport"
+  ## PRODUCES             ## Variable:L"SignatureSupport"
+  ## PRODUCES             ## Variable:L"VendorKeys"
+  gEfiGlobalVariableGuid
+  
+  ## SOMETIMES_CONSUMES   ## Variable:L"DB"
+  ## SOMETIMES_CONSUMES   ## Variable:L"DBX"
+  gEfiImageSecurityDatabaseGuid
+ 
+  ## CONSUMES             ## Variable:L"SecureBootEnable"
+  ## PRODUCES             ## Variable:L"SecureBootEnable"
+  gEfiSecureBootEnableDisableGuid
+  
+  ## CONSUMES             ## Variable:L"CustomMode"
+  ## PRODUCES             ## Variable:L"CustomMode"
+  gEfiCustomModeEnableGuid
+  
+  ## CONSUMES             ## Variable:L"certdb"
+  ## PRODUCES             ## Variable:L"certdb"
+  gEfiCertDbGuid
+
+  ## CONSUMES             ## Variable:L"VendorKeysNv"
+  ## PRODUCES             ## Variable:L"VendorKeysNv"
+  gEfiVendorKeysNvGuid
+    
   gSmmVariableWriteGuid                         ## PRODUCES ## SMM Variable Write Guid 
+  gEfiCertTypeRsa2048Sha256Guid            ## SOMETIMES_CONSUMES     ## GUID        # Unique ID for the format of the CertData.
+  gEfiCertPkcs7Guid                        ## SOMETIMES_CONSUMES     ## GUID        # Unique ID for the format of the CertData.
+  gEfiCertX509Guid                         ## SOMETIMES_CONSUMES     ## GUID        # Unique ID for the type of the signature.
+  gEfiSystemNvDataFvGuid                   ## CONSUMES               ## GUID
+  gEfiHardwareErrorVariableGuid            ## SOMETIMES_CONSUMES     ## Variable:L"HwErrRec####"
+  gEdkiiFaultTolerantWriteGuid             ## SOMETIMES_CONSUMES     ## HOB
+  gEdkiiVarErrorFlagGuid                   ## CONSUMES               ## GUID
   gEfiSystemNvDataFvGuid                        ## CONSUMES
-  gEfiHardwareErrorVariableGuid                 ## SOMETIMES_CONSUMES
   gEfiMemoryConfigDataGuid                      ## SOMETIMES_CONSUMES
   gQuarkVariableLockGuid                        ## SOMETIMES_CONSUMES
+
+  ## gEfiVariableGuid                              ## PRODUCES ## Configuration Table Guid 
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableSize
@@ -100,9 +159,13 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxHardwareErrorVariableSize
   gEfiMdeModulePkgTokenSpaceGuid.PcdVariableStoreSize
   gEfiMdeModulePkgTokenSpaceGuid.PcdHwErrStorageSize
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxUserNvVariableSpaceSize           ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdBoottimeReservedNvVariableSpaceSize  ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdReclaimVariableSpaceAtEndOfDxe   ## CONSUMES
   
 [FeaturePcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdVariableCollectStatistics  ## SOMETIME_CONSUMES (statistic the information of variable.)
+  gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultLangDeprecate  ## CONSUMES
 
 [Depex]
   TRUE

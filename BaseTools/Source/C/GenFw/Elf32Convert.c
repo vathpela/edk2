@@ -628,10 +628,10 @@ WriteSections32 (
         // Check section header index found in symbol table and get the section 
         // header location.
         //
-        if (Sym->st_shndx == SHN_UNDEF
-            || Sym->st_shndx == SHN_ABS
+        if (/* Sym->st_shndx == SHN_UNDEF
+            || */ Sym->st_shndx == SHN_ABS
             || Sym->st_shndx > mEhdr->e_shnum) {
-          Error (NULL, 0, 3000, "Invalid", "%s bad symbol definition.", mInImageName);
+          Error (NULL, 0, 3000, "Invalid", "%s bad symbol definition (st_shndx: %d mEhdr->e_shnum: %d).", mInImageName, Sym->st_shndx, mEhdr->e_shnum);
         }
         SymShdr = GetShdrByIndex(Sym->st_shndx);
 

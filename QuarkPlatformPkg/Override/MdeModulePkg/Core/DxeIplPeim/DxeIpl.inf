@@ -102,6 +102,7 @@
   gEfiPeiLoadFilePpiGuid            ## CONSUMES
   gEfiPeiS3Resume2PpiGuid           ## SOMETIMES_CONSUMES(Consumed on S3 boot path)
   gEfiPeiRecoveryModulePpiGuid      ## SOMETIMES_CONSUMES(Consumed on recovery boot path)
+  gEfiVectorHandoffInfoPpiGuid      ## SOMETIMES_CONSUMES
 
 [Guids]
   gEfiMemoryTypeInformationGuid     ## SOMETIMES_CONSUMES ## Variable:L"MemoryTypeInformation"

@@ -2114,7 +2114,7 @@ typedef struct {
 #pragma pack()
 
 //
-// EFI File location to boot from on removable media devices
+// EFI  location to boot from on removable media devices
 //
 #define EFI_REMOVABLE_MEDIA_FILE_NAME_IA32    L"\\EFI\\BOOT\\BOOTIA32.EFI"
 #define EFI_REMOVABLE_MEDIA_FILE_NAME_IA64    L"\\EFI\\BOOT\\BOOTIA64.EFI"

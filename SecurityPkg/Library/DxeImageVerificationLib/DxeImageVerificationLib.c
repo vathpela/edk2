@@ -590,6 +590,18 @@ HashPeImage (
       if (!Status) {
         goto Done;
       }
+      /*
+       * Problem: some unsigned PECOFF binaries don't always end on an aligned
+       * size. For this case, pad them with zeros up to the aligned size
+       */
+      if (ALIGN_SIZE(mImageSize)) {
+	UINT64 zerofill = 0;
+
+	Status  = mHash[HashAlg].HashUpdate(HashCtx, &zerofill, ALIGN_SIZE(mImageSize));
+	if (!Status) {
+	  goto Done;
+	}
+      }
     } else if (mImageSize < CertSize + SumOfBytesHashed) {
       Status = FALSE;
       goto Done;

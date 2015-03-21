@@ -73,6 +73,7 @@
   @retval EFI_BUFFER_TOO_SMALL    Buffer is not sufficient for this operation.
 
 **/
+STATIC
 EFI_STATUS
 CheckParameters (
   IN     EFI_SMBUS_DEVICE_ADDRESS SlaveAddress,

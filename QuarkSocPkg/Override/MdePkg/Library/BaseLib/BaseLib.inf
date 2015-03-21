@@ -78,6 +78,7 @@
   ../../../../../MdePkg/Library/BaseLib/Cpu.c
   ../../../../../MdePkg/Library/BaseLib/LinkedList.c
   ../../../../../MdePkg/Library/BaseLib/String.c
+  ../../../../../MdePkg/Library/BaseLib/FilePaths.c
   ../../../../../MdePkg/Library/BaseLib/BaseLibInternals.h
   ../../../../../QuarkSocPkg/QuarkNorthCluster/Include/QuarkNcSocId.h
   ../../../../../UefiCpuPkg/Include/Library/MtrrLib.h

@@ -85,14 +85,16 @@ SET gQuarkPlatformTokenSpaceGuid.PcdFlashFvMainSize = 0x00120000
 ########################################################
 # Quark EDKII Payload Image.
 ########################################################
-0x00400400|0x000F0000
+#0x00400400|0x000F0000
+0x00400400|0x00020000
 gQuarkPlatformTokenSpaceGuid.PcdFlashFvPayloadBase|gQuarkPlatformTokenSpaceGuid.PcdFlashFvPayloadSize
 FV = EDKII_PAYLOAD_IMAGE
 
 ########################################################
 # Quark EDKII Stage2 Image (Compressed)
 ########################################################
-0x00500400|0x00120000
+#0x00500400|0x00120000
+0x00430400|0x00120000
 gQuarkPlatformTokenSpaceGuid.PcdFlashFvMainBase|gQuarkPlatformTokenSpaceGuid.PcdFlashFvMainSize
 FV = EDKII_BOOT_STAGE2_COMPACT
 
@@ -100,14 +102,15 @@ FV = EDKII_BOOT_STAGE2_COMPACT
 # Quark EDKII Stage1 Backup Image
 # Quark EDKII Stage1 contains: Stage1 FV + Remote Management Unit Binary
 #########################################################
-0x00680400|0x0003f000
+#0x00680400|0x0003f000
+0x00560400|0x0006f000
 FV = EDKII_BOOT_STAGE1_IMAGE1
 
 #########################################################
 # Quark EDKII Stage1 Primary Image
 # Quark EDKII Stage1 contains: Stage1 FV + Remote Management Unit Binary
 #########################################################
-0x006C0400|0x0003f000
+0x005E0400|0x0006f000
 FV = EDKII_BOOT_STAGE1_IMAGE1
 
 #########################################################
@@ -233,10 +236,11 @@ gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareBase|gEfiMdeModulePkgTok
 # Quark EDKII Recovery Primary Image
 # Quark EDKII Recovery contains: Recovery Stage1 FV + Recovery Stage2 FV + Remote Management Unit Binary
 #########################################################################################
-0x00790400|0x00038000
+#0x00790400|0x00038000
+0x00750000|0x00058000
 FV = EDKII_RECOVERY_STAGE1_IMAGE1
 
-0x007C8400|0x00007000
+0x007A8000|0x00008000
 FV = EDKII_RECOVERY_STAGE2_IMAGE1
 
 #######################
@@ -345,7 +349,7 @@ READ_STATUS        = TRUE
 READ_LOCK_CAP      = TRUE
 READ_LOCK_STATUS   = TRUE
 
-!if $(CFG_SOURCE_DEBUG) == TRUE
+!if $(SOURCE_DEBUG_ENABLE) == TRUE
  INF  QuarkPlatformPkg/Override/UefiCpuPkg/Universal/Acpi/S3Resume2Pei/S3Resume2Pei.inf
 !endif
 FILE FV_IMAGE = 1E9D7604-EF45-46a0-BD8A-71AC78C17AC1 {
@@ -404,7 +408,7 @@ INF  MdeModulePkg/Universal/Disk/CdExpressPei/CdExpressPei.inf
 [FV.EDKII_BOOT_STAGE1_IMAGE1]
 !include QuarkPlatformPkgStage1.fdf.inc
 INF  IA32FamilyCpuBasePkg/PiSmmCommunication/PiSmmCommunicationPei.inf
-!if $(CFG_SOURCE_DEBUG) == TRUE
+!if $(SOURCE_DEBUG_ENABLE) == TRUE
 # nothing
 !else
  INF  QuarkPlatformPkg/Override/UefiCpuPkg/Universal/Acpi/S3Resume2Pei/S3Resume2Pei.inf
@@ -423,7 +427,7 @@ INF  IA32FamilyCpuBasePkg/PiSmmCommunication/PiSmmCommunicationPei.inf
 [FV.EDKII_BOOT_STAGE1_IMAGE2]
 !include QuarkPlatformPkgStage1.fdf.inc
 INF  IA32FamilyCpuBasePkg/PiSmmCommunication/PiSmmCommunicationPei.inf
-!if $(CFG_SOURCE_DEBUG) == TRUE
+!if $(SOURCE_DEBUG_ENABLE) == TRUE
 # nothing
 !else
  INF  QuarkPlatformPkg/Override/UefiCpuPkg/Universal/Acpi/S3Resume2Pei/S3Resume2Pei.inf

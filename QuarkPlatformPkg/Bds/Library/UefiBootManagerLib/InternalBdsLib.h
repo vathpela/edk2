@@ -119,7 +119,7 @@ CHAR16 *
 
   @return  Revision.
 **/
-#define KEY_OPTION_REVISION(KeyOption)           ((KeyOption)->KeyData & EFI_KEY_OPTION_REVISION_MASK)
+#define KEY_OPTION_REVISION(KeyOption)           ((KeyOption)->KeyData.Options.Revision)
 
 /**
   Get the actual number of entries in EFI_KEY_OPTION.Keys, from 0-3.
@@ -128,7 +128,7 @@ CHAR16 *
 
   @return  Actual number of entries in EFI_KEY_OPTION.Keys.
 **/
-#define KEY_OPTION_INPUT_KEY_COUNT(KeyOption)    (((KeyOption)->KeyData & EFI_KEY_OPTION_INPUT_KEY_COUNT_MASK) >> LowBitSet32 (EFI_KEY_OPTION_INPUT_KEY_COUNT_MASK))
+#define KEY_OPTION_INPUT_KEY_COUNT(KeyOption)    (((KeyOption)->KeyData.Options.InputKeyCount))
 
 /**
   Return whether the Shift key needs pressed.
@@ -138,7 +138,7 @@ CHAR16 *
   @retval  TRUE  Shift key needs pressed.
   @retval  FALSE Shift key needn't pressed.
 **/
-#define KEY_OPTION_SHIFT_PRESSED(KeyOption)      (BOOLEAN) (((KeyOption)->KeyData & EFI_KEY_OPTION_SHIFT_PRESSED_MASK) != 0)
+#define KEY_OPTION_SHIFT_PRESSED(KeyOption)      (BOOLEAN) (((KeyOption)->KeyData.Options.ShiftPressed) != 0)
 
 /**
   Return whether the Control key needs pressed.
@@ -148,7 +148,7 @@ CHAR16 *
   @retval  TRUE  Control key needs pressed.
   @retval  FALSE Control key needn't pressed.
 **/
-#define KEY_OPTION_CONTROL_PRESSED(KeyOption)    (BOOLEAN) (((KeyOption)->KeyData & EFI_KEY_OPTION_CONTROL_PRESSED_MASK) != 0)
+#define KEY_OPTION_CONTROL_PRESSED(KeyOption)    (BOOLEAN) (((KeyOption)->KeyData.Options.ControlPressed) != 0)
 
 /**
   Return whether the Alt key needs pressed.
@@ -158,7 +158,7 @@ CHAR16 *
   @retval  TRUE  Alt key needs pressed.
   @retval  FALSE Alt key needn't pressed.
 **/
-#define KEY_OPTION_ALT_PRESSED(KeyOption)        (BOOLEAN) (((KeyOption)->KeyData & EFI_KEY_OPTION_ALT_PRESSED_MASK) != 0)
+#define KEY_OPTION_ALT_PRESSED(KeyOption)        (BOOLEAN) (((KeyOption)->KeyData.Options.AltPressed) != 0)
 
 /**
   Return whether the Logo key needs pressed.
@@ -168,7 +168,7 @@ CHAR16 *
   @retval  TRUE  Logo key needs pressed.
   @retval  FALSE Logo key needn't pressed.
 **/
-#define KEY_OPTION_LOGO_PRESSED(KeyOption)       (BOOLEAN) (((KeyOption)->KeyData & EFI_KEY_OPTION_LOGO_PRESSED_MASK) != 0)
+#define KEY_OPTION_LOGO_PRESSED(KeyOption)       (BOOLEAN) (((KeyOption)->KeyData.Options.LogoPressed) != 0)
 
 /**
   Return whether the Menu key needs pressed.
@@ -178,7 +178,7 @@ CHAR16 *
   @retval  TRUE  Menu key needs pressed.
   @retval  FALSE Menu key needn't pressed.
 **/
-#define KEY_OPTION_MENU_PRESSED(KeyOption)       (BOOLEAN) (((KeyOption)->KeyData & EFI_KEY_OPTION_MENU_PRESSED_MASK) != 0)
+#define KEY_OPTION_MENU_PRESSED(KeyOption)       (BOOLEAN) (((KeyOption)->KeyData.Options.MenuPressed) != 0)
 
 /**
   Return whether the SysReq key needs pressed.
@@ -188,7 +188,7 @@ CHAR16 *
   @retval  TRUE  SysReq key needs pressed.
   @retval  FALSE SysReq key needn't pressed.
 **/
-#define KEY_OPTION_SYS_REQ_PRESSED(KeyOption)    (BOOLEAN) (((KeyOption)->KeyData & EFI_KEY_OPTION_SYS_REQ_PRESSED_MASK) != 0)
+#define KEY_OPTION_SYS_REQ_PRESSED(KeyOption)    (BOOLEAN) (((KeyOption)->KeyData.Options.SysReqPressed) != 0)
 
 #define HOTKEY_SIGNATURE SIGNATURE_32 ('b', 'm', 'h', 'k')
 typedef struct {

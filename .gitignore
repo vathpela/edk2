@@ -1,7 +1,9 @@
 Build
 tags
 Conf
+!*/Override/BaseTools/Conf
 Report.log
+CryptoPkg/Library/OpensslLib/openssl-0.9.8*
 *.d
 *.o
 *~

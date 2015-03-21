@@ -469,7 +469,7 @@ UsbSelectConfig (
   @param  UsbIf                 The interface to disconnect driver from.
 
 **/
-VOID
+EFI_STATUS
 UsbDisconnectDriver (
   IN USB_INTERFACE        *UsbIf
   )
@@ -481,6 +481,7 @@ UsbDisconnectDriver (
   // Release the hub if it's a hub controller, otherwise
   // disconnect the driver if it is managed by other drivers.
   //
+  Status = EFI_SUCCESS;
   if (UsbIf->IsHub) {
     UsbIf->HubApi->Release (UsbIf);
 
@@ -505,6 +506,8 @@ UsbDisconnectDriver (
 
     gBS->RaiseTPL (OldTpl);
   }
+
+  return Status;
 }
 
 
@@ -514,13 +517,15 @@ UsbDisconnectDriver (
   @param  Device                The USB device to remove configuration from.
 
 **/
-VOID
+EFI_STATUS
 UsbRemoveConfig (
   IN USB_DEVICE           *Device
   )
 {
   USB_INTERFACE           *UsbIf;
   UINTN                   Index;
+  EFI_STATUS              Status;
+  EFI_STATUS              ReturnStatus;
 
   //
   // Remove each interface of the device
@@ -533,13 +538,18 @@ UsbRemoveConfig (
       continue;
     }
 
-    UsbDisconnectDriver (UsbIf);
-    UsbFreeInterface (UsbIf);
-    Device->Interfaces[Index] = NULL;
+    Status = UsbDisconnectDriver (UsbIf);
+    if (!EFI_ERROR (Status)) {
+      UsbFreeInterface (UsbIf);
+      Device->Interfaces[Index] = NULL;
+    } else {
+      ReturnStatus = Status;
+    }
   }
 
   Device->ActiveConfig    = NULL;
   Device->NumOfInterface  = 0;
+  return ReturnStatus;
 }
 
 

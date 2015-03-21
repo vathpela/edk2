@@ -42,11 +42,14 @@ Abstract:
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <Common/UefiBaseTypes.h>
 
 #include "CommonLib.h"
 #include "ParseInf.h"
 #include "EfiUtilityMsgs.h"
+
+#define _MAX_PATH PATH_MAX
 
 #define UTILITY_NAME            "CapsuleCreate"
 #define UTILITY_MAJOR_VERSION   0

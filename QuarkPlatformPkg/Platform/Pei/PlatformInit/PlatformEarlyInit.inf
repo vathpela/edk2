@@ -231,10 +231,11 @@
   gQuarkPlatformTokenSpaceGuid.PcdFlashFvRecoveryBase
   gQuarkPlatformTokenSpaceGuid.PcdFlashFvMainSize
   gQuarkPlatformTokenSpaceGuid.PcdFlashFvMainBase
-  gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdBootState
-  gEfiCpuTokenSpaceGuid.PcdIsPowerOnReset
   gQuarkPlatformTokenSpaceGuid.PcdFlashFvPayloadBase
   gQuarkPlatformTokenSpaceGuid.PcdFlashFvPayloadSize
+
+  gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdBootState
+  gEfiCpuTokenSpaceGuid.PcdIsPowerOnReset
 
 [Depex]
   gEfiPeiReadOnlyVariable2PpiGuid AND gCltMemoryInitPpiGuid

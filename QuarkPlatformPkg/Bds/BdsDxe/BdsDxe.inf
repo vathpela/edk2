@@ -114,6 +114,7 @@
   gEfiSimpleTextInputExProtocolGuid             ## PROTOCOL CONSUMES
 
 [FeaturePcd]
+  gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultLangDeprecate    ## CONSUMES
   gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultLangDeprecate
   gEfiMdePkgTokenSpaceGuid.PcdUgaConsumeSupport
 

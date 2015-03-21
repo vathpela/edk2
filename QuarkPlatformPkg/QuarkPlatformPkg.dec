@@ -346,7 +346,19 @@
   gQuarkPlatformTokenSpaceGuid.PcdKekX509File |{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }|VOID*|0xA000017E
   gQuarkPlatformTokenSpaceGuid.PcdKekRsa2048File |{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }|VOID*|0xA000017F
 
+  # PCDs for Secure Boot.
+  gEfiSecurityPkgTokenSpaceGuid.PcdOptionRomImageVerificationPolicy|0x01|UINT32|0x00000001
+  gEfiSecurityPkgTokenSpaceGuid.PcdRemovableMediaImageVerificationPolicy|0x04|UINT32|0x00000002
+  gEfiSecurityPkgTokenSpaceGuid.PcdFixedMediaImageVerificationPolicy|0x04|UINT32|0x00000003
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpmPhysicalPresence|FALSE|BOOLEAN|0x00010001
+
 [PcdsPatchableInModule]
+  gQuarkPlatformTokenSpaceGuid.PcdFlashFvPayloadBase|0xFFC00400|UINT32|0xA00002A7
+  gQuarkPlatformTokenSpaceGuid.PcdFlashFvPayloadSize|0x000F0000|UINT32|0xA00002A8
+  gQuarkPlatformTokenSpaceGuid.PcdFlashFvMainBase|0xFFD00400|UINT32|0xA00002A9
+  gQuarkPlatformTokenSpaceGuid.PcdFlashFvMainSize|0x000D0000|UINT32|0xA00002AA
+  gQuarkPlatformTokenSpaceGuid.PcdFlashFvRecoveryBase|0xFFEC0400|UINT32|0xA00002AB
+  gQuarkPlatformTokenSpaceGuid.PcdFlashFvRecoverySize|0x0003F000|UINT32|0xA00002AC
 
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## This PCD points to the file name GUID of the BootManagerMenuApp
@@ -941,9 +953,4 @@
 
 [PcdsDynamic, PcdsDynamicEx]
 
-  gQuarkPlatformTokenSpaceGuid.PcdFlashFvPayloadBase|0xFFC00400|UINT32|0xA00002A7
-  gQuarkPlatformTokenSpaceGuid.PcdFlashFvPayloadSize|0x000F0000|UINT32|0xA00002A8
-  gQuarkPlatformTokenSpaceGuid.PcdFlashFvMainBase|0xFFD00400|UINT32|0xA00002A9
-  gQuarkPlatformTokenSpaceGuid.PcdFlashFvMainSize|0x000D0000|UINT32|0xA00002AA
-  gQuarkPlatformTokenSpaceGuid.PcdFlashFvRecoveryBase|0xFFEC0400|UINT32|0xA00002AB
-  gQuarkPlatformTokenSpaceGuid.PcdFlashFvRecoverySize|0x0003F000|UINT32|0xA00002AC
+

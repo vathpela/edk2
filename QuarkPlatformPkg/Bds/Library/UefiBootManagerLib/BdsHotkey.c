@@ -90,7 +90,7 @@ InitializeKeyFields (
     return EFI_INVALID_PARAMETER;
   }
 
-  KeyOption->KeyData = 0;
+  KeyOption->KeyData.PackedValue = 0;
 
   for (KeyCount = 0; KeyCount < sizeof (KeyOption->Keys) / sizeof (KeyOption->Keys[0]); KeyCount++) {
     Key = VA_ARG (Args, EFI_INPUT_KEY *);
@@ -109,7 +109,7 @@ InitializeKeyFields (
     //
     return EFI_INVALID_PARAMETER;
   } else {
-    KeyOption->KeyData |= KeyCount << LowBitSet32 (EFI_KEY_OPTION_INPUT_KEY_COUNT_MASK);
+    KeyOption->KeyData.Options.InputKeyCount |= KeyCount;
   }
 
   if ((Modifier & ~(EFI_BOOT_MANAGER_SHIFT_PRESSED
@@ -123,22 +123,22 @@ InitializeKeyFields (
   }
 
   if (BitSet (Modifier, EFI_BOOT_MANAGER_SHIFT_PRESSED)) {
-    KeyOption->KeyData |= EFI_KEY_OPTION_SHIFT_PRESSED_MASK;
+    KeyOption->KeyData.Options.ShiftPressed = 1;
   }
   if (BitSet (Modifier, EFI_BOOT_MANAGER_CONTROL_PRESSED)) {
-    KeyOption->KeyData |= EFI_KEY_OPTION_CONTROL_PRESSED_MASK;
+    KeyOption->KeyData.Options.ControlPressed = 1;
   }
   if (BitSet (Modifier, EFI_BOOT_MANAGER_ALT_PRESSED)) {
-    KeyOption->KeyData |= EFI_KEY_OPTION_ALT_PRESSED_MASK;
+    KeyOption->KeyData.Options.AltPressed = 1;
   }
   if (BitSet (Modifier, EFI_BOOT_MANAGER_LOGO_PRESSED)) {
-    KeyOption->KeyData |= EFI_KEY_OPTION_LOGO_PRESSED_MASK;
+    KeyOption->KeyData.Options.LogoPressed = 1;
   }
   if (BitSet (Modifier, EFI_BOOT_MANAGER_MENU_KEY_PRESSED)) {
-    KeyOption->KeyData |= EFI_KEY_OPTION_MENU_PRESSED_MASK;
+    KeyOption->KeyData.Options.MenuPressed = 1;
   }
   if (BitSet (Modifier, EFI_BOOT_MANAGER_SYS_REQ_PRESSED)) {
-    KeyOption->KeyData |= EFI_KEY_OPTION_SYS_REQ_PRESSED_MASK;
+    KeyOption->KeyData.Options.SysReqPressed = 1;
   }
 
   return EFI_SUCCESS;
@@ -839,7 +839,7 @@ EfiBootManagerAddKeyOptionVariable (
   //
   KeyOptions = EfiBootManagerGetKeyOptions (&KeyOptionCount);
   for (Index = 0; Index < KeyOptionCount; Index++) {
-    if ((KeyOptions[Index].KeyData == KeyOption.KeyData) &&
+    if ((KeyOptions[Index].KeyData.PackedValue == KeyOption.KeyData.PackedValue) &&
       (CompareMem (
          KeyOptions[Index].Keys, KeyOption.Keys,
          KEY_OPTION_INPUT_KEY_COUNT (&KeyOption) * sizeof (EFI_INPUT_KEY)
@@ -967,7 +967,7 @@ EfiBootManagerDeleteKeyOptionVariable (
   Status     = EFI_NOT_FOUND;
   KeyOptions = EfiBootManagerGetKeyOptions (&KeyOptionCount);
   for (Index = 0; Index < KeyOptionCount; Index++) {
-    if ((KeyOptions[Index].KeyData == KeyOption.KeyData) &&
+    if ((KeyOptions[Index].KeyData.PackedValue == KeyOption.KeyData.PackedValue) &&
         (CompareMem (
            KeyOptions[Index].Keys, KeyOption.Keys,
            KEY_OPTION_INPUT_KEY_COUNT (&KeyOption)* sizeof (EFI_INPUT_KEY)) == 0)

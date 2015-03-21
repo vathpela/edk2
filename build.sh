@@ -18,16 +18,20 @@ if [ ! -d openssl-0.9.8ze ]; then
     sh ./Install.sh
 fi
 popd
-#
-# Need to apply patch for generating correct hashes on IA32
-if [ ! -f SecurityPkg/Library/DxeImageVerificationLib/DxeImageVerificationLib.c.orig ]; then
-    patch -p1 -b < DxeImageVerificationLib-fix.diff
-fi
 # now initialise the edk2environment using the QuarkPlatformPkg Overrides
 #cp .module/edk2/edksetup.sh .
 mkdir Conf
 . ./edksetup.sh
-cp QuarkPlatformPkg/Override/BaseTools/Conf/build_rule.template Conf/build_rule.txt
+
+# parallel builds
+SMP_MFLAGS="-j4"
+if [[ x"$SMP_MFLAGS" = x-j* ]]; then
+        CC_FLAGS="$CC_FLAGS -n ${SMP_MFLAGS#-j}"
+elif [ -n "%{?jobs}" ]; then
+        CC_FLAGS="$CC_FLAGS -n %{?jobs}"
+fi
+
+#cp QuarkPlatformPkg/Override/BaseTools/Conf/build_rule.template Conf/build_rule.txt
 cp QuarkPlatformPkg/Override/BaseTools/Conf/tools_def.template Conf/tools_def.txt
 make -C BaseTools
 . ./edksetup.sh
@@ -35,13 +39,15 @@ make -C BaseTools
 # alternatively, you can just comment this out and run quarkbuild.sh but
 # it does a lot of irrelevant other stuff
 type=DEBUG
+#type=RELEASE
 flags="-DDEBUG_PRINT_ERROR_LEVEL=0x80000042 -DDEBUG_PROPERTY_MASK=0x27"
 #type=RELEASE
 #flags="-DDEBUG_PRINT_ERROR_LEVEL=0x80000000 -DDEBUG_PROPERTY_MASK=0x23"
 ##
 # You probably have gcc 4.8 or 4.9, but this doesn't seem to matter
-toolchain=GCC47
-build -a IA32 -b ${type} -y Report.log -t ${toolchain} -p QuarkPlatformPkg/QuarkPlatformPkg.dsc ${flags} -DSECURE_BOOT || exit 1
+toolchain=GCC49
+#build -w -a IA32 -b ${type} -y Report.log -t ${toolchain} -p QuarkPlatformPkg/QuarkPlatformPkg.dsc ${flags} -DSECURE_BOOT -DSECURE_BOOT_ENABLE || exit 1
+build -w -a IA32 -b ${type} -y Report.log -t ${toolchain} -p QuarkPlatformPkg/QuarkPlatformPkg.dsc ${flags} || exit 1
 # finally, the spi flash tools are going to need the capsule creator, so build it
 make -C QuarkPlatformPkg/Tools/CapsuleCreate
 #

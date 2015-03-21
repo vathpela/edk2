@@ -769,3 +769,46 @@ SmBusWriteBlock (
            );
 }
 
+/**
+  Executes an SMBUS block process call command.
+
+  Executes an SMBUS block process call command on the SMBUS device specified by SmBusAddress.
+  The SMBUS slave address, SMBUS command, and SMBUS length fields of SmBusAddress are required.
+  Bytes are written to the SMBUS from WriteBuffer.  Bytes are then read from the SMBUS into ReadBuffer.
+  If Status is not NULL, then the status of the executed command is returned in Status.
+  It is the caller's responsibility to make sure ReadBuffer is large enough for the total number of bytes read.
+  SMBUS supports a maximum transfer size of 32 bytes, so Buffer does not need to be any larger than 32 bytes.
+  If Length in SmBusAddress is zero or greater than 32, then ASSERT().
+  If WriteBuffer is NULL, then ASSERT().
+  If ReadBuffer is NULL, then ASSERT().
+  If any reserved bits of SmBusAddress are set, then ASSERT().
+
+  @param  SmBusAddress    Address that encodes the SMBUS Slave Address,
+                          SMBUS Command, SMBUS Data Length, and PEC.
+  @param  WriteBuffer     Pointer to the buffer of bytes to write to the SMBUS.
+  @param  ReadBuffer      Pointer to the buffer of bytes to read from the SMBUS.
+  @param  Status          Return status for the executed command.
+                          This is an optional parameter and may be NULL.
+
+  @return The number of bytes written.
+
+**/
+UINTN
+EFIAPI
+SmBusBlockProcessCall (
+  IN  UINTN          SmBusAddress,
+  IN  VOID           *WriteBuffer,
+  OUT VOID           *ReadBuffer,
+  OUT RETURN_STATUS  *Status        OPTIONAL
+  )
+{
+  ASSERT (WriteBuffer != NULL);
+  ASSERT (ReadBuffer  != NULL);
+  ASSERT (SMBUS_LIB_LENGTH (SmBusAddress) >= 1);
+  ASSERT (SMBUS_LIB_LENGTH (SmBusAddress) <= 32);
+  ASSERT (SMBUS_LIB_RESERVED (SmBusAddress) == 0);
+  if (Status != NULL) {
+    *Status = RETURN_UNSUPPORTED;
+  }
+  return 0;
+}
