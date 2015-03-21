@@ -7,13 +7,13 @@ git submodule init
 git submodule update
 # add the external crypto libraries
 pushd CryptoPkg/Library/OpensslLib
-if [ ! -f openssl-0.9.8w.tar.gz ]; then
-    wget http://www.openssl.org/source/old/0.9.x/openssl-0.9.8w.tar.gz
+if [ ! -f openssl-0.9.8ze.tar.gz ]; then
+    wget http://www.openssl.org/source/old/0.9.x/openssl-0.9.8ze.tar.gz
 fi
-if [ ! -d openssl-0.9.8w ]; then
-    tar xfz openssl-0.9.8w.tar.gz
-    cd openssl-0.9.8w
-    patch -b -p0 <../EDKII_openssl-0.9.8w.patch
+if [ ! -d openssl-0.9.8ze ]; then
+    tar xfz openssl-0.9.8ze.tar.gz
+    cd openssl-0.9.8ze
+    patch -b -p0 <../EDKII_openssl-0.9.8ze.patch
     cd ..
     sh ./Install.sh
 fi
@@ -24,7 +24,7 @@ if [ ! -f SecurityPkg/Library/DxeImageVerificationLib/DxeImageVerificationLib.c.
     patch -p1 -b < DxeImageVerificationLib-fix.diff
 fi
 # now initialise the edk2environment using the QuarkPlatformPkg Overrides
-cp .module/edk2/edksetup.sh .
+#cp .module/edk2/edksetup.sh .
 mkdir Conf
 . ./edksetup.sh
 cp QuarkPlatformPkg/Override/BaseTools/Conf/build_rule.template Conf/build_rule.txt
