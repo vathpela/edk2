@@ -45,7 +45,7 @@
   MdeModulePkg/MdeModulePkg.dec
 
 
-[LibraryClasses]
+[LibraryClasses.IA32.PEIM]
   HobLib
   BaseMemoryLib
   PeiServicesLib

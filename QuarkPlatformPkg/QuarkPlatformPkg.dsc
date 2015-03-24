@@ -60,6 +60,11 @@
 
   FLASH_DEFINITION                    = $(PLATFORM_PKG)/QuarkPlatformPkg.fdf
 
+
+!if $(SOURCE_DEBUG_ENABLE) == TRUE
+  !include SourceLevelDebugPkg/SourceLevelDebugPkg.dsc
+!endif
+
 ################################################################################
 #
 # SKU Identification section - list of all SKU IDs supported by this
@@ -221,6 +226,9 @@
   PerformanceLib|MdeModulePkg/Library/PeiPerformanceLib/PeiPerformanceLib.inf
   SwBpeLib|QuarkPlatformPkg/Library/SwBpeLib/SwBpeLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/PeiCryptLib.inf
+!if $(SOURCE_DEBUG_ENABLE) == TRUE
+  DebugAgentLib|SourceLevelDebugPkg/Library/DebugAgent/SecPeiDebugAgentLib.inf
+!endif
 
   #
   # Platform SEC and PEI phase common.
@@ -242,6 +250,8 @@
 !endif
 !if $(SOURCE_DEBUG_ENABLE) == TRUE
   DebugAgentLib|SourceLevelDebugPkg/Library/DebugAgent/SecPeiDebugAgentLib.inf
+  MemoryAllocationLib|MdePkg/Library/PeiMemoryAllocationLib/PeiMemoryAllocationLib.inf
+  HobLib|MdePkg/Library/PeiHobLib/PeiHobLib.inf
 !endif
 
 [LibraryClasses.IA32]
@@ -792,7 +802,7 @@
 !endif
 !if $(SOURCE_DEBUG_ENABLE) == TRUE
   #DebugAgentLib|SourceLevelDebugPkg/Library/DebugAgent/SecPeiDebugAgentLib.inf
-  SourceLevelDebugPkg/DebugAgentPei/DebugAgentPei.inf
+  #SourceLevelDebugPkg/DebugAgentPei/DebugAgentPei.inf
 !endif
 
 ###################################################################################################
