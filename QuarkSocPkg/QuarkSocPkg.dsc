@@ -164,6 +164,7 @@
   ReportStatusCodeLib|MdePkg/Library/BaseReportStatusCodeLibNull/BaseReportStatusCodeLibNull.inf
   DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
   PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
+  HobLib|MdePkg/Library/PeiHobLib/PeiHobLib.inf
 
 [LibraryClasses.IA32]
   #

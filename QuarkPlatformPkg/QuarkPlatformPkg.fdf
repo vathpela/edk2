@@ -240,7 +240,7 @@ gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareBase|gEfiMdeModulePkgTok
 0x00750000|0x00058000
 FV = EDKII_RECOVERY_STAGE1_IMAGE1
 
-0x007A8000|0x00008000
+0x007A8000|0x0000f000
 FV = EDKII_RECOVERY_STAGE2_IMAGE1
 
 #######################
