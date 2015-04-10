@@ -617,6 +617,12 @@
   # @Prompt Enable S3 performance data support.
   gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwarePerformanceDataTableS3Support|TRUE|BOOLEAN|0x00010064
 
+  ## Indicates if the platform can support Capsule Result Variables.
+  #   TRUE  - Supports update capsule across a system reset.
+  #   FALSE - Does not support update capsule across a system reset.
+  # @Prompt Enable update capsule capsule result variables.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSupportCapsuleResultVar|FALSE|BOOLEAN|0x00010071
+
 [PcdsFeatureFlag.IA32, PcdsFeatureFlag.X64]
   ## Indicates if DxeIpl should switch to long mode to enter DXE phase.
   #  It is assumed that 64-bit DxeCore is built in firmware if it is true; otherwise 32-bit DxeCore
