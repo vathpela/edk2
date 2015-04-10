@@ -412,6 +412,9 @@ BdsFormalizeEfiGlobalVariable (
   //
   OsIndicationSupport = EFI_OS_INDICATIONS_BOOT_TO_FW_UI \
                       | EFI_OS_INDICATIONS_FMP_CAPSULE_SUPPORTED;
+  if (FeaturePcdGet(PcdSupportCapsuleResultVar)) {
+    OsIndicationSupport |= EFI_OS_INDICATIONS_CAPSULE_RESULT_VAR_SUPPORTED;
+  }
 
   BdsDxeSetVariableAndReportStatusCodeOnError (
     L"OsIndicationsSupported",

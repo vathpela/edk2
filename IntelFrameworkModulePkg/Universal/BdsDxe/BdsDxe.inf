@@ -181,6 +181,7 @@
   gEdkiiVariableLockProtocolGuid                ## SOMETIMES_CONSUMES
 
 [FeaturePcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSupportCapsuleResultVar       ## CONSUMES
   gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultLangDeprecate    ## CONSUMES
   gEfiMdePkgTokenSpaceGuid.PcdUgaConsumeSupport                   ## CONSUMES
   gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdBootlogoOnlyEnable ## CONSUMES
