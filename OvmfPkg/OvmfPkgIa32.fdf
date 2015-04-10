@@ -240,6 +240,9 @@ INF  OvmfPkg/XenPvBlkDxe/XenPvBlkDxe.inf
 
 INF  MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
 INF  MdeModulePkg/Universal/MonotonicCounterRuntimeDxe/MonotonicCounterRuntimeDxe.inf
+!if $(FAKE_CAPSULE_ENABLE) == TRUE
+  INF  MdeModulePkg/Universal/FakeEsrtDxe/FakeEsrtDxe.inf
+!endif
 INF  MdeModulePkg/Universal/CapsuleRuntimeDxe/CapsuleRuntimeDxe.inf
 INF  MdeModulePkg/Universal/Console/ConPlatformDxe/ConPlatformDxe.inf
 INF  MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe.inf
