@@ -13,6 +13,22 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
 #include "Bds.h"
 
+///
+/// The EFI System Table entry must point to an array of capsules
+/// that contain the same CapsuleGuid value. The array must be
+/// prefixed by a UINT32 that represents the size of the array of capsules.
+///
+typedef struct {
+  ///
+  /// the size of the array of capsules.
+  ///
+  UINT32    CapsuleArrayNumber;
+  ///
+  /// Point to an array of capsules that contain the same CapsuleGuid value.
+  ///
+  VOID*     CapsulePtr[1];
+} EFI_CAPSULE_ARRAY_HEADER;
+
 /**
 
   This routine is called to see if there are any capsules we need to process.
@@ -45,7 +61,7 @@ BdsProcessCapsules (
   UINT32                      Size;
   UINT32                      CapsuleNumber;
   UINT32                      CapsuleTotalNumber;
-  EFI_CAPSULE_TABLE           *CapsuleTable;
+  EFI_CAPSULE_ARRAY_HEADER    *CapsuleTable;
   UINT32                      Index;
   UINT32                      CacheIndex;
   UINT32                      CacheNumber;
@@ -172,7 +188,7 @@ BdsProcessCapsules (
       }
     }
     if (CapsuleNumber != 0) {
-      Size = sizeof(EFI_CAPSULE_TABLE) + (CapsuleNumber - 1) * sizeof(VOID*);  
+      Size = sizeof(EFI_CAPSULE_ARRAY_HEADER) + (CapsuleNumber - 1) * sizeof(VOID*);
       CapsuleTable = AllocateRuntimePool (Size);
       ASSERT (CapsuleTable != NULL);
       CapsuleTable->CapsuleArrayNumber =  CapsuleNumber;
