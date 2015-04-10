@@ -195,7 +195,12 @@
 [LibraryClasses.common.DXE_RUNTIME_DRIVER]
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
   ReportStatusCodeLib|IntelFrameworkModulePkg/Library/DxeReportStatusCodeLibFramework/DxeReportStatusCodeLib.inf
+!if $(FAKE_CAPSULE_ENABLE) == TRUE
+  FakeCapsuleBase|MdeModulePkg/Library/FakeCapsuleLib/FakeCapsuleBase.inf
+  CapsuleLib|MdeModulePkg/Library/FakeCapsuleLib/FakeCapsuleLib.inf
+!else
   CapsuleLib|MdeModulePkg/Library/DxeCapsuleLibNull/DxeCapsuleLibNull.inf
+!endif
 
 [LibraryClasses.ARM]
   #
@@ -249,6 +254,10 @@
   gEmbeddedTokenSpaceGuid.PcdPrePiProduceMemoryTypeInformationHob|TRUE
 
   gEfiMdeModulePkgTokenSpaceGuid.PcdTurnOffUsbLegacySupport|TRUE
+
+!if $(FAKE_CAPSULE_ENABLE) == TRUE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSupportCapsuleResultVar|TRUE
+!endif
 
 [PcdsFixedAtBuild.common]
   gArmPlatformTokenSpaceGuid.PcdFirmwareVendor|"ARM Virtualization Platform"
