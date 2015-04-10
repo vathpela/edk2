@@ -1628,22 +1628,6 @@ typedef struct {
   UINT32            CapsuleImageSize;
 } EFI_CAPSULE_HEADER;
 
-///
-/// The EFI System Table entry must point to an array of capsules
-/// that contain the same CapsuleGuid value. The array must be
-/// prefixed by a UINT32 that represents the size of the array of capsules.
-///
-typedef struct {
-  ///
-  /// the size of the array of capsules.
-  ///
-  UINT32   CapsuleArrayNumber;
-  ///
-  /// Point to an array of capsules that contain the same CapsuleGuid value.
-  ///
-  VOID*    CapsulePtr[1];
-} EFI_CAPSULE_TABLE;
-
 #define CAPSULE_FLAGS_PERSIST_ACROSS_RESET          0x00010000
 #define CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE         0x00020000
 #define CAPSULE_FLAGS_INITIATE_RESET                0x00040000
