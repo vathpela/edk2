@@ -53,6 +53,8 @@ SupportCapsuleImage (
   UINT32                    VariableAttributes = 0;
 
   DEBUG ((EFI_D_VERBOSE, "%a\n", __FUNCTION__));
+  DEBUG ((EFI_D_INFO, "%a\n", __FUNCTION__));
+  DEBUG ((EFI_D_ERROR, "%a\n", __FUNCTION__));
   if (CapsuleHeader->CapsuleImageSize - CapsuleHeader->HeaderSize
       != sizeof (EFI_SYSTEM_RESOURCE_ENTRY)) {
     DEBUG ((EFI_D_ERROR,
@@ -136,6 +138,8 @@ GetCapsuleNumber(UINT16 *CapsuleNum, UINT16 Limit)
   UINTN         VariableNumber = 0;
   UINTN         i;
 
+  DEBUG ((EFI_D_ERROR, "%a\n", __FUNCTION__));
+  DEBUG ((EFI_D_INFO, "%a\n", __FUNCTION__));
   if (!CapsuleNum) {
     return EFI_INVALID_PARAMETER;
   }
@@ -196,6 +200,9 @@ FindCapsuleReturnVarName (
   UINTN         NEntries = 0;
   UINT16        VariableNumber = 0;
 
+  DEBUG ((EFI_D_INFO, "%a\n", __FUNCTION__));
+  DEBUG ((EFI_D_ERROR, "%a\n", __FUNCTION__));
+
   Status = FakeCapsuleCountEntries (&NEntries);
   if (EFI_ERROR (Status)) {
     DEBUG ((EFI_D_ERROR, "%a:%d: FakeCapsuleCountEntries(): %r\n",
@@ -243,6 +250,8 @@ ReportStatus (
   EFI_CAPSULE_RESULT_VARIABLE_HEADER  Result;
 
   DEBUG ((EFI_D_VERBOSE, "%a\n", __FUNCTION__));
+  DEBUG ((EFI_D_INFO, "%a\n", __FUNCTION__));
+  DEBUG ((EFI_D_ERROR, "%a\n", __FUNCTION__));
 
   if (VarPayload) {
     VarPayload->LastAttemptStatus = LastAttemptStatus;
@@ -299,6 +308,8 @@ ProcessCapsuleImage (
   ESRT_OPERATION_PROTOCOL   *EsrtOps = NULL;
   CHAR16                    *RetVarName = NULL;
 
+  DEBUG ((EFI_D_VERBOSE, "%a\n", __FUNCTION__));
+  DEBUG ((EFI_D_ERROR, "%a\n", __FUNCTION__));
   DEBUG ((EFI_D_INFO, "%a\n", __FUNCTION__));
   CapPayload = (EFI_SYSTEM_RESOURCE_ENTRY *)
     ((UINT8 *)CapsuleHeader + CapsuleHeader->HeaderSize);

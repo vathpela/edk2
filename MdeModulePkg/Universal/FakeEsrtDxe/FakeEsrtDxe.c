@@ -56,6 +56,8 @@ FakeEsrtGetFwEntryByGuid (
   EFI_GUID      VendorGuid = { 0, };
 
   DEBUG ((EFI_D_VERBOSE, "%a\n", __FUNCTION__));
+  DEBUG ((EFI_D_ERROR, "%a\n", __FUNCTION__));
+  DEBUG ((EFI_D_INFO, "%a\n", __FUNCTION__));
 
   Status = FindEsrtVariableByCapsuleGuid (&FwEntryGuid,
                                           &VendorGuid,
@@ -88,6 +90,8 @@ FakeEsrtUpdateConfigTableEntry (
   EFI_SYSTEM_RESOURCE_ENTRY *Entry;
   UINTN                     i;
 
+  DEBUG ((EFI_D_INFO, "%a\n", __FUNCTION__));
+  DEBUG ((EFI_D_ERROR, "%a\n", __FUNCTION__));
   if (GlobalEsrt == NULL ||
       GlobalEsrtSize <= sizeof (EFI_SYSTEM_RESOURCE_TABLE)) {
     return EFI_NOT_FOUND;
@@ -126,6 +130,7 @@ FakeEsrtUpdateTableEntryByGuid (
   UINT16        VariableNumber = 0;
 
   DEBUG ((EFI_D_INFO, "%a\n", __FUNCTION__));
+  DEBUG ((EFI_D_ERROR, "%a\n", __FUNCTION__));
   Status = FakeCapsuleCountEntries(&NEntries);
   if (EFI_ERROR (Status)) {
     DEBUG ((EFI_D_ERROR, "%a:%d FakeCapsuleCountEntries(): %r\n",
@@ -211,6 +216,8 @@ FakeEsrtPopulateTable (
   VOID                      *Esre;
 
   DEBUG ((EFI_D_VERBOSE, "%a\n", __FUNCTION__));
+  DEBUG ((EFI_D_INFO, "%a\n", __FUNCTION__));
+  DEBUG ((EFI_D_ERROR, "%a\n", __FUNCTION__));
   Status = FakeCapsuleCountEntries(&NEntries);
   if (EFI_ERROR (Status)) {
     return Status;
@@ -339,7 +346,9 @@ FakeEsrtDxeEntryPoint (
 {
   RETURN_STATUS Status;
 
+  DEBUG ((EFI_D_ERROR, "%a\n", __FUNCTION__));
   DEBUG ((EFI_D_VERBOSE, "%a\n", __FUNCTION__));
+  DEBUG ((EFI_D_INFO, "%a\n", __FUNCTION__));
 
   /* Ideally this would be called by some /consumer/ of
    * gEfiEsrtOperationProtocolGuid, but there's not much of that existing

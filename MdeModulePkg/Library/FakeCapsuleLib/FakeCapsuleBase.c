@@ -69,6 +69,7 @@ FindEsrtVariableByCapsuleGuid (
 
   if (!*VariableName) {
     VariableNameBufferSize = sizeof (CHAR16);
+    DEBUG (( EFI_D_ERROR, "%a:%d Allocating *VariableName\n", __FUNCTION__, __LINE__));
     *VariableName = AllocateZeroPool (VariableNameBufferSize);
     if (!*VariableName) {
       return EFI_OUT_OF_RESOURCES;
@@ -89,6 +90,7 @@ FindEsrtVariableByCapsuleGuid (
                                        VendorGuid
                                        );
     if (Status == EFI_BUFFER_TOO_SMALL) {
+      DEBUG (( EFI_D_ERROR, "%a:%d Reallocating *VariableName\n", __FUNCTION__, __LINE__));
       *VariableName = ReallocatePool (VariableNameBufferSize, VariableNameSize,
                                       *VariableName);
       VariableNameBufferSize = VariableNameSize;
@@ -129,6 +131,7 @@ FindEsrtVariableByCapsuleGuid (
         continue;
       }
 
+      DEBUG (( EFI_D_ERROR, "%a:%d Reallocating *VariableData\n", __FUNCTION__, __LINE__));
       *VariableData = ReallocatePool (VariableDataBufferSize, *VariableDataSize,
                                       *VariableData);
       VariableDataBufferSize = *VariableDataSize;
@@ -165,11 +168,13 @@ FindEsrtVariableByCapsuleGuid (
               Status));
     }
     if (*VariableName != NULL) {
+      DEBUG (( EFI_D_ERROR, "%a:%d Freeing *VariableName\n", __FUNCTION__, __LINE__));
       FreePool (*VariableName);
       *VariableName = NULL;
     }
 
     if (*VariableData != NULL) {
+      DEBUG (( EFI_D_ERROR, "%a:%d Freeing *VariableData\n", __FUNCTION__, __LINE__));
       FreePool (*VariableData);
       *VariableData = NULL;
       *VariableDataSize = 0;
@@ -206,6 +211,7 @@ FindFreeNumberName (
   UINTN         VariableDataSize = 0;
 
   DEBUG ((EFI_D_VERBOSE, "%a\n", __FUNCTION__));
+  DEBUG ((EFI_D_ERROR, "%a\n", __FUNCTION__));
 
   if (!Number || !Prefix || !VendorGuid) {
     return EFI_INVALID_PARAMETER;
@@ -268,6 +274,7 @@ FakeCapsuleCountEntries(
   UINTN                     VariableDataSize;
   UINT32                    VariableAttributes = 0;
 
+  DEBUG ((EFI_D_ERROR, "%a\n", __FUNCTION__));
   DEBUG ((EFI_D_VERBOSE, "%a\n", __FUNCTION__));
   if (!NEntries) {
     return EFI_INVALID_PARAMETER;
@@ -306,9 +313,11 @@ FakeCapsuleCountEntries(
   }
 
   if (VariableName) {
+    DEBUG (( EFI_D_ERROR, "%a:%d Freeing VariableName\n", __FUNCTION__, __LINE__));
     FreePool (VariableName);
   }
   if (VariableData) {
+    DEBUG (( EFI_D_ERROR, "%a:%d Freeing VariableData\n", __FUNCTION__, __LINE__));
     FreePool (VariableData);
   }
 
