@@ -1,8 +1,7 @@
 /**************************************************************************;
 ;*                                                                        *;
-;*    Intel Confidential                                                  *;
 ;*                                                                        *;
-;*    Intel Corporation - ACPI Reference Code for the Valleyview          *;
+;*    Intel Corporation - ACPI Reference Code for the Baytrail            *;
 ;*    Family of Customer Reference Boards.                                *;
 ;*                                                                        *;
 ;*                                                                        *;
@@ -33,18 +32,6 @@ Scope(\_TZ)
 
   ThermalZone(TZ01)
   {
-    // Return the temperature at which the OS initiates Active Cooling.
-
-    Method(_AC0,0,Serialized)
-    {
-      if(LEqual(ACTT, 0))
-      {
-        Store( 50, ACTT)
-      }
-      Return(Add(2732,Multiply(ACTT,10)))
-    }
-
-
     // Return the temperature at which the OS must perform a Critcal
     // Shutdown.
 

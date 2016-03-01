@@ -1,6 +1,5 @@
 /**************************************************************************;
 ;*                                                                        *;
-;*    Intel Confidential                                                  *;
 ;*                                                                        *;
 ;*    Intel Corporation - ACPI Reference Code for the Haswell             *;
 ;*    Family of Customer Reference Boards.                                *;

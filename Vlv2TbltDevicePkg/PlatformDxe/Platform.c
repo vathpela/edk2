@@ -82,7 +82,7 @@ UINT32 mSubsystemVidDid;
 UINT32 mSubsystemAudioVidDid;
 
 UINTN   mPciLanCount = 0;
-VOID    *mPciLanInfo;
+VOID    *mPciLanInfo = NULL;
 UINTN   SpiBase;
 
 static EFI_SPEAKER_IF_PROTOCOL mSpeakerInterface = {
@@ -612,7 +612,7 @@ InitializePlatform (
 {
   EFI_STATUS                          Status;
   UINTN                               VarSize;
-  EFI_HANDLE                          Handle;
+  EFI_HANDLE                          Handle = NULL;
 
   EFI_EVENT                           mEfiExitBootServicesEvent;
 
@@ -938,15 +938,21 @@ ReadyToBootFunction (
   //
   // save LAN info to a variable
   //
-  gRT->SetVariable (
-         L"PciLanInfo",
-         &gEfiPciLanInfoGuid,
-         EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-         mPciLanCount * sizeof(PCI_LAN_INFO),
-         mPciLanInfo
-         );
+  if (NULL != mPciLanInfo) {
+    gRT->SetVariable (
+           L"PciLanInfo",
+           &gEfiPciLanInfoGuid,
+           EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+           mPciLanCount * sizeof(PCI_LAN_INFO),
+           mPciLanInfo
+           );
+  }
 
-  gBS->FreePool (mPciLanInfo);
+  if (NULL != mPciLanInfo) {
+    gBS->FreePool (mPciLanInfo);
+    mPciLanInfo = NULL;
+  }
+  
 
   //
   // Handle ACPI OS TPM requests here

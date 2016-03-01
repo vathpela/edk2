@@ -18,7 +18,7 @@ Module Name:
 
 Abstract:
 
-  IGD OpRegion/Software SCI Reference Code for the ValleyView Family.
+  IGD OpRegion/Software SCI Reference Code for the Baytrail Family.
   This file contains Get BIOS Data Area funciton support for
   the Integrated Graphics Device (IGD) OpRegion/Software SCI mechanism.
 

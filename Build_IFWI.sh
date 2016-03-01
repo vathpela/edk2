@@ -5,20 +5,11 @@ function Usage() {
   echo
   echo "Script to build BIOS firmware and stitch the entire IFWI."
   echo
-  echo "Usage: Build_IFWI.bat [options]  PlatformType  BuildTarget  [IFWI Suffix]"
+  echo "Usage: Build_IFWI.bat   PlatformType  BuildTarget  "
   echo
-  echo "       /q     Quiet mode. Only display Fatal Errors (slightly faster)"
-  echo "       /l     Log a copy of the build output to EDK2.log"
-  echo "       /c     CleanAll before building"
-  echo "       /ecp   ECP build enable"
-  echo "       /x64   Set Arch to X64  (default: IA32)"
-  echo "       /nG    Do NOT update the GOP driver when stitching (ie keep src version)"
-  echo "       /nM    Do NOT update the Microcode when stitching  (ie keep src version)"
-  echo "       /nB    Do NOT create a backup of BIOS.ROM before modifying it for Stitch"
   echo 
-  echo "       Platform Types:   ALPV, BBAY, BLAK, FFD8, BYTI, CVHS, BYTC"
+  echo "       Platform Types:   MNW2"
   echo "       Build Targets:    Release, Debug"
-  echo "       IFWI Suffix:      Suffix to append to end of IFWI filename (default: MM_DD_YYYY)"
   echo
   echo "       See  Stitch/Stitch_Config.txt  for additional stitching settings."
   echo

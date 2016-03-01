@@ -1,8 +1,7 @@
 /************************************************************************************;
 ;*                                                                                  *;
-;*    Intel Confidential                                                            *;
 ;*                                                                                  *;
-;*    Intel Corporation - ACPI Reference Code for the Valleyview                    *;
+;*    Intel Corporation - ACPI Reference Code for the Baytrail                      *;
 ;*    Family of Customer Reference Boards.                                          *;
 ;*                                                                                  *;
 ;*    MPG-MSAE                                                                      *;

@@ -1307,6 +1307,8 @@ typedef struct {
   UINT8  LpssHsuart1FlowControlEnabled;
 
   UINT8   SdCardRemovable; // ACPI reporting MMC/SD media as: removable/non-removable
+  
+  UINT8   GpioWakeCapability;
 
 } SYSTEM_CONFIGURATION;
 #pragma pack()
