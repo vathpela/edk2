@@ -29,7 +29,6 @@ SUPPORT_OBJS = set.obj
 
 $(EDK_TOOLS_PATH)\Bin\Win32\antlr.exe: $(ANTLR_OBJS) $(SUPPORT_OBJS)
     $(CC) $(CFLAGS) -Feantlr.exe $(ANTLR_OBJS) $(SUPPORT_OBJS)
-    -@if not exist $(EDK_TOOLS_PATH)\Bin\Win32 mkdir $(EDK_TOOLS_PATH)\Bin\Win32
 		copy antlr.exe $(EDK_TOOLS_PATH)\Bin\Win32
 
 

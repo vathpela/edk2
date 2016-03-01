@@ -1279,46 +1279,40 @@ DetectMediaParsingSenseKeys (
     ScsiDiskDevice->BlkIo.Media->MediaPresent = FALSE;
     ScsiDiskDevice->BlkIo.Media->LastBlock    = 0;
     *Action = ACTION_NO_ACTION;
-    DEBUG ((EFI_D_VERBOSE, "ScsiDisk: ScsiDiskIsNoMedia\n"));
     return EFI_SUCCESS;
   }
 
   if (ScsiDiskIsMediaChange (SenseData, NumberOfSenseKeys)) {
     ScsiDiskDevice->BlkIo.Media->MediaId++;
-    DEBUG ((EFI_D_VERBOSE, "ScsiDisk: ScsiDiskIsMediaChange!\n"));
     return EFI_SUCCESS;
   }
 
   if (ScsiDiskIsResetBefore (SenseData, NumberOfSenseKeys)) {
     *Action = ACTION_RETRY_COMMAND_LATER;
-    DEBUG ((EFI_D_VERBOSE, "ScsiDisk: ScsiDiskIsResetBefore!\n"));
     return EFI_SUCCESS;
   }
 
   if (ScsiDiskIsMediaError (SenseData, NumberOfSenseKeys)) {
-    DEBUG ((EFI_D_VERBOSE, "ScsiDisk: ScsiDiskIsMediaError\n"));
-    *Action = ACTION_RETRY_WITH_BACKOFF_ALGO;
+    ScsiDiskDevice->BlkIo.Media->MediaPresent = FALSE;
+    ScsiDiskDevice->BlkIo.Media->LastBlock    = 0;
+    *Action = ACTION_NO_ACTION;
     return EFI_DEVICE_ERROR;
   }
 
   if (ScsiDiskIsHardwareError (SenseData, NumberOfSenseKeys)) {
-    DEBUG ((EFI_D_VERBOSE, "ScsiDisk: ScsiDiskIsHardwareError\n"));
-    *Action = ACTION_RETRY_WITH_BACKOFF_ALGO;
+    *Action = ACTION_NO_ACTION;
     return EFI_DEVICE_ERROR;
   }
 
   if (!ScsiDiskIsDriveReady (SenseData, NumberOfSenseKeys, &RetryLater)) {
     if (RetryLater) {
       *Action = ACTION_RETRY_COMMAND_LATER;
-      DEBUG ((EFI_D_VERBOSE, "ScsiDisk: ScsiDiskDriveNotReady!\n"));
       return EFI_SUCCESS;
     }
     *Action = ACTION_NO_ACTION;
     return EFI_DEVICE_ERROR;
   }
 
-  *Action = ACTION_RETRY_WITH_BACKOFF_ALGO;
-  DEBUG ((EFI_D_VERBOSE, "ScsiDisk: Sense Key = 0x%x ASC = 0x%x!\n", SenseData->Sense_Key, SenseData->Addnl_Sense_Code));
   return EFI_SUCCESS;
 }
 
@@ -1572,6 +1566,7 @@ CheckTargetStatus (
 
   case EFI_EXT_SCSI_STATUS_TARGET_RESERVATION_CONFLICT:
     return EFI_DEVICE_ERROR;
+    break;
 
   default:
     return EFI_SUCCESS;
@@ -1623,14 +1618,9 @@ ScsiDiskRequestSenseKeys (
 
   *NumberOfSenseKeys  = 0;
   *SenseDataArray     = ScsiDiskDevice->SenseData;
-  Status              = EFI_SUCCESS;
-  PtrSenseData        = AllocateAlignedBuffer (ScsiDiskDevice, sizeof (EFI_SCSI_SENSE_DATA));
-  if (PtrSenseData == NULL) {
-    return EFI_DEVICE_ERROR;
-  }
+  PtrSenseData        = ScsiDiskDevice->SenseData;
 
   for (SenseReq = TRUE; SenseReq;) {
-    ZeroMem (PtrSenseData, sizeof (EFI_SCSI_SENSE_DATA));
     Status = ScsiRequestSenseCommand (
               ScsiDiskDevice->ScsiIo,
               SCSI_DISK_TIMEOUT,
@@ -1661,15 +1651,12 @@ ScsiDiskRequestSenseKeys (
     if (EFI_ERROR (FallStatus)) {
       if (*NumberOfSenseKeys != 0) {
         *NeedRetry = FALSE;
-        Status = EFI_SUCCESS;
-        goto EXIT;
+        return EFI_SUCCESS;
       } else {
-        Status = EFI_DEVICE_ERROR;
-        goto EXIT;
+        return EFI_DEVICE_ERROR;
       }
     }
 
-    CopyMem (ScsiDiskDevice->SenseData + *NumberOfSenseKeys, PtrSenseData, SenseDataLength);
     (*NumberOfSenseKeys) += 1;
 
     //
@@ -1680,11 +1667,9 @@ ScsiDiskRequestSenseKeys (
         (*NumberOfSenseKeys == ScsiDiskDevice->SenseDataNumber)) {
       SenseReq = FALSE;
     }
+    PtrSenseData += 1;
   }
-
-EXIT:
-  FreeAlignedBuffer (PtrSenseData, sizeof (EFI_SCSI_SENSE_DATA));
-  return Status;
+  return EFI_SUCCESS;
 }
 
 
@@ -1795,6 +1780,11 @@ ScsiDiskReadSectors (
   UINT8               Index;
   UINT8               MaxRetry;
   BOOLEAN             NeedRetry;
+  EFI_SCSI_SENSE_DATA *SenseData;
+  UINTN               NumberOfSenseKeys;
+
+  SenseData         = NULL;
+  NumberOfSenseKeys = 0;
 
   Status            = EFI_SUCCESS;
 
@@ -1865,6 +1855,8 @@ ScsiDiskReadSectors (
         Status = ScsiDiskRead10 (
                   ScsiDiskDevice,
                   &NeedRetry,
+                  &SenseData,
+                  &NumberOfSenseKeys,
                   Timeout,
                   PtrBuffer,
                   &ByteCount,
@@ -1875,6 +1867,8 @@ ScsiDiskReadSectors (
         Status = ScsiDiskRead16 (
                   ScsiDiskDevice,
                   &NeedRetry,
+                  &SenseData,
+                  &NumberOfSenseKeys,
                   Timeout,
                   PtrBuffer,
                   &ByteCount,
@@ -1940,6 +1934,11 @@ ScsiDiskWriteSectors (
   UINT8               Index;
   UINT8               MaxRetry;
   BOOLEAN             NeedRetry;
+  EFI_SCSI_SENSE_DATA *SenseData;
+  UINTN               NumberOfSenseKeys;
+
+  SenseData         = NULL;
+  NumberOfSenseKeys = 0;
 
   Status            = EFI_SUCCESS;
 
@@ -2009,6 +2008,8 @@ ScsiDiskWriteSectors (
         Status = ScsiDiskWrite10 (
                   ScsiDiskDevice,
                   &NeedRetry,
+                  &SenseData,
+                  &NumberOfSenseKeys,
                   Timeout,
                   PtrBuffer,
                   &ByteCount,
@@ -2019,6 +2020,8 @@ ScsiDiskWriteSectors (
         Status = ScsiDiskWrite16 (
                   ScsiDiskDevice,
                   &NeedRetry,
+                  &SenseData,
+                  &NumberOfSenseKeys,
                   Timeout,
                   PtrBuffer,
                   &ByteCount,
@@ -2057,11 +2060,13 @@ ScsiDiskWriteSectors (
 
   @param  ScsiDiskDevice     The pointer of ScsiDiskDevice
   @param  NeedRetry          The pointer of flag indicates if needs retry if error happens
+  @param  SenseDataArray     NOT used yet in this function
+  @param  NumberOfSenseKeys  The number of sense key
   @param  Timeout            The time to complete the command
   @param  DataBuffer         The buffer to fill with the read out data
   @param  DataLength         The length of buffer
   @param  StartLba           The start logic block address
-  @param  SectorCount        The number of blocks to read
+  @param  SectorSize         The size of sector
 
   @return  EFI_STATUS is returned by calling ScsiRead10Command().
 **/
@@ -2069,11 +2074,13 @@ EFI_STATUS
 ScsiDiskRead10 (
   IN     SCSI_DISK_DEV         *ScsiDiskDevice,
      OUT BOOLEAN               *NeedRetry,
+     OUT EFI_SCSI_SENSE_DATA   **SenseDataArray,   OPTIONAL
+     OUT UINTN                 *NumberOfSenseKeys,
   IN     UINT64                Timeout,
      OUT UINT8                 *DataBuffer,
   IN OUT UINT32                *DataLength,
   IN     UINT32                StartLba,
-  IN     UINT32                SectorCount
+  IN     UINT32                SectorSize
   )
 {
   UINT8       SenseDataLength;
@@ -2083,16 +2090,8 @@ ScsiDiskRead10 (
   UINT8       TargetStatus;
   UINTN       Action;
 
-  //
-  // Implement a backoff algorithem to resolve some compatibility issues that
-  // some SCSI targets or ATAPI devices couldn't correctly response reading/writing
-  // big data in a single operation.
-  // This algorithem will at first try to execute original request. If the request fails
-  // with media error sense data or else, it will reduce the transfer length to half and
-  // try again till the operation succeeds or fails with one sector transfer length.
-  //
-BackOff:
   *NeedRetry          = FALSE;
+  *NumberOfSenseKeys  = 0;
   Action              = ACTION_NO_ACTION;
   SenseDataLength     = (UINT8) (ScsiDiskDevice->SenseDataNumber * sizeof (EFI_SCSI_SENSE_DATA));
   ReturnStatus = ScsiRead10Command (
@@ -2105,7 +2104,7 @@ BackOff:
                    DataBuffer,
                    DataLength,
                    StartLba,
-                   SectorCount
+                   SectorSize
                    );
 
   if (ReturnStatus == EFI_NOT_READY) {
@@ -2146,26 +2145,14 @@ BackOff:
     return EFI_DEVICE_ERROR;
   }
 
-  if ((TargetStatus == EFI_EXT_SCSI_STATUS_TARGET_CHECK_CONDITION) || (EFI_ERROR (ReturnStatus))) {
-    DEBUG ((EFI_D_ERROR, "ScsiDiskRead10: Check Condition happened!\n"));
+  if (TargetStatus == EFI_EXT_SCSI_STATUS_TARGET_CHECK_CONDITION) {
+    DEBUG ((EFI_D_VERBOSE, "ScsiDiskRead10: Check Condition happened!\n"));
     Status = DetectMediaParsingSenseKeys (ScsiDiskDevice, ScsiDiskDevice->SenseData, SenseDataLength / sizeof (EFI_SCSI_SENSE_DATA), &Action);
-    if (Action == ACTION_RETRY_COMMAND_LATER) {
+    if (EFI_ERROR (Status)) {
+      return Status;
+    } else if (Action == ACTION_RETRY_COMMAND_LATER) {
       *NeedRetry = TRUE;
       return EFI_DEVICE_ERROR;
-    } else if (Action == ACTION_RETRY_WITH_BACKOFF_ALGO) {
-      if (SectorCount <= 1) {
-        //
-        // Jump out if the operation still fails with one sector transfer length.
-        //
-        *NeedRetry = FALSE;
-        return EFI_DEVICE_ERROR;
-      }
-      //
-      // Try again with half length if the sense data shows we need to retry.
-      //
-      SectorCount >>= 1;
-      *DataLength = SectorCount * ScsiDiskDevice->BlkIo.Media->BlockSize;
-      goto BackOff;
     } else {
       *NeedRetry = FALSE;
       return EFI_DEVICE_ERROR;
@@ -2181,11 +2168,13 @@ BackOff:
 
   @param  ScsiDiskDevice     The pointer of ScsiDiskDevice
   @param  NeedRetry          The pointer of flag indicates if needs retry if error happens
+  @param  SenseDataArray     NOT used yet in this function
+  @param  NumberOfSenseKeys  The number of sense key
   @param  Timeout            The time to complete the command
   @param  DataBuffer         The buffer to fill with the read out data
   @param  DataLength         The length of buffer
   @param  StartLba           The start logic block address
-  @param  SectorCount        The number of blocks to write
+  @param  SectorSize         The size of sector
 
   @return  EFI_STATUS is returned by calling ScsiWrite10Command().
 
@@ -2194,11 +2183,13 @@ EFI_STATUS
 ScsiDiskWrite10 (
   IN     SCSI_DISK_DEV         *ScsiDiskDevice,
      OUT BOOLEAN               *NeedRetry,
+     OUT EFI_SCSI_SENSE_DATA   **SenseDataArray,   OPTIONAL
+     OUT UINTN                 *NumberOfSenseKeys,
   IN     UINT64                Timeout,
   IN     UINT8                 *DataBuffer,
   IN OUT UINT32                *DataLength,
   IN     UINT32                StartLba,
-  IN     UINT32                SectorCount
+  IN     UINT32                SectorSize
   )
 {
   EFI_STATUS  Status;
@@ -2208,16 +2199,8 @@ ScsiDiskWrite10 (
   UINT8       TargetStatus;
   UINTN       Action;
 
-  //
-  // Implement a backoff algorithem to resolve some compatibility issues that
-  // some SCSI targets or ATAPI devices couldn't correctly response reading/writing
-  // big data in a single operation.
-  // This algorithem will at first try to execute original request. If the request fails
-  // with media error sense data or else, it will reduce the transfer length to half and
-  // try again till the operation succeeds or fails with one sector transfer length.
-  //
-BackOff:
   *NeedRetry          = FALSE;
+  *NumberOfSenseKeys  = 0;
   Action              = ACTION_NO_ACTION;
   SenseDataLength     = (UINT8) (ScsiDiskDevice->SenseDataNumber * sizeof (EFI_SCSI_SENSE_DATA));
   ReturnStatus = ScsiWrite10Command (
@@ -2230,7 +2213,7 @@ BackOff:
                    DataBuffer,
                    DataLength,
                    StartLba,
-                   SectorCount
+                   SectorSize
                    );
   if (ReturnStatus == EFI_NOT_READY) {
     *NeedRetry = TRUE;
@@ -2270,26 +2253,14 @@ BackOff:
     return EFI_DEVICE_ERROR;
   }
 
-  if ((TargetStatus == EFI_EXT_SCSI_STATUS_TARGET_CHECK_CONDITION) || (EFI_ERROR (ReturnStatus))) {
-    DEBUG ((EFI_D_ERROR, "ScsiDiskWrite10: Check Condition happened!\n"));
+  if (TargetStatus == EFI_EXT_SCSI_STATUS_TARGET_CHECK_CONDITION) {
+    DEBUG ((EFI_D_VERBOSE, "ScsiDiskWrite10: Check Condition happened!\n"));
     Status = DetectMediaParsingSenseKeys (ScsiDiskDevice, ScsiDiskDevice->SenseData, SenseDataLength / sizeof (EFI_SCSI_SENSE_DATA), &Action);
-    if (Action == ACTION_RETRY_COMMAND_LATER) {
+    if (EFI_ERROR (Status)) {
+      return Status;
+    } else if (Action == ACTION_RETRY_COMMAND_LATER) {
       *NeedRetry = TRUE;
       return EFI_DEVICE_ERROR;
-    } else if (Action == ACTION_RETRY_WITH_BACKOFF_ALGO) {
-      if (SectorCount <= 1) {
-        //
-        // Jump out if the operation still fails with one sector transfer length.
-        //
-        *NeedRetry = FALSE;
-        return EFI_DEVICE_ERROR;
-      }
-      //
-      // Try again with half length if the sense data shows we need to retry.
-      //
-      SectorCount >>= 1;
-      *DataLength = SectorCount * ScsiDiskDevice->BlkIo.Media->BlockSize;
-      goto BackOff;
     } else {
       *NeedRetry = FALSE;
       return EFI_DEVICE_ERROR;
@@ -2305,23 +2276,27 @@ BackOff:
 
   @param  ScsiDiskDevice     The pointer of ScsiDiskDevice
   @param  NeedRetry          The pointer of flag indicates if needs retry if error happens
+  @param  SenseDataArray     NOT used yet in this function
+  @param  NumberOfSenseKeys  The number of sense key
   @param  Timeout            The time to complete the command
   @param  DataBuffer         The buffer to fill with the read out data
   @param  DataLength         The length of buffer
   @param  StartLba           The start logic block address
-  @param  SectorCount        The number of blocks to read
+  @param  SectorSize         The size of sector
 
-  @return  EFI_STATUS is returned by calling ScsiRead16Command().
+  @return  EFI_STATUS is returned by calling ScsiRead10Command().
 **/
 EFI_STATUS
 ScsiDiskRead16 (
   IN     SCSI_DISK_DEV         *ScsiDiskDevice,
      OUT BOOLEAN               *NeedRetry,
+     OUT EFI_SCSI_SENSE_DATA   **SenseDataArray,   OPTIONAL
+     OUT UINTN                 *NumberOfSenseKeys,
   IN     UINT64                Timeout,
      OUT UINT8                 *DataBuffer,
   IN OUT UINT32                *DataLength,
   IN     UINT64                StartLba,
-  IN     UINT32                SectorCount
+  IN     UINT32                SectorSize
   )
 {
   UINT8       SenseDataLength;
@@ -2331,16 +2306,8 @@ ScsiDiskRead16 (
   UINT8       TargetStatus;
   UINTN       Action;
 
-  //
-  // Implement a backoff algorithem to resolve some compatibility issues that
-  // some SCSI targets or ATAPI devices couldn't correctly response reading/writing
-  // big data in a single operation.
-  // This algorithem will at first try to execute original request. If the request fails
-  // with media error sense data or else, it will reduce the transfer length to half and
-  // try again till the operation succeeds or fails with one sector transfer length.
-  //
-BackOff:
   *NeedRetry          = FALSE;
+  *NumberOfSenseKeys  = 0;
   Action              = ACTION_NO_ACTION;
   SenseDataLength     = (UINT8) (ScsiDiskDevice->SenseDataNumber * sizeof (EFI_SCSI_SENSE_DATA));
   ReturnStatus = ScsiRead16Command (
@@ -2353,7 +2320,7 @@ BackOff:
                    DataBuffer,
                    DataLength,
                    StartLba,
-                   SectorCount
+                   SectorSize
                    );
   if (ReturnStatus == EFI_NOT_READY) {
     *NeedRetry = TRUE;
@@ -2393,26 +2360,14 @@ BackOff:
     return EFI_DEVICE_ERROR;
   }
 
-  if ((TargetStatus == EFI_EXT_SCSI_STATUS_TARGET_CHECK_CONDITION) || (EFI_ERROR (ReturnStatus))) {
-    DEBUG ((EFI_D_ERROR, "ScsiDiskRead16: Check Condition happened!\n"));
+  if (TargetStatus == EFI_EXT_SCSI_STATUS_TARGET_CHECK_CONDITION) {
+    DEBUG ((EFI_D_VERBOSE, "ScsiDiskRead16: Check Condition happened!\n"));
     Status = DetectMediaParsingSenseKeys (ScsiDiskDevice, ScsiDiskDevice->SenseData, SenseDataLength / sizeof (EFI_SCSI_SENSE_DATA), &Action);
-    if (Action == ACTION_RETRY_COMMAND_LATER) {
+    if (EFI_ERROR (Status)) {
+      return Status;
+    } else if (Action == ACTION_RETRY_COMMAND_LATER) {
       *NeedRetry = TRUE;
       return EFI_DEVICE_ERROR;
-    } else if (Action == ACTION_RETRY_WITH_BACKOFF_ALGO) {
-      if (SectorCount <= 1) {
-        //
-        // Jump out if the operation still fails with one sector transfer length.
-        //
-        *NeedRetry = FALSE;
-        return EFI_DEVICE_ERROR;
-      }
-      //
-      // Try again with half length if the sense data shows we need to retry.
-      //
-      SectorCount >>= 1;
-      *DataLength = SectorCount * ScsiDiskDevice->BlkIo.Media->BlockSize;
-      goto BackOff;
     } else {
       *NeedRetry = FALSE;
       return EFI_DEVICE_ERROR;
@@ -2428,24 +2383,28 @@ BackOff:
 
   @param  ScsiDiskDevice     The pointer of ScsiDiskDevice
   @param  NeedRetry          The pointer of flag indicates if needs retry if error happens
+  @param  SenseDataArray     NOT used yet in this function
+  @param  NumberOfSenseKeys  The number of sense key
   @param  Timeout            The time to complete the command
   @param  DataBuffer         The buffer to fill with the read out data
   @param  DataLength         The length of buffer
   @param  StartLba           The start logic block address
-  @param  SectorCount        The number of blocks to write
+  @param  SectorSize         The size of sector
 
-  @return  EFI_STATUS is returned by calling ScsiWrite16Command().
+  @return  EFI_STATUS is returned by calling ScsiWrite10Command().
 
 **/
 EFI_STATUS
 ScsiDiskWrite16 (
   IN     SCSI_DISK_DEV         *ScsiDiskDevice,
      OUT BOOLEAN               *NeedRetry,
+     OUT EFI_SCSI_SENSE_DATA   **SenseDataArray,   OPTIONAL
+     OUT UINTN                 *NumberOfSenseKeys,
   IN     UINT64                Timeout,
   IN     UINT8                 *DataBuffer,
   IN OUT UINT32                *DataLength,
   IN     UINT64                StartLba,
-  IN     UINT32                SectorCount
+  IN     UINT32                SectorSize
   )
 {
   EFI_STATUS  Status;
@@ -2455,16 +2414,8 @@ ScsiDiskWrite16 (
   UINT8       TargetStatus;
   UINTN       Action;
 
-  //
-  // Implement a backoff algorithem to resolve some compatibility issues that
-  // some SCSI targets or ATAPI devices couldn't correctly response reading/writing
-  // big data in a single operation.
-  // This algorithem will at first try to execute original request. If the request fails
-  // with media error sense data or else, it will reduce the transfer length to half and
-  // try again till the operation succeeds or fails with one sector transfer length.
-  //
-BackOff:
   *NeedRetry          = FALSE;
+  *NumberOfSenseKeys  = 0;
   Action              = ACTION_NO_ACTION;
   SenseDataLength     = (UINT8) (ScsiDiskDevice->SenseDataNumber * sizeof (EFI_SCSI_SENSE_DATA));
   ReturnStatus = ScsiWrite16Command (
@@ -2477,7 +2428,7 @@ BackOff:
                    DataBuffer,
                    DataLength,
                    StartLba,
-                   SectorCount
+                   SectorSize
                    );
   if (ReturnStatus == EFI_NOT_READY) {
     *NeedRetry = TRUE;
@@ -2517,26 +2468,14 @@ BackOff:
     return EFI_DEVICE_ERROR;
   }
 
-  if ((TargetStatus == EFI_EXT_SCSI_STATUS_TARGET_CHECK_CONDITION) || (EFI_ERROR (ReturnStatus))) {
-    DEBUG ((EFI_D_ERROR, "ScsiDiskWrite16: Check Condition happened!\n"));
+  if (TargetStatus == EFI_EXT_SCSI_STATUS_TARGET_CHECK_CONDITION) {
+    DEBUG ((EFI_D_VERBOSE, "ScsiDiskWrite16: Check Condition happened!\n"));
     Status = DetectMediaParsingSenseKeys (ScsiDiskDevice, ScsiDiskDevice->SenseData, SenseDataLength / sizeof (EFI_SCSI_SENSE_DATA), &Action);
-    if (Action == ACTION_RETRY_COMMAND_LATER) {
+    if (EFI_ERROR (Status)) {
+      return Status;
+    } else if (Action == ACTION_RETRY_COMMAND_LATER) {
       *NeedRetry = TRUE;
       return EFI_DEVICE_ERROR;
-    } else if (Action == ACTION_RETRY_WITH_BACKOFF_ALGO) {
-      if (SectorCount <= 1) {
-        //
-        // Jump out if the operation still fails with one sector transfer length.
-        //
-        *NeedRetry = FALSE;
-        return EFI_DEVICE_ERROR;
-      }
-      //
-      // Try again with half length if the sense data shows we need to retry.
-      //
-      SectorCount >>= 1;
-      *DataLength = SectorCount * ScsiDiskDevice->BlkIo.Media->BlockSize;
-      goto BackOff;
     } else {
       *NeedRetry = FALSE;
       return EFI_DEVICE_ERROR;

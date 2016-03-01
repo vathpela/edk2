@@ -5,7 +5,7 @@
 #    PCD Name    Offset in binary
 #    ========    ================
 #
-# Copyright (c) 2008 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2008 - 2013, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -18,7 +18,7 @@
 
 #======================================  External Libraries ========================================
 import optparse
-import Common.LongFilePathOs as os
+import os
 import re
 import array
 
@@ -26,7 +26,6 @@ from Common.BuildToolError import *
 import Common.EdkLogger as EdkLogger
 from Common.Misc import PeImageClass
 from Common.BuildVersion import gBUILD_VERSION
-from Common.LongFilePathSupport import OpenLongFilePath as open
 
 # Version and Copyright
 __version_number__ = ("0.10" + " " + gBUILD_VERSION)
@@ -54,9 +53,7 @@ def parsePcdInfoFromMapFile(mapfilepath, efifilepath):
         return None
     
     if len(lines) == 0: return None
-    firstline = lines[0].strip()
-    if (firstline.startswith("Archive member included ") and
-        firstline.endswith(" file (symbol)")):
+    if lines[0].strip().find("Archive member included because of file (symbol)") != -1:
         return _parseForGCC(lines, efifilepath)
     return _parseGeneral(lines, efifilepath)
 

@@ -1,7 +1,7 @@
 ## @file
 #  Debug Agent library instance for Dxe Core and Dxe modules.
 #
-#  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2010 - 2013, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -16,7 +16,6 @@
 [Defines]
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = DxeDebugAgentLib
-  MODULE_UNI_FILE                = DxeDebugAgentLib.uni
   FILE_GUID                      = BA6BAD25-B814-4747-B0B0-0FBB61D40B90
   MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 0.7
@@ -81,22 +80,19 @@
   MemoryAllocationLib
 
 [Guids]
-  ## SOMETIMES_PRODUCES ## SystemTable
-  ## CONSUMES ## HOB
-  gEfiDebugAgentGuid
-  ## SOMETIMES_CONSUMES ## SystemTable
-  ## SOMETIMES_PRODUCES ## SystemTable
-  gEfiVectorHandoffTableGuid
-
+  gEfiDebugAgentGuid                            ## PRODUCES ## Configuration Table
+  gEfiDebugAgentGuid                            ## CONSUMES ## HOB
+  gEfiVectorHandoffTableGuid                    ## SOMETIMES_PRODUCES ## Configuration Table
+  
 [Ppis]
   gEfiVectorHandoffInfoPpiGuid                  ## UNDEFINED
-
+  
 [Protocols]
-  gEfiSerialIoProtocolGuid                      ## SOMETIMES_PRODUCES
-  gEfiDevicePathProtocolGuid                    ## SOMETIMES_PRODUCES 
+  gEfiSerialIoProtocolGuid                      ## PRODUCES
+  gEfiDevicePathProtocolGuid                    ## PRODUCES 
 
 [Pcd]
-  gEfiMdePkgTokenSpaceGuid.PcdFSBClock                                  ## SOMETIMES_CONSUMES
-  gEfiSourceLevelDebugPkgTokenSpaceGuid.PcdExceptionsIgnoredByDebugger  ## SOMETIMES_CONSUMES
+  gEfiMdePkgTokenSpaceGuid.PcdFSBClock                                  ## CONSUMES
+  gEfiSourceLevelDebugPkgTokenSpaceGuid.PcdExceptionsIgnoredByDebugger  ## CONSUMES
   gEfiSourceLevelDebugPkgTokenSpaceGuid.PcdDebugPortHandleBufferSize    ## CONSUMES
 

@@ -1,8 +1,7 @@
 /** @file
   Implementation of EFI_IP6_PROTOCOL protocol interfaces.
 
-  (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
-  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -705,6 +704,11 @@ EfiIp6Configure (
   // whether it is necessary to reconfigure the MNP.
   //
   Ip6ServiceConfigMnp (IpInstance->Service, FALSE);
+
+  //
+  // Update the variable data.
+  //
+  Ip6SetVariableData (IpInstance->Service);
 
 Exit:
   gBS->RestoreTPL (OldTpl);
@@ -1762,6 +1766,7 @@ EfiIp6Cancel (
   )
 {
   IP6_PROTOCOL              *IpInstance;
+  IP6_SERVICE               *IpSb;
   EFI_STATUS                Status;
   EFI_TPL                   OldTpl;
 
@@ -1770,6 +1775,7 @@ EfiIp6Cancel (
   }
 
   IpInstance = IP6_INSTANCE_FROM_PROTOCOL (This);
+  IpSb       = IpInstance->Service;
 
   OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
 

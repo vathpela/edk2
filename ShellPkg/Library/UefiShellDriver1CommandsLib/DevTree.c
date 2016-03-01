@@ -1,7 +1,6 @@
 /** @file
   Main file for DevTree shell Driver1 function.
 
-  Copyright (c) 2014, Hewlett-Packard Development Company, L.P.<BR>
   Copyright (c) 2010 - 2012, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -58,12 +57,6 @@ DoDevTreeForHandle(
   ChildCount          = 0;
 
   ASSERT(TheHandle    != NULL);
-  
-  if (ShellGetExecutionBreakFlag()) {
-    ShellStatus = SHELL_ABORTED;
-    return ShellStatus;
-  }
-  
   //
   // We want controller handles.  they will not have LoadedImage or DriverBinding (or others...)
   //
@@ -126,9 +119,6 @@ DoDevTreeForHandle(
   ParseHandleDatabaseForChildControllers(TheHandle, &ChildCount, &ChildHandleBuffer);
   for (LoopVar = 0 ; LoopVar < ChildCount && ShellStatus == SHELL_SUCCESS; LoopVar++){
     ShellStatus = DoDevTreeForHandle(ChildHandleBuffer[LoopVar], Lang, UseDevPaths, IndentCharCount+2, HiiString);
-    if (ShellStatus == SHELL_ABORTED) {
-      break;
-    }
   }
 
   if (ChildHandleBuffer != NULL) {

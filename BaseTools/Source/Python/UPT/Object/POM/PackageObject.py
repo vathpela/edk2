@@ -1,7 +1,7 @@
 ## @file
 # This file is used to define a class object to describe a package
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
 #
 # This program and the accompanying materials are licensed and made available 
 # under the terms and conditions of the BSD License which accompanies this 
@@ -21,7 +21,6 @@ PackageObject
 from Object.POM.CommonObject import CommonPropertiesObject
 from Object.POM.CommonObject import IdentificationObject
 from Object.POM.CommonObject import CommonHeaderObject
-from Object.POM.CommonObject import BinaryHeaderObject
 from Library.Misc import Sdict
 
 ## StandardIncludeFileObject
@@ -45,11 +44,10 @@ class PackageIncludeFileObject(StandardIncludeFileObject):
 ##
 # PackageObject
 #
-class PackageObject(IdentificationObject, CommonHeaderObject, BinaryHeaderObject):
+class PackageObject(IdentificationObject, CommonHeaderObject):
     def __init__(self):
         IdentificationObject.__init__(self)
         CommonHeaderObject.__init__(self)
-        BinaryHeaderObject.__init__(self)
         #
         # LibraryClassObject
         #
@@ -87,12 +85,8 @@ class PackageObject(IdentificationObject, CommonHeaderObject, BinaryHeaderObject
         #
         self.PcdList = [] 
         #
-        # {(PcdTokenSpaceGuidCName, PcdErrroNumber): PcdErrorMessageList}
-        #
-        self.PcdErrorCommentDict = {}
-        #
         # UserExtensionObject
-        #        
+        #
         self.UserExtensionList = [] 
         #
         # MiscFileObject
@@ -109,8 +103,6 @@ class PackageObject(IdentificationObject, CommonHeaderObject, BinaryHeaderObject
         self.ModuleFileList = [] 
         
         self.PcdChecks = []
-        
-        self.UNIFlag = False
         
     def SetLibraryClassList(self, LibraryClassList):
         self.LibraryClassList = LibraryClassList

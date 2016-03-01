@@ -1,7 +1,7 @@
 /** @file
   TIS (TPM Interface Specification) functions used by dTPM2.0 library.
   
-Copyright (c) 2013 - 2015, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials 
 are licensed and made available under the terms and conditions of the BSD License 
 which accompanies this distribution.  The full text of the license may be found at 
@@ -223,6 +223,7 @@ TisPcPresenceCheck (
   @retval     EFI_TIMEOUT  The register can't run into the expected status in time.
 **/
 EFI_STATUS
+EFIAPI
 TisPcWaitRegisterBits (
   IN      UINT8                     *Register,
   IN      UINT8                     BitSet,
@@ -254,6 +255,7 @@ TisPcWaitRegisterBits (
   @retval     EFI_TIMEOUT           BurstCount can't be got in time.
 **/
 EFI_STATUS
+EFIAPI
 TisPcReadBurstCount (
   IN      TIS_PC_REGISTERS_PTR      TisReg,
      OUT  UINT16                    *BurstCount
@@ -297,6 +299,7 @@ TisPcReadBurstCount (
   @retval    EFI_TIMEOUT           TPM chip can't be set to ready state in time.
 **/
 EFI_STATUS
+EFIAPI
 TisPcPrepareCommand (
   IN      TIS_PC_REGISTERS_PTR      TisReg
   )
@@ -329,6 +332,7 @@ TisPcPrepareCommand (
   @retval    EFI_TIMEOUT           Can't get the TPM control in time.
 **/
 EFI_STATUS
+EFIAPI
 TisPcRequestUseTpm (
   IN      TIS_PC_REGISTERS_PTR      TisReg
   )
@@ -363,6 +367,7 @@ TisPcRequestUseTpm (
   @param[in, out] SizeOut       Size of response data.  
  
   @retval EFI_SUCCESS           Operation completed successfully.
+  @retval EFI_TIMEOUT           The register can't run into the expected status in time.
   @retval EFI_BUFFER_TOO_SMALL  Response data buffer is too small.
   @retval EFI_DEVICE_ERROR      Unexpected device behavior.
   @retval EFI_UNSUPPORTED       Unsupported TPM version
@@ -387,7 +392,7 @@ TisTpmCommand (
   DEBUG_CODE (
     UINTN  DebugSize;
 
-    DEBUG ((EFI_D_INFO, "Tpm2TisTpmCommand Send - "));
+    DEBUG ((EFI_D_INFO, "TisTpmCommand Send - "));
     if (SizeIn > 0x100) {
       DebugSize = 0x40;
     } else {
@@ -408,8 +413,8 @@ TisTpmCommand (
 
   Status = TisPcPrepareCommand (TisReg);
   if (EFI_ERROR (Status)){
-    DEBUG ((DEBUG_ERROR, "Tpm2 is not ready for command!\n"));
-    return EFI_DEVICE_ERROR;
+    DEBUG ((DEBUG_ERROR, "Tpm is not ready for command!\n"));
+    return Status;
   }
   //
   // Send the command data to Tpm
@@ -418,7 +423,7 @@ TisTpmCommand (
   while (Index < SizeIn) {
     Status = TisPcReadBurstCount (TisReg, &BurstCount);
     if (EFI_ERROR (Status)) {
-      Status = EFI_DEVICE_ERROR;
+      Status = EFI_TIMEOUT;
       goto Exit;
     }
     for (; BurstCount > 0 && Index < SizeIn; BurstCount--) {
@@ -436,7 +441,7 @@ TisTpmCommand (
              TIS_TIMEOUT_C
              );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "Tpm2 The send buffer too small!\n"));
+    DEBUG ((DEBUG_ERROR, "The send buffer too small!\n"));
     Status = EFI_BUFFER_TOO_SMALL;
     goto Exit;
   }
@@ -455,8 +460,8 @@ TisTpmCommand (
              TIS_TIMEOUT_MAX
              );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "Wait for Tpm2 response data time out!!\n"));
-    Status = EFI_DEVICE_ERROR;
+    DEBUG ((DEBUG_ERROR, "Wait for Tpm response data time out!!\n"));
+    Status = EFI_TIMEOUT;
     goto Exit;
   }
   //
@@ -467,7 +472,7 @@ TisTpmCommand (
   while (Index < sizeof (TPM2_RESPONSE_HEADER)) {
     Status = TisPcReadBurstCount (TisReg, &BurstCount);
     if (EFI_ERROR (Status)) {
-      Status = EFI_DEVICE_ERROR;
+      Status = EFI_TIMEOUT;
       goto Exit;
     }
     for (; BurstCount > 0; BurstCount--) {
@@ -489,7 +494,7 @@ TisTpmCommand (
   CopyMem (&Data16, BufferOut, sizeof (UINT16));
   // TPM2 should not use this RSP_COMMAND
   if (SwapBytes16 (Data16) == TPM_ST_RSP_COMMAND) {
-    DEBUG ((EFI_D_ERROR, "TPM2: TPM_ST_RSP error - %x\n", TPM_ST_RSP_COMMAND));
+    DEBUG ((EFI_D_ERROR, "TPM_ST_RSP error - %x\n", TPM_ST_RSP_COMMAND));
     Status = EFI_UNSUPPORTED;
     goto Exit;
   }
@@ -515,13 +520,13 @@ TisTpmCommand (
     }
     Status = TisPcReadBurstCount (TisReg, &BurstCount);
     if (EFI_ERROR (Status)) {
-      Status = EFI_DEVICE_ERROR;
+      Status = EFI_TIMEOUT;
       goto Exit;
     }
   }
 Exit:
   DEBUG_CODE (
-    DEBUG ((EFI_D_INFO, "Tpm2TisTpmCommand Receive - "));
+    DEBUG ((EFI_D_INFO, "TisTpmCommand Receive - "));
     for (Index = 0; Index < TpmOutSize; Index++) {
       DEBUG ((EFI_D_INFO, "%02x ", BufferOut[Index]));
     }

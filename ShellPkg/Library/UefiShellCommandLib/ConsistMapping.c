@@ -1,7 +1,7 @@
 /** @file
   Main file for support of shell consist mapping.
 
-  Copyright (c) 2005 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2005 - 2012, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution. The full text of the license may be found at
@@ -14,8 +14,6 @@
 #include "UefiShellCommandLib.h"
 #include <Library/DevicePathLib.h>
 #include <Library/SortLib.h>
-#include <Library/UefiLib.h>
-#include <Protocol/UsbIo.h>
 
 typedef enum {
   MTDTypeUnknown,
@@ -42,26 +40,10 @@ typedef struct {
   CHAR16    *Name;
 } MTD_NAME;
 
-/**
-  Serial Decode function.
-
-  @param  DevPath          The Device path info.
-  @param  MapInfo          The map info.
-  @param  OrigDevPath      The original device path protocol.
-
-**/
-typedef 
-VOID 
-(EFIAPI *SERIAL_DECODE_FUNCTION) (
-  EFI_DEVICE_PATH_PROTOCOL    *DevPath, 
-  DEVICE_CONSIST_MAPPING_INFO *MapInfo,
-  EFI_DEVICE_PATH_PROTOCOL    *OrigDevPath
-  );
-
 typedef struct {
   UINT8 Type;
   UINT8 SubType;
-  SERIAL_DECODE_FUNCTION SerialFun;
+  VOID (EFIAPI *SerialFun) (EFI_DEVICE_PATH_PROTOCOL *DevPath, DEVICE_CONSIST_MAPPING_INFO *MapInfo);
   INTN (EFIAPI *CompareFun) (EFI_DEVICE_PATH_PROTOCOL *DevPath, EFI_DEVICE_PATH_PROTOCOL *DevPath2);
 } DEV_PATH_CONSIST_MAPPING_TABLE;
 
@@ -116,7 +98,7 @@ CatPrint (
     ASSERT (Str->Str != NULL);
   }
 
-  StrnCat (Str->Str, AppendStr, StringSize/sizeof(CHAR16) - 1 - StrLen(Str->Str));
+  StrCat (Str->Str, AppendStr);
   Str->Len = StringSize;
 
   FreePool (AppendStr);
@@ -440,14 +422,12 @@ DevPathCompareDefault (
 
   @param[in] DevicePathNode   The node to get info on.
   @param[in] MappingItem      The info item to populate.
-  @param[in] DevicePath       Ignored.
 **/
 VOID
 EFIAPI
 DevPathSerialHardDrive (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
   HARDDRIVE_DEVICE_PATH *Hd;
@@ -468,14 +448,12 @@ DevPathSerialHardDrive (
 
   @param[in] DevicePathNode   The node to get info on.
   @param[in] MappingItem      The info item to populate.
-  @param[in] DevicePath       Ignored.
 **/
 VOID
 EFIAPI
 DevPathSerialAtapi (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
   ATAPI_DEVICE_PATH *Atapi;
@@ -492,14 +470,12 @@ DevPathSerialAtapi (
 
   @param[in] DevicePathNode   The node to get info on.
   @param[in] MappingItem      The info item to populate.
-  @param[in] DevicePath       Ignored.
 **/
 VOID
 EFIAPI
 DevPathSerialCdRom (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
   CDROM_DEVICE_PATH *Cd;
@@ -517,14 +493,12 @@ DevPathSerialCdRom (
 
   @param[in] DevicePathNode   The node to get info on.
   @param[in] MappingItem      The info item to populate.
-  @param[in] DevicePath       Ignored.
 **/
 VOID
 EFIAPI
 DevPathSerialFibre (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
   FIBRECHANNEL_DEVICE_PATH  *Fibre;
@@ -542,14 +516,12 @@ DevPathSerialFibre (
 
   @param[in] DevicePathNode   The node to get info on.
   @param[in] MappingItem      The info item to populate.
-  @param[in] DevicePath       Ignored.
 **/
 VOID
 EFIAPI
 DevPathSerialUart (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
   UART_DEVICE_PATH  *Uart;
@@ -569,22 +541,15 @@ DevPathSerialUart (
 
   @param[in] DevicePathNode   The node to get info on.
   @param[in] MappingItem      The info item to populate.
-  @param[in] DevicePath       Ignored.
 **/
 VOID
 EFIAPI
 DevPathSerialUsb (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
-  USB_DEVICE_PATH           *Usb;
-  EFI_USB_IO_PROTOCOL       *UsbIo;
-  EFI_HANDLE                TempHandle;
-  EFI_STATUS                Status;
-  USB_INTERFACE_DESCRIPTOR  InterfaceDesc;
-
+  USB_DEVICE_PATH *Usb;
 
   ASSERT(DevicePathNode != NULL);
   ASSERT(MappingItem != NULL);
@@ -592,35 +557,6 @@ DevPathSerialUsb (
   Usb = (USB_DEVICE_PATH *) DevicePathNode;
   AppendCSDNum (MappingItem, Usb->ParentPortNumber);
   AppendCSDNum (MappingItem, Usb->InterfaceNumber);
-
-  if (PcdGetBool(PcdUsbExtendedDecode)) {
-    Status = gBS->LocateDevicePath( &gEfiUsbIoProtocolGuid, &DevicePath, &TempHandle );
-    UsbIo = NULL;
-    if (!EFI_ERROR(Status)) {
-      Status = gBS->OpenProtocol(TempHandle, &gEfiUsbIoProtocolGuid, (VOID**)&UsbIo, gImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
-    } 
-
-    if (!EFI_ERROR(Status)) {
-      ASSERT(UsbIo != NULL);
-      Status = UsbIo->UsbGetInterfaceDescriptor(UsbIo, &InterfaceDesc);
-      if (!EFI_ERROR(Status)) {
-        if (InterfaceDesc.InterfaceClass == USB_MASS_STORE_CLASS && MappingItem->Mtd == MTDTypeUnknown) {
-          switch (InterfaceDesc.InterfaceSubClass){
-            case USB_MASS_STORE_SCSI:
-              MappingItem->Mtd = MTDTypeHardDisk;
-              break;
-            case USB_MASS_STORE_8070I:
-            case USB_MASS_STORE_UFI:
-              MappingItem->Mtd = MTDTypeFloppy;
-              break;
-            case USB_MASS_STORE_8020I:
-              MappingItem->Mtd  = MTDTypeCDRom;
-              break;
-          }
-        }
-      }
-    } 
-  }
 }
 
 /**
@@ -628,22 +564,17 @@ DevPathSerialUsb (
 
   @param[in] DevicePathNode   The node to get info on.
   @param[in] MappingItem      The info item to populate.
-  @param[in] DevicePath       Ignored.
 
 **/
 VOID
 EFIAPI
 DevPathSerialVendor (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
   VENDOR_DEVICE_PATH  *Vendor;
   SAS_DEVICE_PATH     *Sas;
-  UINTN               TargetNameLength;
-  UINTN               Index;
-  CHAR16              *Buffer;
 
   if (DevicePathNode == NULL || MappingItem == NULL) {
     return;
@@ -658,32 +589,6 @@ DevPathSerialVendor (
     AppendCSDNum (MappingItem, Sas->Lun);
     AppendCSDNum (MappingItem, Sas->DeviceTopology);
     AppendCSDNum (MappingItem, Sas->RelativeTargetPort);
-  } else {
-    TargetNameLength = MIN(DevicePathNodeLength (DevicePathNode) - sizeof (VENDOR_DEVICE_PATH), PcdGet32(PcdShellVendorExtendedDecode));
-    if (TargetNameLength != 0) {
-      //
-      // String is 2 chars per data byte, plus NULL terminator
-      //
-      Buffer = AllocateZeroPool (((TargetNameLength * 2) + 1) * sizeof(CHAR16));
-      ASSERT(Buffer != NULL);
-      if (Buffer == NULL) {
-        return;
-  }
-
-      //
-      // Build the string data
-      //
-      for (Index = 0; Index < TargetNameLength; Index++) {
-        Buffer = CatSPrint (Buffer, L"%02x", *((UINT8*)Vendor + sizeof (VENDOR_DEVICE_PATH) + Index));
-}
-
-      //
-      // Append the new data block
-      //
-      AppendCSDStr (MappingItem, Buffer);
-
-      FreePool(Buffer);
-    }
   }
 }
 
@@ -692,14 +597,12 @@ DevPathSerialVendor (
 
   @param[in] DevicePathNode   The node to get info on.
   @param[in] MappingItem      The info item to populate.
-  @param[in] DevicePath       Ignored.
 **/
 VOID
 EFIAPI
 DevPathSerialLun (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
   DEVICE_LOGICAL_UNIT_DEVICE_PATH *Lun;
@@ -716,14 +619,12 @@ DevPathSerialLun (
 
   @param[in] DevicePathNode   The node to get info on.
   @param[in] MappingItem      The info item to populate.
-  @param[in] DevicePath       Ignored.
 **/
 VOID
 EFIAPI
 DevPathSerialSata (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
   SATA_DEVICE_PATH  *Sata;
@@ -742,16 +643,21 @@ DevPathSerialSata (
 
   @param[in] DevicePathNode   The node to get info on.
   @param[in] MappingItem      The info item to populate.
-  @param[in] DevicePath       Ignored.
 **/
 VOID
 EFIAPI
 DevPathSerialIScsi (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
+///@todo make this a PCD
+//
+// As Csd of ISCSI node is quite long, we comment
+// the code below to keep the consistent mapping
+// short. Uncomment if you really need it.
+//
+/*
   ISCSI_DEVICE_PATH  *IScsi;
   UINT8              *IScsiTargetName;
   CHAR16             *TargetName;
@@ -761,25 +667,24 @@ DevPathSerialIScsi (
   ASSERT(DevicePathNode != NULL);
   ASSERT(MappingItem != NULL);
 
-  if (PcdGetBool(PcdShellDecodeIScsiMapNames)) {
-    IScsi = (ISCSI_DEVICE_PATH  *) DevicePathNode;
-    AppendCSDNum (MappingItem, IScsi->NetworkProtocol);
-    AppendCSDNum (MappingItem, IScsi->LoginOption);
-    AppendCSDNum (MappingItem, IScsi->Lun);
-    AppendCSDNum (MappingItem, IScsi->TargetPortalGroupTag);
-    TargetNameLength = DevicePathNodeLength (DevicePathNode) - sizeof (ISCSI_DEVICE_PATH);
-    if (TargetNameLength > 0) {
-      TargetName = AllocateZeroPool ((TargetNameLength + 1) * sizeof (CHAR16));
-      if (TargetName != NULL) {
-        IScsiTargetName = (UINT8 *) (IScsi + 1);
-        for (Index = 0; Index < TargetNameLength; Index++) {
-          TargetName[Index] = (CHAR16) IScsiTargetName[Index];
-        }
-        AppendCSDStr (MappingItem, TargetName);
-        FreePool (TargetName);
+  IScsi = (ISCSI_DEVICE_PATH  *) DevicePathNode;
+  AppendCSDNum (MappingItem, IScsi->NetworkProtocol);
+  AppendCSDNum (MappingItem, IScsi->LoginOption);
+  AppendCSDNum (MappingItem, IScsi->Lun);
+  AppendCSDNum (MappingItem, IScsi->TargetPortalGroupTag);
+  TargetNameLength = DevicePathNodeLength (DevicePathNode) - sizeof (ISCSI_DEVICE_PATH);
+  if (TargetNameLength > 0) {
+    TargetName = AllocateZeroPool ((TargetNameLength + 1) * sizeof (CHAR16));
+    if (TargetName != NULL) {
+      IScsiTargetName = (UINT8 *) (IScsi + 1);
+      for (Index = 0; Index < TargetNameLength; Index++) {
+        TargetName[Index] = (CHAR16) IScsiTargetName[Index];
       }
+      AppendCSDStr (MappingItem, TargetName);
+      FreePool (TargetName);
     }
   }
+ */
 }
 
 /**
@@ -787,14 +692,12 @@ DevPathSerialIScsi (
 
   @param[in] DevicePathNode   The node to get info on.
   @param[in] MappingItem      The info item to populate.
-  @param[in] DevicePath       Ignored.
 **/
 VOID
 EFIAPI
 DevPathSerialI2O (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
   I2O_DEVICE_PATH *DevicePath_I20;
@@ -811,14 +714,12 @@ DevPathSerialI2O (
 
   @param[in] DevicePathNode   The node to get info on.
   @param[in] MappingItem      The info item to populate.
-  @param[in] DevicePath       Ignored.
 **/
 VOID
 EFIAPI
 DevPathSerialMacAddr (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
   MAC_ADDR_DEVICE_PATH  *Mac;
@@ -849,14 +750,12 @@ DevPathSerialMacAddr (
 
   @param[in] DevicePathNode   The node to get info on.
   @param[in] MappingItem      The info item to populate.
-  @param[in] DevicePath       Ignored.
 **/
 VOID
 EFIAPI
 DevPathSerialInfiniBand (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
   INFINIBAND_DEVICE_PATH  *InfiniBand;
@@ -883,14 +782,12 @@ DevPathSerialInfiniBand (
 
   @param[in] DevicePathNode   The node to get info on.
   @param[in] MappingItem      The info item to populate.
-  @param[in] DevicePath       Ignored.
 **/
 VOID
 EFIAPI
 DevPathSerialIPv4 (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
   IPv4_DEVICE_PATH  *Ip;
@@ -929,15 +826,12 @@ DevPathSerialIPv4 (
 
   @param[in] DevicePathNode   The node to get info on.
   @param[in] MappingItem      The info item to populate.
-  @param[in] DevicePath       Ignored.
-
 **/
 VOID
 EFIAPI
 DevPathSerialIPv6 (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
   IPv6_DEVICE_PATH  *Ip;
@@ -968,15 +862,12 @@ DevPathSerialIPv6 (
 
   @param[in] DevicePathNode   The node to get info on.
   @param[in] MappingItem      The info item to populate.
-  @param[in] DevicePath       Ignored.
-
 **/
 VOID
 EFIAPI
 DevPathSerialScsi (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
   SCSI_DEVICE_PATH  *Scsi;
@@ -994,14 +885,12 @@ DevPathSerialScsi (
 
   @param[in] DevicePathNode   The node to get info on.
   @param[in] MappingItem      The info item to populate.
-  @param[in] DevicePath       Ignored.
 **/
 VOID
 EFIAPI
 DevPathSerial1394 (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
   F1394_DEVICE_PATH *DevicePath_F1394;
@@ -1020,14 +909,12 @@ DevPathSerial1394 (
 
   @param[in] DevicePathNode   The node to get info on.
   @param[in] MappingItem      The info item to populate.
-  @param[in] DevicePath       Ignored.
 **/
 VOID
 EFIAPI
 DevPathSerialAcpi (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
   ACPI_HID_DEVICE_PATH  *Acpi;
@@ -1049,7 +936,6 @@ DevPathSerialAcpi (
 
   @param[in] DevicePathNode       Ignored.
   @param[in] MappingItem          Ignored.
-  @param[in] DevicePath           Ignored.
 
   Does nothing.
 **/
@@ -1057,8 +943,7 @@ VOID
 EFIAPI
 DevPathSerialDefault (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
-  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem,
-  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
   )
 {
   return;
@@ -1300,22 +1185,21 @@ GetDeviceConsistMappingInfo (
   IN EFI_DEVICE_PATH_PROTOCOL       *DevicePath
   )
 {
-  SERIAL_DECODE_FUNCTION    SerialFun;
-  UINTN                     Index;
-  EFI_DEVICE_PATH_PROTOCOL  *OriginalDevicePath;
+  VOID (EFIAPI *SerialFun) (EFI_DEVICE_PATH_PROTOCOL *, DEVICE_CONSIST_MAPPING_INFO *);
+
+  UINTN Index;
 
   ASSERT(DevicePath != NULL);
   ASSERT(MappingItem != NULL);
 
   SetMem (&MappingItem->Csd, sizeof (POOL_PRINT), 0);
-  OriginalDevicePath = DevicePath;
 
   while (!IsDevicePathEnd (DevicePath)) {
     //
-    // Find the handler to dump this device path node and
-    // initialize with generic function in case nothing is found
+    // Find the handler to dump this device path node
     //
-    for (SerialFun = DevPathSerialDefault, Index = 0; DevPathConsistMappingTable[Index].SerialFun != NULL; Index += 1) {
+    SerialFun = NULL;
+    for (Index = 0; DevPathConsistMappingTable[Index].SerialFun != NULL; Index += 1) {
 
       if (DevicePathType (DevicePath) == DevPathConsistMappingTable[Index].Type &&
           DevicePathSubType (DevicePath) == DevPathConsistMappingTable[Index].SubType
@@ -1324,8 +1208,14 @@ GetDeviceConsistMappingInfo (
         break;
       }
     }
+    //
+    // If not found, use a generic function
+    //
+    if (!SerialFun) {
+      SerialFun = DevPathSerialDefault;
+    }
 
-    SerialFun (DevicePath, MappingItem, OriginalDevicePath);
+    SerialFun (DevicePath, MappingItem);
 
     //
     // Next device path node

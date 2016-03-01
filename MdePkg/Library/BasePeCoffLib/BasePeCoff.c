@@ -941,7 +941,6 @@ PeCoffLoaderRelocateImage (
   EFI_IMAGE_OPTIONAL_HEADER_PTR_UNION   Hdr;
   EFI_IMAGE_DATA_DIRECTORY              *RelocDir;
   UINT64                                Adjust;
-  EFI_IMAGE_BASE_RELOCATION             *RelocBaseOrg;
   EFI_IMAGE_BASE_RELOCATION             *RelocBase;
   EFI_IMAGE_BASE_RELOCATION             *RelocBaseEnd;
   UINT16                                *Reloc;
@@ -1042,8 +1041,7 @@ PeCoffLoaderRelocateImage (
                                                                             RelocDir->VirtualAddress + RelocDir->Size - 1,
                                                                             TeStrippedOffset
                                                                             );
-    if (RelocBase == NULL || RelocBaseEnd == NULL || RelocBaseEnd < RelocBase) {
-      ImageContext->ImageError = IMAGE_ERROR_FAILED_RELOCATION;
+    if (RelocBase == NULL || RelocBaseEnd == NULL) {
       return RETURN_LOAD_ERROR;
     }
   } else {
@@ -1052,7 +1050,6 @@ PeCoffLoaderRelocateImage (
     //
     RelocBase = RelocBaseEnd = NULL;    
   }
-  RelocBaseOrg = RelocBase;
 
   //
   // If Adjust is not zero, then apply fix ups to the image
@@ -1068,23 +1065,14 @@ PeCoffLoaderRelocateImage (
       //
       // Add check for RelocBase->SizeOfBlock field.
       //
-      if (RelocBase->SizeOfBlock == 0) {
-        ImageContext->ImageError = IMAGE_ERROR_FAILED_RELOCATION;
-        return RETURN_LOAD_ERROR;
-      }
-      if ((UINTN)RelocBase > MAX_ADDRESS - RelocBase->SizeOfBlock) {
+      if ((RelocBase->SizeOfBlock == 0) || (RelocBase->SizeOfBlock > RelocDir->Size)) {
         ImageContext->ImageError = IMAGE_ERROR_FAILED_RELOCATION;
         return RETURN_LOAD_ERROR;
       }
 
       RelocEnd  = (UINT16 *) ((CHAR8 *) RelocBase + RelocBase->SizeOfBlock);
-      if ((UINTN)RelocEnd > (UINTN)RelocBaseOrg + RelocDir->Size) {
-        ImageContext->ImageError = IMAGE_ERROR_FAILED_RELOCATION;
-        return RETURN_LOAD_ERROR;
-      }
       FixupBase = PeCoffLoaderImageAddress (ImageContext, RelocBase->VirtualAddress, TeStrippedOffset);
       if (FixupBase == NULL) {
-        ImageContext->ImageError = IMAGE_ERROR_FAILED_RELOCATION;
         return RETURN_LOAD_ERROR;
       }  
 
@@ -1092,11 +1080,8 @@ PeCoffLoaderRelocateImage (
       // Run this relocation record
       //
       while (Reloc < RelocEnd) {
-        Fixup = PeCoffLoaderImageAddress (ImageContext, RelocBase->VirtualAddress + (*Reloc & 0xFFF), TeStrippedOffset);
-        if (Fixup == NULL) {
-          ImageContext->ImageError = IMAGE_ERROR_FAILED_RELOCATION;
-          return RETURN_LOAD_ERROR;
-        }
+
+        Fixup = FixupBase + (*Reloc & 0xFFF);
         switch ((*Reloc) >> 12) {
         case EFI_IMAGE_REL_BASED_ABSOLUTE:
           break;
@@ -1163,7 +1148,6 @@ PeCoffLoaderRelocateImage (
       //
       RelocBase = (EFI_IMAGE_BASE_RELOCATION *) RelocEnd;
     }
-    ASSERT ((UINTN)FixupData <= (UINTN)ImageContext->FixupData + ImageContext->FixupDataSize);
 
     //
     // Adjust the EntryPoint to match the linked-to address
@@ -1460,17 +1444,14 @@ PeCoffLoaderLoadImage (
       DirectoryEntry = (EFI_IMAGE_DATA_DIRECTORY *)&Hdr.Pe32Plus->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_BASERELOC];
     }
 
-    //
-    // Must use UINT64 here, because there might a case that 32bit loader to load 64bit image.
-    //
     if (NumberOfRvaAndSizes > EFI_IMAGE_DIRECTORY_ENTRY_BASERELOC) {
-      ImageContext->FixupDataSize = DirectoryEntry->Size / sizeof (UINT16) * sizeof (UINT64);
+      ImageContext->FixupDataSize = DirectoryEntry->Size / sizeof (UINT16) * sizeof (UINTN);
     } else {
       ImageContext->FixupDataSize = 0;
     }
   } else {
     DirectoryEntry              = &Hdr.Te->DataDirectory[0];
-    ImageContext->FixupDataSize = DirectoryEntry->Size / sizeof (UINT16) * sizeof (UINT64);
+    ImageContext->FixupDataSize = DirectoryEntry->Size / sizeof (UINT16) * sizeof (UINTN);
   }
   //
   // Consumer must allocate a buffer for the relocation fixup log.

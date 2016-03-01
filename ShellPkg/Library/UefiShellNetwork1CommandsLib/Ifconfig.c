@@ -271,16 +271,16 @@ AppendOffsetWidthValue (
 
   OriString = String;
 
-  StrnCpy (String, L"&OFFSET=", 9);
+  StrCpy (String, L"&OFFSET=");
   String += StrLen (L"&OFFSET=");
   String += UnicodeSPrint (String, 20, L"%x", Offset);
 
-  StrnCpy (String,L"&WIDTH=", 8);
+  StrCpy (String,L"&WIDTH=");
   String += StrLen (L"&WIDTH=");
   String += UnicodeSPrint (String, 20, L"%x", Width);
 
   if (Block != NULL) {
-    StrnCpy (String,L"&VALUE=", 8);
+    StrCpy (String,L"&VALUE=");
     String += StrLen (L"&VALUE=");
     while ((Width--) != 0) {
       String += UnicodeSPrint (String, 20, L"%x", Block[Width]);
@@ -369,7 +369,7 @@ ConstructConfigHdr (
   } 
 
   String = ConfigHdr;
-  StrnCpy (String, L"GUID=", 6);
+  StrCpy (String, L"GUID=");
   String += StrLen (L"GUID=");
 
   //
@@ -382,7 +382,7 @@ ConstructConfigHdr (
   //
   // Append L"&NAME="
   //
-  StrnCpy (String, L"&NAME=", 7);
+  StrCpy (String, L"&NAME=");
   String += StrLen (L"&NAME=");
   for (Index = 0; Index < NameLength ; Index++) {
     String += UnicodeSPrint (String, 10, L"00%x", Name[Index]);
@@ -391,7 +391,7 @@ ConstructConfigHdr (
   //
   // Append L"&PATH="
   //
-  StrnCpy (String, L"&PATH=", 7);
+  StrCpy (String, L"&PATH=");
   String += StrLen (L"&PATH=");
   for (Index = 0, Buffer = (UINT8 *) DevicePath; Index < DevicePathLength; Index++) {
     String += UnicodeSPrint (String, 6, L"%02x", *Buffer++);
@@ -618,7 +618,7 @@ IfconfigGetAllNicInfoByHii (
       goto ON_ERROR;
     }
     if (ConfigHdr != NULL) {
-      StrnCpy (ConfigResp, ConfigHdr, Length + NIC_ITEM_CONFIG_SIZE * 2 + 100 - 1);
+      StrCpy (ConfigResp, ConfigHdr);
     }
  
     //
@@ -791,7 +791,7 @@ IfconfigSetNicAddrByHii (
     goto ON_EXIT;
   }
   if (ConfigHdr != NULL) {
-    StrnCpy (ConfigResp, ConfigHdr, Length + NIC_ITEM_CONFIG_SIZE * 2 + 100 - 1);
+    StrCpy (ConfigResp, ConfigHdr);
   }
 
   NicConfig = AllocateZeroPool (NIC_ITEM_CONFIG_SIZE);

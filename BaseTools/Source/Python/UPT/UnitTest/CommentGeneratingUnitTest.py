@@ -1,7 +1,7 @@
 ## @file
 # This file contain unit test for CommentParsing
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
 #
 # This program and the accompanying materials are licensed and made available 
 # under the terms and conditions of the BSD License which accompanies this 
@@ -30,8 +30,7 @@ from Object.POM.ModuleObject import HobObject
                                
 from Library.String import GetSplitValueList
 from Library.DataType import TAB_SPACE_SPLIT
-from Library.DataType import TAB_LANGUAGE_EN_US
-from Library.DataType import TAB_LANGUAGE_ENG
+from Library.DataType import LANGUAGE_EN_US
 from Library.DataType import ITEM_UNDEFINED
 from Library.DataType import TAB_INF_FEATURE_PCD
 from Library import GlobalData
@@ -53,7 +52,7 @@ class _GetHelpStrTest(unittest.TestCase):
     def testNormalCase1(self):
         HelpStr = 'Hello world'
         HelpTextObj = TextObject()
-        HelpTextObj.SetLang(TAB_LANGUAGE_EN_US)
+        HelpTextObj.SetLang(LANGUAGE_EN_US)
         HelpTextObj.SetString(HelpStr)
         
         HelpTextList = [HelpTextObj]
@@ -66,14 +65,14 @@ class _GetHelpStrTest(unittest.TestCase):
     def testNormalCase2(self):
         HelpStr = 'Hello world'
         HelpTextObj = TextObject()
-        HelpTextObj.SetLang(TAB_LANGUAGE_ENG)
+        HelpTextObj.SetLang('eng')
         HelpTextObj.SetString(HelpStr)
         
         HelpTextList = [HelpTextObj]
 
         ExpectedStr = 'Hello world1'
         HelpTextObj = TextObject()
-        HelpTextObj.SetLang(TAB_LANGUAGE_EN_US)
+        HelpTextObj.SetLang(LANGUAGE_EN_US)
         HelpTextObj.SetString(ExpectedStr)        
         
         HelpTextList.append(HelpTextObj)
@@ -94,7 +93,7 @@ class _GetHelpStrTest(unittest.TestCase):
 
         ExpectedStr = 'Hello world1'
         HelpTextObj = TextObject()
-        HelpTextObj.SetLang(TAB_LANGUAGE_ENG)
+        HelpTextObj.SetLang('eng')
         HelpTextObj.SetString(ExpectedStr)        
         
         HelpTextList.append(HelpTextObj)
@@ -109,7 +108,7 @@ class _GetHelpStrTest(unittest.TestCase):
 
         ExpectedStr = 'Hello world1'
         HelpTextObj = TextObject()
-        HelpTextObj.SetLang(TAB_LANGUAGE_ENG)
+        HelpTextObj.SetLang('eng')
         HelpTextObj.SetString(ExpectedStr)        
         HelpTextList = [HelpTextObj]
       
@@ -129,7 +128,7 @@ class _GetHelpStrTest(unittest.TestCase):
 
         ExpectedStr = 'Hello world1'
         HelpTextObj = TextObject()
-        HelpTextObj.SetLang(TAB_LANGUAGE_EN_US)
+        HelpTextObj.SetLang(LANGUAGE_EN_US)
         HelpTextObj.SetString(ExpectedStr)        
         HelpTextList = [HelpTextObj]
       

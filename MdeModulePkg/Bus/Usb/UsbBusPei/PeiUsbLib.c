@@ -221,24 +221,26 @@ IsPortConnect (
 }
 
 /**
-  Get device speed according to port status.
+  Judge if the port is connected with a low-speed usb device or not.
 
-  @param    PortStatus  The usb port status gotten.
+  @param  PortStatus  The usb port status gotten.
 
-  @return   Device speed value.
+  @retval TRUE        A low-speed usb device is connected with the port.
+  @retval FALSE       No low-speed usb device is connected with the port.
 
 **/
 UINTN
-PeiUsbGetDeviceSpeed (
-  IN UINT16 PortStatus
+IsPortLowSpeedDeviceAttached (
+  IN UINT16  PortStatus
   )
 {
+  //
+  // return the bit 9 value of PortStatus
+  //
   if ((PortStatus & USB_PORT_STAT_LOW_SPEED) != 0) {
     return EFI_USB_SPEED_LOW;
   } else if ((PortStatus & USB_PORT_STAT_HIGH_SPEED) != 0){
     return EFI_USB_SPEED_HIGH;
-  } else if ((PortStatus & USB_PORT_STAT_SUPER_SPEED) != 0) {
-    return EFI_USB_SPEED_SUPER;
   } else {
     return EFI_USB_SPEED_FULL;
   }

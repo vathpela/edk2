@@ -219,7 +219,6 @@ IScsiLunToUnicodeStr (
     TempStr += StrLen (TempStr);
   }
 
-  ASSERT (StrLen(Str) >= 1);
   Str[StrLen (Str) - 1] = 0;
 
   for (Index = StrLen (Str) - 1; Index > 1; Index = Index - 2) {

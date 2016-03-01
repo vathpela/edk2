@@ -2,7 +2,7 @@
   This is an implementation of the ACPI S3 Save protocol.  This is defined in
   S3 boot path specification 0.9.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -328,74 +328,68 @@ S3CreateIdentityMappingPageTables (
     VOID                                          *Hob;
     BOOLEAN                                       Page1GSupport;
 
-    S3NvsPageTableAddress = (EFI_PHYSICAL_ADDRESS) PcdGet64 (PcdIdentifyMappingPageTablePtr);
-    if (S3NvsPageTableAddress != 0x0) {
-      return S3NvsPageTableAddress;
-    } else {
-      Page1GSupport = FALSE;
-      if (PcdGetBool(PcdUse1GPageTable)) {
-        AsmCpuid (0x80000000, &RegEax, NULL, NULL, NULL);
-        if (RegEax >= 0x80000001) {
-          AsmCpuid (0x80000001, NULL, NULL, NULL, &RegEdx);
-          if ((RegEdx & BIT26) != 0) {
-            Page1GSupport = TRUE;
-          }
+    Page1GSupport = FALSE;
+    if (PcdGetBool(PcdUse1GPageTable)) {
+      AsmCpuid (0x80000000, &RegEax, NULL, NULL, NULL);
+      if (RegEax >= 0x80000001) {
+        AsmCpuid (0x80000001, NULL, NULL, NULL, &RegEdx);
+        if ((RegEdx & BIT26) != 0) {
+          Page1GSupport = TRUE;
         }
       }
-      
-      //
-      // Get physical address bits supported.
-      //
-      Hob = GetFirstHob (EFI_HOB_TYPE_CPU);
-      if (Hob != NULL) {
-        PhysicalAddressBits = ((EFI_HOB_CPU *) Hob)->SizeOfMemorySpace;
-      } else {
-        AsmCpuid (0x80000000, &RegEax, NULL, NULL, NULL);
-        if (RegEax >= 0x80000008) {
-          AsmCpuid (0x80000008, &RegEax, NULL, NULL, NULL);
-          PhysicalAddressBits = (UINT8) RegEax;
-        } else {
-          PhysicalAddressBits = 36;
-        }
-      }
-      
-      //
-      // IA-32e paging translates 48-bit linear addresses to 52-bit physical addresses.
-      //
-      ASSERT (PhysicalAddressBits <= 52);
-      if (PhysicalAddressBits > 48) {
-        PhysicalAddressBits = 48;
-      }
-      
-      //
-      // Calculate the table entries needed.
-      //
-      if (PhysicalAddressBits <= 39 ) {
-        NumberOfPml4EntriesNeeded = 1;
-        NumberOfPdpEntriesNeeded = (UINT32)LShiftU64 (1, (PhysicalAddressBits - 30));
-      } else {
-        NumberOfPml4EntriesNeeded = (UINT32)LShiftU64 (1, (PhysicalAddressBits - 39));
-        NumberOfPdpEntriesNeeded = 512;
-      }
-      
-      //
-      // We need calculate whole page size then allocate once, because S3 restore page table does not know each page in Nvs.
-      //
-      if (!Page1GSupport) {
-        TotalPageTableSize = (UINTN)(1 + NumberOfPml4EntriesNeeded + NumberOfPml4EntriesNeeded * NumberOfPdpEntriesNeeded);
-      } else {
-        TotalPageTableSize = (UINTN)(1 + NumberOfPml4EntriesNeeded);
-      }
-      DEBUG ((EFI_D_ERROR, "TotalPageTableSize - %x pages\n", TotalPageTableSize));
-      
-      //
-      // By architecture only one PageMapLevel4 exists - so lets allocate storage for it.
-      //
-      S3NvsPageTableAddress = (EFI_PHYSICAL_ADDRESS)(UINTN)AllocateMemoryBelow4G (EfiReservedMemoryType, EFI_PAGES_TO_SIZE(TotalPageTableSize));
-      ASSERT (S3NvsPageTableAddress != 0);
-      PcdSet64 (PcdIdentifyMappingPageTablePtr, S3NvsPageTableAddress); 
-      return S3NvsPageTableAddress;
     }
+
+    //
+    // Get physical address bits supported.
+    //
+    Hob = GetFirstHob (EFI_HOB_TYPE_CPU);
+    if (Hob != NULL) {
+      PhysicalAddressBits = ((EFI_HOB_CPU *) Hob)->SizeOfMemorySpace;
+    } else {
+      AsmCpuid (0x80000000, &RegEax, NULL, NULL, NULL);
+      if (RegEax >= 0x80000008) {
+        AsmCpuid (0x80000008, &RegEax, NULL, NULL, NULL);
+        PhysicalAddressBits = (UINT8) RegEax;
+      } else {
+        PhysicalAddressBits = 36;
+      }
+    }
+    
+    //
+    // IA-32e paging translates 48-bit linear addresses to 52-bit physical addresses.
+    //
+    ASSERT (PhysicalAddressBits <= 52);
+    if (PhysicalAddressBits > 48) {
+      PhysicalAddressBits = 48;
+    }
+
+    //
+    // Calculate the table entries needed.
+    //
+    if (PhysicalAddressBits <= 39 ) {
+      NumberOfPml4EntriesNeeded = 1;
+      NumberOfPdpEntriesNeeded = (UINT32)LShiftU64 (1, (PhysicalAddressBits - 30));
+    } else {
+      NumberOfPml4EntriesNeeded = (UINT32)LShiftU64 (1, (PhysicalAddressBits - 39));
+      NumberOfPdpEntriesNeeded = 512;
+    }
+
+    //
+    // We need calculate whole page size then allocate once, because S3 restore page table does not know each page in Nvs.
+    //
+    if (!Page1GSupport) {
+      TotalPageTableSize = (UINTN)(1 + NumberOfPml4EntriesNeeded + NumberOfPml4EntriesNeeded * NumberOfPdpEntriesNeeded);
+    } else {
+      TotalPageTableSize = (UINTN)(1 + NumberOfPml4EntriesNeeded);
+    }
+    DEBUG ((EFI_D_ERROR, "TotalPageTableSize - %x pages\n", TotalPageTableSize));
+
+    //
+    // By architecture only one PageMapLevel4 exists - so lets allocate storage for it.
+    //
+    S3NvsPageTableAddress = (EFI_PHYSICAL_ADDRESS)(UINTN)AllocateMemoryBelow4G (EfiReservedMemoryType, EFI_PAGES_TO_SIZE(TotalPageTableSize));
+    ASSERT (S3NvsPageTableAddress != 0);
+    return S3NvsPageTableAddress;
   } else {
     //
     // If DXE is running 32-bit mode, no need to establish page table.
@@ -517,8 +511,6 @@ S3Ready (
   DEBUG((EFI_D_INFO, "AcpiS3Context: IdtrProfile is 0x%8x\n", AcpiS3Context->IdtrProfile));
   DEBUG((EFI_D_INFO, "AcpiS3Context: S3NvsPageTableAddress is 0x%8x\n", AcpiS3Context->S3NvsPageTableAddress));
   DEBUG((EFI_D_INFO, "AcpiS3Context: S3DebugBufferAddress is 0x%8x\n", AcpiS3Context->S3DebugBufferAddress));
-  DEBUG((EFI_D_INFO, "AcpiS3Context: BootScriptStackBase is 0x%8x\n", AcpiS3Context->BootScriptStackBase));
-  DEBUG((EFI_D_INFO, "AcpiS3Context: BootScriptStackSize is 0x%8x\n", AcpiS3Context->BootScriptStackSize));
 
   Status = SaveLockBox (
              &gEfiAcpiVariableGuid,

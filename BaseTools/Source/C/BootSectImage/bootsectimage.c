@@ -4,7 +4,7 @@ Abstract:
   Patch the BPB information in boot sector image file.
   Patch the MBR code in MBR image file.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -56,10 +56,8 @@ Returns:
 
 --*/
 {
-  printf ("%s Version %d.%d %s\n", UTILITY_NAME, UTILITY_MAJOR_VERSION, UTILITY_MINOR_VERSION, __BUILD_VERSION);
-  printf ("Copyright (c) 1999-2014 Intel Corporation. All rights reserved.\n");
-  printf ("\n  The BootSectImage tool prints information or patch destination file by source\n");
-  printf ("  file for BIOS Parameter Block (BPB) or Master Boot Record (MBR).\n");
+  printf ("%s v%d.%d %s - Utility to break a file into two pieces at the specified offset.\n", UTILITY_NAME, UTILITY_MAJOR_VERSION, UTILITY_MINOR_VERSION, __BUILD_VERSION);
+  printf ("Copyright (c) 1999-2010 Intel Corporation. All rights reserved.\n");
 }
 
 void
@@ -118,7 +116,7 @@ Return:
   FILE *FileHandle;
   int  result;
 
-  FileHandle = fopen (LongFilePath (FileName), "r+b");
+  FileHandle = fopen (FileName, "r+b");
   if (FileHandle == NULL) {
     DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "Open file: %s", FileName);
     return 0;
@@ -156,7 +154,7 @@ Return:
   FILE *FileHandle;
   int  result;
 
-  FileHandle = fopen (LongFilePath (FileName), "rb");
+  FileHandle = fopen (FileName, "rb");
   if (FileHandle == NULL) {
     DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "ERROR: E0001: Error opening file: %s", FileName);
     return 0;
@@ -891,9 +889,6 @@ main (
       ProcessMbr = TRUE;
     } else if (strcmp (*argv, "-v") == 0 || strcmp (*argv, "--verbose") == 0) {
       Verbose    = TRUE;
-    } else if (strcmp (*argv, "--version") == 0) {
-      Version();
-      return 0;
     } else if ((stricmp (*argv, "-d") == 0) || (stricmp (*argv, "--debug") == 0)) {
       argc--; argv++;
       if (argc < 1) {

@@ -1,7 +1,7 @@
 /** @file
   Pei Core Firmware File System service routines.
   
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -525,24 +525,27 @@ FirmwareVolmeInfoPpiNotifyCallback (
   UINTN                                 FvIndex;
   EFI_PEI_FILE_HANDLE                   FileHandle;
   VOID                                  *DepexData;
-  BOOLEAN                               IsFvInfo2;
   
   Status       = EFI_SUCCESS;
   PrivateData  = PEI_CORE_INSTANCE_FROM_PS_THIS (PeiServices);
+
+  if (PrivateData->FvCount >= FixedPcdGet32 (PcdPeiCoreMaxFvSupported)) {
+    DEBUG ((EFI_D_ERROR, "The number of Fv Images (%d) exceed the max supported FVs (%d) in Pei", PrivateData->FvCount + 1, FixedPcdGet32 (PcdPeiCoreMaxFvSupported)));
+    DEBUG ((EFI_D_ERROR, "PcdPeiCoreMaxFvSupported value need be reconfigurated in DSC"));
+    ASSERT (FALSE);
+  }
 
   if (CompareGuid (NotifyDescriptor->Guid, &gEfiPeiFirmwareVolumeInfo2PpiGuid)) {
     //
     // It is FvInfo2PPI.
     //
     CopyMem (&FvInfo2Ppi, Ppi, sizeof (EFI_PEI_FIRMWARE_VOLUME_INFO2_PPI));
-    IsFvInfo2 = TRUE;
   } else {
     //
     // It is FvInfoPPI.
     //
     CopyMem (&FvInfo2Ppi, Ppi, sizeof (EFI_PEI_FIRMWARE_VOLUME_INFO_PPI));
     FvInfo2Ppi.AuthenticationStatus = 0;
-    IsFvInfo2 = FALSE;
   }
 
   //
@@ -569,19 +572,9 @@ FirmwareVolmeInfoPpiNotifyCallback (
     //
     for (FvIndex = 0; FvIndex < PrivateData->FvCount; FvIndex ++) {
       if (PrivateData->Fv[FvIndex].FvHandle == FvHandle) {
-        if (IsFvInfo2 && (FvInfo2Ppi.AuthenticationStatus != PrivateData->Fv[FvIndex].AuthenticationStatus)) {
-          PrivateData->Fv[FvIndex].AuthenticationStatus = FvInfo2Ppi.AuthenticationStatus;
-          DEBUG ((EFI_D_INFO, "Update AuthenticationStatus of the %dth FV to 0x%x!\n", FvIndex, FvInfo2Ppi.AuthenticationStatus));          
-        }
         DEBUG ((EFI_D_INFO, "The Fv %p has already been processed!\n", FvInfo2Ppi.FvInfo));
         return EFI_SUCCESS;
       }
-    }
-
-    if (PrivateData->FvCount >= PcdGet32 (PcdPeiCoreMaxFvSupported)) {
-      DEBUG ((EFI_D_ERROR, "The number of Fv Images (%d) exceed the max supported FVs (%d) in Pei", PrivateData->FvCount + 1, PcdGet32 (PcdPeiCoreMaxFvSupported)));
-      DEBUG ((EFI_D_ERROR, "PcdPeiCoreMaxFvSupported value need be reconfigurated in DSC"));
-      ASSERT (FALSE);
     }
 
     //
@@ -735,7 +728,6 @@ ProcessSection (
   BOOLEAN                                 SectionCached;
   VOID                                    *TempOutputBuffer;
   UINT32                                  TempAuthenticationStatus;
-  UINT16                                  GuidedSectionAttributes;
 
   PrivateData   = PEI_CORE_INSTANCE_FROM_PS_THIS (PeiServices);
   *OutputBuffer = NULL;
@@ -835,11 +827,9 @@ ProcessSection (
         Authentication = 0;
         if (Section->Type == EFI_SECTION_GUID_DEFINED) {
           if (IS_SECTION2 (Section)) {
-            SectionDefinitionGuid   = &((EFI_GUID_DEFINED_SECTION2 *)Section)->SectionDefinitionGuid;
-            GuidedSectionAttributes = ((EFI_GUID_DEFINED_SECTION2 *)Section)->Attributes;
+            SectionDefinitionGuid = &((EFI_GUID_DEFINED_SECTION2 *)Section)->SectionDefinitionGuid;
           } else {
-            SectionDefinitionGuid   = &((EFI_GUID_DEFINED_SECTION *)Section)->SectionDefinitionGuid;
-            GuidedSectionAttributes = ((EFI_GUID_DEFINED_SECTION *)Section)->Attributes;
+            SectionDefinitionGuid = &((EFI_GUID_DEFINED_SECTION *)Section)->SectionDefinitionGuid;
           }
           if (VerifyGuidedSectionGuid (SectionDefinitionGuid, &GuidSectionPpi)) {
             Status = GuidSectionPpi->ExtractSection (
@@ -849,21 +839,6 @@ ProcessSection (
                                        &PpiOutputSize,
                                        &Authentication
                                        );
-          } else if ((GuidedSectionAttributes & EFI_GUIDED_SECTION_PROCESSING_REQUIRED) == 0) {
-            //
-            // Figure out the proper authentication status for GUIDED section without processing required
-            //
-            Status = EFI_SUCCESS;
-            if ((GuidedSectionAttributes & EFI_GUIDED_SECTION_AUTH_STATUS_VALID) == EFI_GUIDED_SECTION_AUTH_STATUS_VALID) {
-              Authentication |= EFI_AUTH_STATUS_IMAGE_SIGNED | EFI_AUTH_STATUS_NOT_TESTED;
-            }
-            if (IS_SECTION2 (Section)) {
-              PpiOutputSize = SECTION2_SIZE (Section) - ((EFI_GUID_DEFINED_SECTION2 *) Section)->DataOffset;
-              PpiOutput     = (UINT8 *) Section + ((EFI_GUID_DEFINED_SECTION2 *) Section)->DataOffset;
-            } else {
-              PpiOutputSize = SECTION_SIZE (Section) - ((EFI_GUID_DEFINED_SECTION *) Section)->DataOffset;
-              PpiOutput     = (UINT8 *) Section + ((EFI_GUID_DEFINED_SECTION *) Section)->DataOffset;
-            }
           }
         } else if (Section->Type == EFI_SECTION_COMPRESSION) {
           Status = PeiServicesLocatePpi (&gEfiPeiDecompressPpiGuid, 0, NULL, (VOID **) &DecompressPpi);
@@ -1362,16 +1337,8 @@ ProcessFvFile (
   ASSERT_EFI_ERROR (Status);
   
   //
-  // Install FvInfo(2) Ppi
+  // Install FvInfo2 Ppi and Build FvHob
   //
-  PeiServicesInstallFvInfoPpi (
-    &FvHeader->FileSystemGuid,
-    (VOID**) FvHeader,
-    (UINT32) FvHeader->FvLength,
-    &ParentFvImageInfo.FvName,
-    &FileInfo.FileName
-    );
-
   PeiServicesInstallFvInfo2Ppi (
     &FvHeader->FileSystemGuid,
     (VOID**) FvHeader,
@@ -1985,7 +1952,7 @@ FindNextCoreFvHandle (
     }
   }
 
-  ASSERT (Private->FvCount <= PcdGet32 (PcdPeiCoreMaxFvSupported));
+  ASSERT (Private->FvCount <= FixedPcdGet32 (PcdPeiCoreMaxFvSupported));
   if (Instance >= Private->FvCount) {
     return NULL;
   }
@@ -2033,7 +2000,7 @@ PeiReinitializeFv (
   //
   // Fixup all FvPpi pointers for the implementation in flash to permanent memory.
   //
-  for (Index = 0; Index < PcdGet32 (PcdPeiCoreMaxFvSupported); Index ++) {
+  for (Index = 0; Index < FixedPcdGet32 (PcdPeiCoreMaxFvSupported); Index ++) {
     if (PrivateData->Fv[Index].FvPpi == OldFfsFvPpi) {
       PrivateData->Fv[Index].FvPpi = &mPeiFfs2FwVol.Fv;
     }
@@ -2061,7 +2028,7 @@ PeiReinitializeFv (
   //
   // Fixup all FvPpi pointers for the implementation in flash to permanent memory.
   //
-  for (Index = 0; Index < PcdGet32 (PcdPeiCoreMaxFvSupported); Index ++) {
+  for (Index = 0; Index < FixedPcdGet32 (PcdPeiCoreMaxFvSupported); Index ++) {
     if (PrivateData->Fv[Index].FvPpi == OldFfsFvPpi) {
       PrivateData->Fv[Index].FvPpi = &mPeiFfs3FwVol.Fv;
     }
@@ -2092,7 +2059,7 @@ AddUnknownFormatFvInfo (
 {
   PEI_CORE_UNKNOW_FORMAT_FV_INFO    *NewUnknownFv;
   
-  if (PrivateData->UnknownFvInfoCount + 1 >= PcdGet32 (PcdPeiCoreMaxFvSupported)) {
+  if (PrivateData->UnknownFvInfoCount + 1 >= FixedPcdGet32 (PcdPeiCoreMaxFvSupported)) {
     return EFI_OUT_OF_RESOURCES;
   }
   
@@ -2230,8 +2197,8 @@ ThirdPartyFvPpiNotifyCallback (
       continue;
     }
     
-    if (PrivateData->FvCount >= PcdGet32 (PcdPeiCoreMaxFvSupported)) {
-      DEBUG ((EFI_D_ERROR, "The number of Fv Images (%d) exceed the max supported FVs (%d) in Pei", PrivateData->FvCount + 1, PcdGet32 (PcdPeiCoreMaxFvSupported)));
+    if (PrivateData->FvCount >= FixedPcdGet32 (PcdPeiCoreMaxFvSupported)) {
+      DEBUG ((EFI_D_ERROR, "The number of Fv Images (%d) exceed the max supported FVs (%d) in Pei", PrivateData->FvCount + 1, FixedPcdGet32 (PcdPeiCoreMaxFvSupported)));
       DEBUG ((EFI_D_ERROR, "PcdPeiCoreMaxFvSupported value need be reconfigurated in DSC"));
       ASSERT (FALSE);
     }

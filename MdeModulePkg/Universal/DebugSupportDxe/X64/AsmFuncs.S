@@ -280,7 +280,7 @@ ExtraPushDone:
 
                 mov     %ds, %rax
                 pushq   %rax
-                mov     %es, %rax
+                movw    %es, %rax
                 pushq   %rax
                 mov     %fs, %rax
                 pushq   %rax

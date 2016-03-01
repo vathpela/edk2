@@ -1,7 +1,7 @@
 ## @file
 #  Sample to provide FSP hob process related function.
 #
-#  Copyright (c) 2014 - 2015, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2014, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -64,12 +64,12 @@
   PeiServicesTablePointerLib
 
 [Pcd]
-  gFspWrapperTokenSpaceGuid.PcdPeiMinMemSize              ## CONSUMES
-  gFspWrapperTokenSpaceGuid.PcdPeiRecoveryMinMemSize      ## CONSUMES
+  gFspWrapperTokenSpaceGuid.PcdPeiMinMemSize
+  gFspWrapperTokenSpaceGuid.PcdPeiRecoveryMinMemSize
 
 [Guids]
-  gFspReservedMemoryResourceHobGuid                       ## CONSUMES ## HOB
-  gEfiMemoryTypeInformationGuid                           ## CONSUMES ## GUID
+  gFspReservedMemoryResourceHobGuid
+  gEfiMemoryTypeInformationGuid
 
 [Ppis]
-  gPeiCapsulePpiGuid                                      ## CONSUMES
+  gPeiCapsulePpiGuid

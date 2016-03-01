@@ -470,7 +470,7 @@ typedef struct {
   UINT8       PssDeveice;                        // 791 PSS Deveice: 0 - None, 1 - Monzax 2K, 2 - Monzax 8K
   UINT8       EDPV;                              // 792 Check for eDP display device
   UINT32      DIDX;                              // 793 Device ID for eDP device
-  UINT8       MicrosoftIoT;                      // (794)JP1 pins are for Microsoft IoT project.
+
 } EFI_GLOBAL_NVS_AREA;
 #pragma pack ()
 

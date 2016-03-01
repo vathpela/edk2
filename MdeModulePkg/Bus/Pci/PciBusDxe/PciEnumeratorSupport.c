@@ -1,7 +1,7 @@
 /** @file
   PCI emumeration support functions implementation for PCI Bus module.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -393,6 +393,14 @@ GatherDeviceInfo (
   }
 
   //
+  // Create a device path for this PCI device and store it into its private data
+  //
+  CreatePciDevicePath (
+    Bridge->DevicePath,
+    PciIoDevice
+    );
+
+  //
   // If it is a full enumeration, disconnect the device in advance
   //
   if (gFullEnumeration) {
@@ -466,6 +474,14 @@ GatherPpbInfo (
   if (PciIoDevice == NULL) {
     return NULL;
   }
+
+  //
+  // Create a device path for this PCI device and store it into its private data
+  //
+  CreatePciDevicePath (
+    Bridge->DevicePath,
+    PciIoDevice
+    );
 
   if (gFullEnumeration) {
     PCI_DISABLE_COMMAND_REGISTER (PciIoDevice, EFI_PCI_COMMAND_BITS_OWNED);
@@ -617,6 +633,14 @@ GatherP2CInfo (
   if (PciIoDevice == NULL) {
     return NULL;
   }
+
+  //
+  // Create a device path for this PCI device and store it into its private data
+  //
+  CreatePciDevicePath (
+    Bridge->DevicePath,
+    PciIoDevice
+    );
 
   if (gFullEnumeration) {
     PCI_DISABLE_COMMAND_REGISTER (PciIoDevice, EFI_PCI_COMMAND_BITS_OWNED);
@@ -947,12 +971,12 @@ PciSetDeviceAttribute (
 
   if (Option == EFI_SET_SUPPORTS) {
 
-    Attributes |= (UINT64) (EFI_PCI_IO_ATTRIBUTE_MEMORY_WRITE_COMBINE |
+    Attributes |= EFI_PCI_IO_ATTRIBUTE_MEMORY_WRITE_COMBINE |
                   EFI_PCI_IO_ATTRIBUTE_MEMORY_CACHED        |
                   EFI_PCI_IO_ATTRIBUTE_MEMORY_DISABLE       |
                   EFI_PCI_IO_ATTRIBUTE_EMBEDDED_DEVICE      |
                   EFI_PCI_IO_ATTRIBUTE_EMBEDDED_ROM         |
-                  EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE);
+                  EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE;
 
     if (IS_PCI_LPC (&PciIoDevice->Pci)) {
         Attributes |= EFI_PCI_IO_ATTRIBUTE_ISA_MOTHERBOARD_IO;
@@ -1120,7 +1144,7 @@ DetermineDeviceAttribute (
     //
     // Assume the PCI Root Bridge supports DAC
     //
-    PciIoDevice->Supports |= (UINT64)(EFI_PCI_IO_ATTRIBUTE_EMBEDDED_DEVICE |
+    PciIoDevice->Supports |= (EFI_PCI_IO_ATTRIBUTE_EMBEDDED_DEVICE |
                               EFI_PCI_IO_ATTRIBUTE_EMBEDDED_ROM |
                               EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE);
 
@@ -2003,14 +2027,6 @@ CreatePciIoDevice (
   InitializePciDriverOverrideInstance (PciIoDevice);
   InitializePciLoadFile2 (PciIoDevice);
   PciIo = &PciIoDevice->PciIo;
-
-  //
-  // Create a device path for this PCI device and store it into its private data
-  //
-  CreatePciDevicePath (
-    Bridge->DevicePath,
-    PciIoDevice
-    );
 
   //
   // Detect if PCI Express Device

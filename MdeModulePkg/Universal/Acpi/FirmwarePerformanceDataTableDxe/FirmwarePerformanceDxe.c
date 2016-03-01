@@ -5,7 +5,7 @@
   for Firmware Basic Boot Performance Record and other boot performance records, 
   and install FPDT to ACPI table.
 
-  Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2011 - 2013, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -54,7 +54,6 @@ UINTN                       mFirmwarePerformanceTableTemplateKey  = 0;
 UINT32                      mBootRecordSize = 0;
 UINT32                      mBootRecordMaxSize = 0;
 UINT8                       *mBootRecordBuffer = NULL;
-BOOLEAN                     mDxeCoreReportStatusCodeEnable = FALSE;
 
 BOOT_PERFORMANCE_TABLE                      *mAcpiBootPerformanceTable = NULL;
 S3_PERFORMANCE_TABLE                        *mAcpiS3PerformanceTable   = NULL;
@@ -489,15 +488,15 @@ InstallFirmwarePerformanceDataTable (
   mFirmwarePerformanceTableTemplate.S3PointerRecord.S3PerformanceTablePointer = (UINT64) (UINTN) mAcpiS3PerformanceTable;
   //
   // Save Runtime Performance Table pointers to Variable.
-  // Don't check SetVariable return status. It doesn't impact FPDT table generation. 
   //
-  gRT->SetVariable (
-        EFI_FIRMWARE_PERFORMANCE_VARIABLE_NAME,
-        &gEfiFirmwarePerformanceGuid,
-        EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS,
-        sizeof (PerformanceVariable),
-        &PerformanceVariable
-        );
+  Status = gRT->SetVariable (
+                  EFI_FIRMWARE_PERFORMANCE_VARIABLE_NAME,
+                  &gEfiFirmwarePerformanceGuid,
+                  EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS,
+                  sizeof (PerformanceVariable),
+                  &PerformanceVariable
+                  );
+  ASSERT_EFI_ERROR (Status);
 
   //
   // Publish Firmware Performance Data Table.
@@ -596,6 +595,45 @@ FpdtLegacyBootEventNotify (
 }
 
 /**
+  Notify function for event EVT_SIGNAL_EXIT_BOOT_SERVICES. This is used to record
+  performance data for ExitBootServicesEntry in FPDT.
+
+  @param[in]  Event   The Event that is being processed.
+  @param[in]  Context The Event Context.
+
+**/
+VOID
+EFIAPI
+FpdtExitBootServicesEventNotify (
+  IN EFI_EVENT        Event,
+  IN VOID             *Context
+  )
+{
+  if (mAcpiBootPerformanceTable == NULL) {
+    //
+    // Firmware Performance Data Table not installed, do nothing.
+    //
+    return ;
+  }
+
+  //
+  // Update Firmware Basic Boot Performance Record for UEFI boot.
+  //
+  mAcpiBootPerformanceTable->BasicBoot.ExitBootServicesEntry = GetTimeInNanoSecond (GetPerformanceCounter ());
+
+  //
+  // Dump FPDT Boot Performance record.
+  //
+  DEBUG ((EFI_D_INFO, "FPDT: Boot Performance - ResetEnd                = %ld\n", mAcpiBootPerformanceTable->BasicBoot.ResetEnd));
+  DEBUG ((EFI_D_INFO, "FPDT: Boot Performance - OsLoaderLoadImageStart  = %ld\n", mAcpiBootPerformanceTable->BasicBoot.OsLoaderLoadImageStart));
+  DEBUG ((EFI_D_INFO, "FPDT: Boot Performance - OsLoaderStartImageStart = %ld\n", mAcpiBootPerformanceTable->BasicBoot.OsLoaderStartImageStart));
+  DEBUG ((EFI_D_INFO, "FPDT: Boot Performance - ExitBootServicesEntry   = %ld\n", mAcpiBootPerformanceTable->BasicBoot.ExitBootServicesEntry));
+  //
+  // ExitBootServicesExit will be updated later, so don't dump it here.
+  //
+}
+
+/**
   Report status code listener of FPDT. This is used to collect performance data
   for OsLoaderLoadImageStart and OsLoaderStartImageStart in FPDT.
 
@@ -632,13 +670,6 @@ FpdtStatusCodeListenerDxe (
   if ((CodeType & EFI_STATUS_CODE_TYPE_MASK) != EFI_PROGRESS_CODE) {
     return EFI_UNSUPPORTED;
   }
-  
-  if (Value == (EFI_SOFTWARE_DXE_CORE | EFI_SW_DXE_CORE_PC_HANDOFF_TO_NEXT)) {
-    //
-    // DxeCore ReportStatusCode Enable so that the capability can be supported.
-    //
-    mDxeCoreReportStatusCodeEnable = TRUE;
-  }
 
   Status = EFI_SUCCESS;
   if (Value == PcdGet32 (PcdProgressCodeOsLoaderLoad)) {
@@ -667,11 +698,6 @@ FpdtStatusCodeListenerDxe (
     mAcpiBootPerformanceTable->BasicBoot.OsLoaderStartImageStart = GetTimeInNanoSecond (GetPerformanceCounter ());
   } else if (Value == (EFI_SOFTWARE_EFI_BOOT_SERVICE | EFI_SW_BS_PC_EXIT_BOOT_SERVICES)) {
     //
-    // Unregister boot time report status code listener.
-    //
-    mRscHandlerProtocol->Unregister (FpdtStatusCodeListenerDxe);
-
-    //
     // Progress code for ExitBootServices.
     //
     if (mAcpiBootPerformanceTable == NULL) {
@@ -682,6 +708,11 @@ FpdtStatusCodeListenerDxe (
     // Update ExitBootServicesExit for UEFI boot.
     //
     mAcpiBootPerformanceTable->BasicBoot.ExitBootServicesExit = GetTimeInNanoSecond (GetPerformanceCounter ());
+
+    //
+    // Unregister boot time report status code listener.
+    //
+    mRscHandlerProtocol->Unregister (FpdtStatusCodeListenerDxe);
   } else if (Data != NULL && CompareGuid (&Data->Type, &gEfiFirmwarePerformanceGuid)) {
     //
     // Append one or more Boot records
@@ -726,54 +757,6 @@ FpdtStatusCodeListenerDxe (
   }
 
   return Status;
-}
-
-
-/**
-  Notify function for event EVT_SIGNAL_EXIT_BOOT_SERVICES. This is used to record
-  performance data for ExitBootServicesEntry in FPDT.
-
-  @param[in]  Event   The Event that is being processed.
-  @param[in]  Context The Event Context.
-
-**/
-VOID
-EFIAPI
-FpdtExitBootServicesEventNotify (
-  IN EFI_EVENT        Event,
-  IN VOID             *Context
-  )
-{
-  if (!mDxeCoreReportStatusCodeEnable) {
-    //
-    // When DxeCore Report Status Code is disabled, 
-    // Unregister boot time report status code listener at ExitBootService Event.
-    //
-    mRscHandlerProtocol->Unregister (FpdtStatusCodeListenerDxe);
-  }
-
-  if (mAcpiBootPerformanceTable == NULL) {
-    //
-    // Firmware Performance Data Table not installed, do nothing.
-    //
-    return ;
-  }
-
-  //
-  // Update Firmware Basic Boot Performance Record for UEFI boot.
-  //
-  mAcpiBootPerformanceTable->BasicBoot.ExitBootServicesEntry = GetTimeInNanoSecond (GetPerformanceCounter ());
-
-  //
-  // Dump FPDT Boot Performance record.
-  //
-  DEBUG ((EFI_D_INFO, "FPDT: Boot Performance - ResetEnd                = %ld\n", mAcpiBootPerformanceTable->BasicBoot.ResetEnd));
-  DEBUG ((EFI_D_INFO, "FPDT: Boot Performance - OsLoaderLoadImageStart  = %ld\n", mAcpiBootPerformanceTable->BasicBoot.OsLoaderLoadImageStart));
-  DEBUG ((EFI_D_INFO, "FPDT: Boot Performance - OsLoaderStartImageStart = %ld\n", mAcpiBootPerformanceTable->BasicBoot.OsLoaderStartImageStart));
-  DEBUG ((EFI_D_INFO, "FPDT: Boot Performance - ExitBootServicesEntry   = %ld\n", mAcpiBootPerformanceTable->BasicBoot.ExitBootServicesEntry));
-  //
-  // ExitBootServicesExit will be updated later, so don't dump it here.
-  //
 }
 
 /**

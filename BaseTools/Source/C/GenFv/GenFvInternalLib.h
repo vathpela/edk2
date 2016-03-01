@@ -1,8 +1,6 @@
 /** @file
-This file contains describes the public interfaces to the GenFvImage Library.
-The basic purpose of the library is to create Firmware Volume images.
-  
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+
+Copyright (c) 2004 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -10,6 +8,15 @@ http://opensource.org/licenses/bsd-license.php
                                                                                           
 THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+
+Module Name:
+  
+  GenFvInternalLib.h
+
+Abstract:
+
+  This file contains describes the public interfaces to the GenFvImage Library.
+  The basic purpose of the library is to create Firmware Volume images.
 
 **/
 
@@ -207,7 +214,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 //
 typedef struct {
   UINTN Size;
-  CHAR8 ComponentName[MAX_LONG_FILE_PATH];
+  CHAR8 ComponentName[_MAX_PATH];
 } COMPONENT_INFO;
 
 //
@@ -220,12 +227,12 @@ typedef struct {
   BOOLEAN                 FvFileSystemGuidSet;
   EFI_GUID                FvNameGuid;
   BOOLEAN                 FvNameGuidSet;
-  CHAR8                   FvExtHeaderFile[MAX_LONG_FILE_PATH];
+  CHAR8                   FvExtHeaderFile[_MAX_PATH];
   UINTN                   Size;
   EFI_FVB_ATTRIBUTES_2    FvAttributes;
-  CHAR8                   FvName[MAX_LONG_FILE_PATH];
+  CHAR8                   FvName[_MAX_PATH];
   EFI_FV_BLOCK_MAP_ENTRY  FvBlocks[MAX_NUMBER_OF_FV_BLOCKS];
-  CHAR8                   FvFiles[MAX_NUMBER_OF_FILES_IN_FV][MAX_LONG_FILE_PATH];
+  CHAR8                   FvFiles[MAX_NUMBER_OF_FILES_IN_FV][_MAX_PATH];
   UINT32                  SizeofFvFiles[MAX_NUMBER_OF_FILES_IN_FV];
   BOOLEAN                 IsPiFvImage;
   INT8                    ForceRebase;
@@ -235,8 +242,8 @@ typedef struct {
   EFI_GUID                CapGuid;
   UINT32                  HeaderSize;
   UINT32                  Flags;
-  CHAR8                   CapName[MAX_LONG_FILE_PATH];
-  CHAR8                   CapFiles[MAX_NUMBER_OF_FILES_IN_CAP][MAX_LONG_FILE_PATH];
+  CHAR8                   CapName[_MAX_PATH];
+  CHAR8                   CapFiles[MAX_NUMBER_OF_FILES_IN_CAP][_MAX_PATH];
 } CAP_INFO;
 
 #pragma pack(1)

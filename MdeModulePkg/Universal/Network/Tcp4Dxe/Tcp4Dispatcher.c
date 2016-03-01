@@ -1,8 +1,7 @@
 /** @file
   Tcp request dispatcher implementation.
 
-(C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
-Copyright (c) 2005 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2005 - 2012, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -102,11 +101,11 @@ Tcp4GetMode (
 
     AccessPoint->UseDefaultAddress  = Tcb->UseDefaultAddr;
 
-    IP4_COPY_ADDRESS (&AccessPoint->StationAddress, &Tcb->LocalEnd.Ip);
-    IP4_COPY_ADDRESS (&AccessPoint->SubnetMask, &Tcb->SubnetMask);
+    CopyMem (&AccessPoint->StationAddress, &Tcb->LocalEnd.Ip, sizeof (EFI_IPv4_ADDRESS));
+    AccessPoint->SubnetMask         = Tcb->SubnetMask;
     AccessPoint->StationPort        = NTOHS (Tcb->LocalEnd.Port);
 
-    IP4_COPY_ADDRESS (&AccessPoint->RemoteAddress, &Tcb->RemoteEnd.Ip);
+    CopyMem (&AccessPoint->RemoteAddress, &Tcb->RemoteEnd.Ip, sizeof (EFI_IPv4_ADDRESS));
     AccessPoint->RemotePort         = NTOHS (Tcb->RemoteEnd.Port);
     AccessPoint->ActiveFlag         = (BOOLEAN) (Tcb->State != TCP_LISTEN);
 
@@ -217,10 +216,12 @@ Tcp4FlushPcb (
   )
 {
   SOCKET           *Sock;
+  TCP4_PROTO_DATA  *TcpProto;
 
   IpIoConfigIp (Tcb->IpInfo, NULL);
 
   Sock     = Tcb->Sk;
+  TcpProto = (TCP4_PROTO_DATA *) Sock->ProtoReserved;
 
   if (SOCK_IS_CONFIGURED (Sock)) {
     RemoveEntryList (&Tcb->List);
@@ -236,6 +237,8 @@ Tcp4FlushPcb (
              );
       FreePool (Sock->DevicePath);
     }
+
+    TcpSetVariableData (TcpProto->TcpService);
   }
 
   NetbufFreeList (&Tcb->SndQue);
@@ -459,7 +462,7 @@ Tcp4ConfigurePcb (
 
   CopyMem (&Tcb->LocalEnd.Ip, &CfgData->AccessPoint.StationAddress, sizeof (IP4_ADDR));
   Tcb->LocalEnd.Port  = HTONS (CfgData->AccessPoint.StationPort);
-  IP4_COPY_ADDRESS (&Tcb->SubnetMask, &CfgData->AccessPoint.SubnetMask);
+  Tcb->SubnetMask     = CfgData->AccessPoint.SubnetMask;
 
   if (CfgData->AccessPoint.ActiveFlag) {
     CopyMem (&Tcb->RemoteEnd.Ip, &CfgData->AccessPoint.RemoteAddress, sizeof (IP4_ADDR));

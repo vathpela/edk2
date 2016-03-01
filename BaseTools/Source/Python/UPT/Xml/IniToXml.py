@@ -1,7 +1,7 @@
 ## @file
 # This file is for converting package information data file to xml file.
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
 #
 # This program and the accompanying materials are licensed and made available 
 # under the terms and conditions of the BSD License which accompanies this 
@@ -32,7 +32,6 @@ from Library.DataType import TAB_SECTION_END
 from Logger import StringTable as ST
 from Library.String import ConvertSpecialChar
 from Library.ParserValidate import IsValidPath
-from Library import GlobalData
 
 ## log error:
 #
@@ -59,7 +58,9 @@ def __ValidatePath(Path, Root):
 # @param Filename: File to be checked
 #
 def ValidateMiscFile(Filename):
-    Root = GlobalData.gWORKSPACE
+    Root = ''
+    if 'WORKSPACE' in os.environ:
+        Root = os.environ['WORKSPACE']
     return __ValidatePath(Filename, Root)
 
 ## ValidateToolsFile
@@ -70,8 +71,8 @@ def ValidateToolsFile(Filename):
     Valid, Cause = False, ''
     if not Valid and 'EDK_TOOLS_PATH' in os.environ:
         Valid, Cause = __ValidatePath(Filename, os.environ['EDK_TOOLS_PATH'])
-    if not Valid:
-        Valid, Cause = __ValidatePath(Filename, GlobalData.gWORKSPACE)
+    if not Valid and 'WORKSPACE' in os.environ:
+        Valid, Cause = __ValidatePath(Filename, os.environ['WORKSPACE'])
     return Valid, Cause
 
 ## ParseFileList
@@ -331,7 +332,7 @@ def IniToXml(IniFile):
     for Index in range(0, len(FileContent)):
         LastIndex = Index
         Line = FileContent[Index].strip()
-        if Line == '' or Line.startswith(';'):
+        if Line == '':
             continue
         if Line[0] == TAB_SECTION_START and Line[-1] == TAB_SECTION_END:
             CurrentKey = ''

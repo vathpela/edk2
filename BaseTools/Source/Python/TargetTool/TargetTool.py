@@ -1,7 +1,5 @@
-## @file
-# Target Tool Parser
 #
-#  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -12,7 +10,7 @@
 #  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #
 
-import Common.LongFilePathOs as os
+import os
 import sys
 import traceback
 from optparse import OptionParser
@@ -21,7 +19,6 @@ import Common.EdkLogger as EdkLogger
 import Common.BuildToolError as BuildToolError
 from Common.DataType import *
 from Common.BuildVersion import gBUILD_VERSION
-from Common.LongFilePathSupport import OpenLongFilePath as open
 
 # To Do 1.set clean, 2. add item, if the line is disabled.
 

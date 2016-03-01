@@ -35,6 +35,7 @@ formset
       text
         help   = STRING_TOKEN(STR_NULL_STRING),
         text   = STRING_TOKEN(STR_NULL_STRING),
+          text   = STRING_TOKEN(STR_NULL_STRING),
         flags  = INTERACTIVE,
         key    = QUESTIONID_USER_MANAGE;
     endif;

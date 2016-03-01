@@ -1,15 +1,15 @@
 /*++
 
 Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
-                                                                                   
-  This program and the accompanying materials are licensed and made available under
-  the terms and conditions of the BSD License that accompanies this distribution.  
-  The full text of the license may be found at                                     
-  http://opensource.org/licenses/bsd-license.php.                                  
-                                                                                   
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,            
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.    
-                                                                                   
+                                                                                   
+  This program and the accompanying materials are licensed and made available under
+  the terms and conditions of the BSD License that accompanies this distribution.  
+  The full text of the license may be found at                                     
+  http://opensource.org/licenses/bsd-license.php.                                  
+                                                                                   
+  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,            
+  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.    
+                                                                                   
 
 
 Module Name:
@@ -25,11 +25,9 @@ Abstract:
 
 
 #include "CommonHeader.h"
+
 #include "MiscSubclassDriver.h"
 #include <Protocol/DxeSmmReadyToLock.h>
-#include <Library/NetLib.h>
-#include "Library/DebugLib.h"
-#include <Uefi/UefiBaseType.h>
 
 /**
 
@@ -69,10 +67,6 @@ AddSmbiosManuCallback (
   EFI_MISC_SYSTEM_MANUFACTURER      *ForType1InputData;
   EFI_SMBIOS_PROTOCOL               *Smbios;
   CHAR16                            Buffer[40];
-  
-  CHAR16                          *MacStr; 
-  EFI_HANDLE                      *Handles;
-  UINTN                           BufferSize;
 
   ForType1InputData = (EFI_MISC_SYSTEM_MANUFACTURER *)Context;
 
@@ -91,60 +85,53 @@ AddSmbiosManuCallback (
   //
   switch (PchStepping()) {
     case PchA0:
-      UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"MinnowBoard MAX A0 PLATFORM");
+      UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"Minnowboard Max A0 PLATFORM");
       HiiSetString(mHiiHandle,STRING_TOKEN(STR_MISC_SYSTEM_PRODUCT_NAME), Buffer, NULL);
       UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"A0");
       HiiSetString(mHiiHandle,STRING_TOKEN(STR_MISC_SYSTEM_VERSION), Buffer, NULL);
       DEBUG ((EFI_D_ERROR, "A0 Stepping Detected\n"));
       break;
     case PchA1:
-      UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"MinnowBoard MAX A1 PLATFORM");
+      UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"Minnowboard Max A1 PLATFORM");
       HiiSetString(mHiiHandle,STRING_TOKEN(STR_MISC_SYSTEM_PRODUCT_NAME), Buffer, NULL);
       UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"A1");
       HiiSetString(mHiiHandle,STRING_TOKEN(STR_MISC_SYSTEM_VERSION), Buffer, NULL);
       DEBUG ((EFI_D_ERROR, "A1 Stepping Detected\n"));
       break;
     case PchB0:
-      UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"MinnowBoard MAX B0 PLATFORM");
+      UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"Minnowboard Max B0 PLATFORM");
       HiiSetString(mHiiHandle,STRING_TOKEN(STR_MISC_SYSTEM_PRODUCT_NAME), Buffer, NULL);
       UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"B0");
       HiiSetString(mHiiHandle,STRING_TOKEN(STR_MISC_SYSTEM_VERSION), Buffer, NULL);
       DEBUG ((EFI_D_ERROR, "B0 Stepping Detected\n"));
       break;
     case PchB1:
-      UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"MinnowBoard MAX B1 PLATFORM");
+      UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"Minnowboard Max B1 PLATFORM");
       HiiSetString(mHiiHandle,STRING_TOKEN(STR_MISC_SYSTEM_PRODUCT_NAME), Buffer, NULL);
       UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"B1");
       HiiSetString(mHiiHandle,STRING_TOKEN(STR_MISC_SYSTEM_VERSION), Buffer, NULL);
       DEBUG ((EFI_D_ERROR, "B1 Stepping Detected\n"));
       break;
     case PchB2:
-      UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"MinnowBoard MAX B2 PLATFORM");
+      UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"Minnowboard Max B2 PLATFORM");
       HiiSetString(mHiiHandle,STRING_TOKEN(STR_MISC_SYSTEM_PRODUCT_NAME), Buffer, NULL);
       UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"B2");
       HiiSetString(mHiiHandle,STRING_TOKEN(STR_MISC_SYSTEM_VERSION), Buffer, NULL);
       DEBUG ((EFI_D_ERROR, "B2 Stepping Detected\n"));
       break;
     case PchB3:
-      UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"MinnowBoard MAX B3 PLATFORM");
+      UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"Minnowboard Max B3 PLATFORM");
       HiiSetString(mHiiHandle,STRING_TOKEN(STR_MISC_SYSTEM_PRODUCT_NAME), Buffer, NULL);
       UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"B3");
       HiiSetString(mHiiHandle,STRING_TOKEN(STR_MISC_SYSTEM_VERSION), Buffer, NULL);
       DEBUG ((EFI_D_ERROR, "B3 Stepping Detected\n"));
       break;
     case PchC0:
-      UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"MinnowBoard MAX C0 PLATFORM");
+      UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"Minnowboard Max C0 PLATFORM");
       HiiSetString(mHiiHandle,STRING_TOKEN(STR_MISC_SYSTEM_PRODUCT_NAME), Buffer, NULL);
       UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"C0");
       HiiSetString(mHiiHandle,STRING_TOKEN(STR_MISC_SYSTEM_VERSION), Buffer, NULL);
-      DEBUG ((EFI_D_ERROR, "C0 Stepping Detected\n"));
-      break;
-   case PchD0:
-      UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"MinnowBoard MAX D0 PLATFORM");
-      HiiSetString(mHiiHandle,STRING_TOKEN(STR_MISC_SYSTEM_PRODUCT_NAME), Buffer, NULL);
-      UnicodeSPrint (Buffer, sizeof (Buffer),L"%s",L"D0");
-      HiiSetString(mHiiHandle,STRING_TOKEN(STR_MISC_SYSTEM_VERSION), Buffer, NULL);
-      DEBUG ((EFI_D_ERROR, "D0 Stepping Detected\n"));
+      DEBUG ((EFI_D_ERROR, "C3 Stepping Detected\n"));
       break;
     default:
       DEBUG ((EFI_D_ERROR, "Unknow Stepping Detected\n"));
@@ -173,45 +160,8 @@ AddSmbiosManuCallback (
     return EFI_UNSUPPORTED;
   }
 
-  //
-  //Get handle infomation
-  //
-  BufferSize = 0;
-  Handles = NULL;
-  Status = gBS->LocateHandle (
-                  ByProtocol, 
-                  &gEfiSimpleNetworkProtocolGuid,
-                  NULL,
-                  &BufferSize,
-                  Handles
-                  );
-
-  if (Status == EFI_BUFFER_TOO_SMALL) {
-  	Handles = AllocateZeroPool(BufferSize);
-  	if (Handles == NULL) {
-  		return (EFI_OUT_OF_RESOURCES);
-  	}
-  	Status = gBS->LocateHandle(
-  	                ByProtocol,
-  	                &gEfiSimpleNetworkProtocolGuid,
-  	                NULL,
-  	                &BufferSize,
-  	                Handles
-  	                );
- }
- 	                
-  //
-  //Get the MAC string
-  //
-  Status = NetLibGetMacString (
-             *Handles,
-             NULL,
-             &MacStr
-             );
-  if (EFI_ERROR (Status)) {	
-    return Status;
-  }
-  SerialNumber = MacStr; 
+  TokenToGet = STRING_TOKEN (STR_MISC_SYSTEM_SERIAL_NUMBER);
+  SerialNumber = SmbiosMiscGetString (TokenToGet);
   SerialNumStrLen = StrLen(SerialNumber);
   if (SerialNumStrLen > SMBIOS_STRING_MAX_LENGTH) {
     return EFI_UNSUPPORTED;

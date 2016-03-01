@@ -12,7 +12,6 @@
 #                                                                                  
 #
 #
-#
 #  Module Name:
 #
 #   MultiPlatform.inf
@@ -71,7 +70,9 @@
   DebugLib
   HobLib
   IoLib
+## For PCCG BayleyBay RVP ##
 #  PeiKscLib
+## For PCCG BayleyBay RVP ##
 
 [Ppis]
   gEfiPeiReadOnlyVariable2PpiGuid

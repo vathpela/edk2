@@ -1,7 +1,7 @@
 /** @file
   The file for AHCI mode of ATA host controller.
 
-  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2013, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -156,16 +156,9 @@ AhciWaitMmioSet (
   )
 {
   UINT32     Value;
-  UINT64     Delay;
-  BOOLEAN    InfiniteWait;
+  UINT32     Delay;
 
-  if (Timeout == 0) {
-    InfiniteWait = TRUE;
-  } else {
-    InfiniteWait = FALSE;
-  }
-
-  Delay = DivU64x32 (Timeout, 1000) + 1;
+  Delay = (UINT32) (DivU64x32 (Timeout, 1000) + 1);
 
   do {
     //
@@ -184,7 +177,7 @@ AhciWaitMmioSet (
 
     Delay--;
 
-  } while (InfiniteWait || (Delay > 0));
+  } while (Delay > 0);
 
   return EFI_TIMEOUT;
 }
@@ -211,16 +204,9 @@ AhciWaitMemSet (
   )
 {
   UINT32     Value;
-  UINT64     Delay;
-  BOOLEAN    InfiniteWait;
+  UINT32     Delay;
 
-  if (Timeout == 0) {
-    InfiniteWait = TRUE;
-  } else {
-    InfiniteWait = FALSE;
-  }
-
-  Delay =  DivU64x32 (Timeout, 1000) + 1;
+  Delay = (UINT32) (DivU64x32 (Timeout, 1000) + 1);
 
   do {
     //
@@ -245,7 +231,7 @@ AhciWaitMemSet (
 
     Delay--;
 
-  } while (InfiniteWait || (Delay > 0));
+  } while (Delay > 0);
 
   return EFI_TIMEOUT;
 }
@@ -256,8 +242,7 @@ AhciWaitMemSet (
   @param[in]       Address           The memory address to test.
   @param[in]       MaskValue         The mask value of memory.
   @param[in]       TestValue         The test value of memory.
-  @param[in, out]  Task              Optional. Pointer to the ATA_NONBLOCK_TASK used by
-                                     non-blocking mode. If NULL, then just try once.
+  @param[in, out]  RetryTimes        The retry times value for waitting memory set. If 0, then just try once.
 
   @retval EFI_NOTREADY      The memory is not set.
   @retval EFI_TIMEOUT       The memory setting retry times out.
@@ -270,13 +255,13 @@ AhciCheckMemSet (
   IN     UINTN                     Address,
   IN     UINT32                    MaskValue,
   IN     UINT32                    TestValue,
-  IN OUT ATA_NONBLOCK_TASK         *Task
+  IN OUT UINTN                     *RetryTimes OPTIONAL
   )
 {
   UINT32     Value;
 
-  if (Task != NULL) {
-    Task->RetryTimes--;
+  if (RetryTimes != NULL) {
+    (*RetryTimes)--;
   }
 
   Value  = *(volatile UINT32 *) Address;
@@ -286,7 +271,7 @@ AhciCheckMemSet (
     return EFI_SUCCESS;
   }
 
-  if ((Task != NULL) && !Task->InfiniteWait && (Task->RetryTimes == 0)) {
+  if ((RetryTimes != NULL) && (*RetryTimes == 0)) {
     return EFI_TIMEOUT;
   } else {
     return EFI_NOT_READY;
@@ -532,7 +517,7 @@ AhciBuildCommand (
   //
   // Filling the PRDT
   //
-  PrdtNumber = (UINT32)DivU64x32 (((UINT64)DataLength + EFI_AHCI_MAX_DATA_PER_PRDT - 1), EFI_AHCI_MAX_DATA_PER_PRDT);
+  PrdtNumber = (DataLength + EFI_AHCI_MAX_DATA_PER_PRDT - 1) / EFI_AHCI_MAX_DATA_PER_PRDT;
 
   //
   // According to AHCI 1.3 spec, a PRDT entry can point to a maximum 4MB data block.
@@ -698,20 +683,11 @@ AhciPioTransfer (
   VOID                          *Map;
   UINTN                         MapLength;
   EFI_PCI_IO_PROTOCOL_OPERATION Flag;
-  UINT64                        Delay;
+  UINT32                        Delay;
   EFI_AHCI_COMMAND_FIS          CFis;
   EFI_AHCI_COMMAND_LIST         CmdList;
   UINT32                        PortTfd;
   UINT32                        PrdCount;
-  BOOLEAN                       InfiniteWait;
-  BOOLEAN                       PioFisReceived;
-  BOOLEAN                       D2hFisReceived;
-
-  if (Timeout == 0) {
-    InfiniteWait = TRUE;
-  } else {
-    InfiniteWait = FALSE;
-  }
 
   if (Read) {
     Flag = EfiPciIoOperationBusMasterWrite;
@@ -780,33 +756,17 @@ AhciPioTransfer (
     // Wait device sends the PIO setup fis before data transfer
     //
     Status = EFI_TIMEOUT;
-    Delay  = DivU64x32 (Timeout, 1000) + 1;
+    Delay  = (UINT32) (DivU64x32 (Timeout, 1000) + 1);
     do {
-      PioFisReceived = FALSE;
-      D2hFisReceived = FALSE;
       Offset = FisBaseAddr + EFI_AHCI_PIO_FIS_OFFSET;
-      Status = AhciCheckMemSet (Offset, EFI_AHCI_FIS_TYPE_MASK, EFI_AHCI_FIS_PIO_SETUP, NULL);
-      if (!EFI_ERROR (Status)) {
-        PioFisReceived = TRUE;
-      }
-      //
-      // According to SATA 2.6 spec section 11.7, D2h FIS means an error encountered.
-      // But Qemu and Marvel 9230 sata controller may just receive a D2h FIS from device
-      // after the transaction is finished successfully.
-      // To get better device compatibilities, we further check if the PxTFD's ERR bit is set.
-      // By this way, we can know if there is a real error happened.
-      //
-      Offset = FisBaseAddr + EFI_AHCI_D2H_FIS_OFFSET;
-      Status = AhciCheckMemSet (Offset, EFI_AHCI_FIS_TYPE_MASK, EFI_AHCI_FIS_REGISTER_D2H, NULL);
-      if (!EFI_ERROR (Status)) {
-        D2hFisReceived = TRUE;
-      }
 
-      if (PioFisReceived || D2hFisReceived) {
+      Status = AhciCheckMemSet (Offset, EFI_AHCI_FIS_TYPE_MASK, EFI_AHCI_FIS_PIO_SETUP, 0);
+      if (!EFI_ERROR (Status)) {
         Offset = EFI_AHCI_PORT_START + Port * EFI_AHCI_PORT_REG_WIDTH + EFI_AHCI_PORT_TFD;
         PortTfd = AhciReadReg (PciIo, (UINT32) Offset);
         //
         // PxTFD will be updated if there is a D2H or SetupFIS received. 
+        // For PIO IN transfer, D2H means a device error. Therefore we only need to check the TFD after receiving a SetupFIS.
         //
         if ((PortTfd & EFI_AHCI_PORT_TFD_ERR) != 0) {
           Status = EFI_DEVICE_ERROR;
@@ -815,9 +775,15 @@ AhciPioTransfer (
 
         PrdCount = *(volatile UINT32 *) (&(AhciRegisters->AhciCmdList[0].AhciCmdPrdbc));
         if (PrdCount == DataCount) {
-          Status = EFI_SUCCESS;
           break;
         }
+      }
+
+      Offset = FisBaseAddr + EFI_AHCI_D2H_FIS_OFFSET;
+      Status = AhciCheckMemSet (Offset, EFI_AHCI_FIS_TYPE_MASK, EFI_AHCI_FIS_REGISTER_D2H, 0);
+      if (!EFI_ERROR (Status)) {
+        Status = EFI_DEVICE_ERROR;
+        break;
       }
 
       //
@@ -826,10 +792,7 @@ AhciPioTransfer (
       MicroSecondDelay(100);
 
       Delay--;
-      if (Delay == 0) {
-        Status = EFI_TIMEOUT;
-      }
-    } while (InfiniteWait || (Delay > 0));
+    } while (Delay > 0);
   } else {
     //
     // Wait for D2H Fis is received
@@ -961,6 +924,7 @@ AhciDmaTransfer (
     //
     if (Task != NULL) {
       Task->IsStart      = TRUE;
+      Task->RetryTimes   = (UINT32) (DivU64x32(Timeout, 1000) + 1);
     }
     if (Read) {
       Flag = EfiPciIoOperationBusMasterWrite;
@@ -1036,7 +1000,7 @@ AhciDmaTransfer (
                Offset,
                EFI_AHCI_FIS_TYPE_MASK,
                EFI_AHCI_FIS_REGISTER_D2H,
-               Task
+               (UINTN *) (&Task->RetryTimes)
                );
   } else {
     Status = AhciWaitMemSet (
@@ -1340,6 +1304,10 @@ AhciStartCommand (
   //
   // Setting the command
   //
+  Offset = EFI_AHCI_PORT_START + Port * EFI_AHCI_PORT_REG_WIDTH + EFI_AHCI_PORT_SACT;
+  AhciAndReg (PciIo, Offset, 0);
+  AhciOrReg (PciIo, Offset, CmdSlotBit);
+
   Offset = EFI_AHCI_PORT_START + Port * EFI_AHCI_PORT_REG_WIDTH + EFI_AHCI_PORT_CI;
   AhciAndReg (PciIo, Offset, 0);
   AhciOrReg (PciIo, Offset, CmdSlotBit);
@@ -1434,25 +1402,14 @@ AhciReset (
   IN  UINT64                    Timeout
   )
 {
-  UINT64                 Delay;
+  UINT32                 Delay;
   UINT32                 Value;
-  UINT32                 Capability;
 
-  //
-  // Collect AHCI controller information
-  //
-  Capability = AhciReadReg (PciIo, EFI_AHCI_CAPABILITY_OFFSET);
-  
-  //
-  // Enable AE before accessing any AHCI registers if Supports AHCI Mode Only is not set
-  //
-  if ((Capability & EFI_AHCI_CAP_SAM) == 0) {
-    AhciOrReg (PciIo, EFI_AHCI_GHC_OFFSET, EFI_AHCI_GHC_ENABLE);
-  }
+  AhciOrReg (PciIo, EFI_AHCI_GHC_OFFSET, EFI_AHCI_GHC_ENABLE);
 
   AhciOrReg (PciIo, EFI_AHCI_GHC_OFFSET, EFI_AHCI_GHC_RESET);
 
-  Delay = DivU64x32(Timeout, 1000) + 1;
+  Delay = (UINT32) (DivU64x32(Timeout, 1000) + 1);
 
   do {
     Value = AhciReadReg(PciIo, EFI_AHCI_GHC_OFFSET);
@@ -2252,17 +2209,15 @@ AhciModeInitialization (
   }
 
   //
+  // Enable AE before accessing any AHCI registers
+  //
+  AhciOrReg (PciIo, EFI_AHCI_GHC_OFFSET, EFI_AHCI_GHC_ENABLE);
+
+  //
   // Collect AHCI controller information
   //
-  Capability = AhciReadReg (PciIo, EFI_AHCI_CAPABILITY_OFFSET);
-  
-  //
-  // Enable AE before accessing any AHCI registers if Supports AHCI Mode Only is not set
-  //
-  if ((Capability & EFI_AHCI_CAP_SAM) == 0) {
-    AhciOrReg (PciIo, EFI_AHCI_GHC_OFFSET, EFI_AHCI_GHC_ENABLE);
-  }
-  
+  Capability           = AhciReadReg(PciIo, EFI_AHCI_CAPABILITY_OFFSET);
+
   //
   // Get the number of command slots per port supported by this HBA.
   //

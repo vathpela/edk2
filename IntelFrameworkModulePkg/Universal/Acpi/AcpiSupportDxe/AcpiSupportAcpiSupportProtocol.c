@@ -1,7 +1,7 @@
 /** @file
   ACPI Support Protocol implementation
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -375,9 +375,6 @@ PublishTables (
                                  and the size field embedded in the ACPI table pointed to by AcpiTableBuffer
                                  are not in sync.
   @return EFI_OUT_OF_RESOURCES   Insufficient resources exist to complete the request.
-  @retval EFI_ACCESS_DENIED      The table signature matches a table already
-                                 present in the system and platform policy
-                                 does not allow duplicate tables of this type.
 
 **/
 EFI_STATUS
@@ -413,13 +410,13 @@ InstallAcpiTable (
   //
   AcpiTableBufferConst = AllocateCopyPool (AcpiTableBufferSize, AcpiTableBuffer);
   *TableKey = 0;
-  Status = AddTableToList (
-             AcpiSupportInstance,
-             AcpiTableBufferConst,
-             TRUE,
-             EFI_ACPI_TABLE_VERSION_1_0B | EFI_ACPI_TABLE_VERSION_2_0 | EFI_ACPI_TABLE_VERSION_3_0,
-             TableKey
-             );
+  Status = AcpiSupport->SetAcpiTable (
+                          AcpiSupport,
+                          AcpiTableBufferConst,
+                          TRUE,
+                          EFI_ACPI_TABLE_VERSION_1_0B | EFI_ACPI_TABLE_VERSION_2_0 | EFI_ACPI_TABLE_VERSION_3_0,
+                          TableKey
+                          );
   if (!EFI_ERROR (Status)) {
     Status = AcpiSupport->PublishTables (
                             AcpiSupport,
@@ -460,11 +457,13 @@ UninstallAcpiTable (
   //
   // Uninstall the ACPI table by using ACPI support protocol
   //
-  Status = RemoveTableFromList (
-             AcpiSupportInstance,
-             EFI_ACPI_TABLE_VERSION_1_0B | EFI_ACPI_TABLE_VERSION_2_0 | EFI_ACPI_TABLE_VERSION_3_0,
-             TableKey
-             );
+  Status = AcpiSupport->SetAcpiTable (
+                          AcpiSupport,
+                          NULL,
+                          FALSE,
+                          EFI_ACPI_TABLE_VERSION_1_0B | EFI_ACPI_TABLE_VERSION_2_0 | EFI_ACPI_TABLE_VERSION_3_0,
+                          &TableKey
+                          );
   if (!EFI_ERROR (Status)) {
     Status = AcpiSupport->PublishTables (
                             AcpiSupport,
@@ -589,9 +588,8 @@ ReallocateAcpiTableBuffer (
 
   @return EFI_SUCCESS               The function completed successfully.
   @return EFI_OUT_OF_RESOURCES      Could not allocate a required resource.
-  @retval EFI_ACCESS_DENIED         The table signature matches a table already
-                                    present in the system and platform policy
-                                    does not allow duplicate tables of this type.
+  @return EFI_ABORTED               The table is a duplicate of a table that is required
+                                    to be unique.
 **/
 EFI_STATUS
 AddTableToList (
@@ -726,7 +724,7 @@ AddTableToList (
         ) {
       gBS->FreePages (CurrentTableList->PageAddress, CurrentTableList->NumberOfPages);
       gBS->FreePool (CurrentTableList);
-      return EFI_ACCESS_DENIED;
+      return EFI_ABORTED;
     }
     //
     // Add the table to the appropriate table version
@@ -867,7 +865,7 @@ AddTableToList (
         ) {
       gBS->FreePages (CurrentTableList->PageAddress, CurrentTableList->NumberOfPages);
       gBS->FreePool (CurrentTableList);
-      return EFI_ACCESS_DENIED;
+      return EFI_ABORTED;
     }
     //
     // FACS is referenced by FADT and is not part of RSDT
@@ -951,7 +949,7 @@ AddTableToList (
         ) {
       gBS->FreePages (CurrentTableList->PageAddress, CurrentTableList->NumberOfPages);
       gBS->FreePool (CurrentTableList);
-      return EFI_ACCESS_DENIED;
+      return EFI_ABORTED;
     }
     //
     // DSDT is referenced by FADT and is not part of RSDT

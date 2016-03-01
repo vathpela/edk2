@@ -512,7 +512,7 @@ PxeBcParseDhcp4Packet (
   }
 
   //
-  // The offer with zero "yiaddr" is a proxy offer.
+  // The offer with "yiaddr" is a proxy offer.
   //
   if (Offer->Dhcp4.Header.YourAddr.Addr[0] == 0) {
     IsProxyOffer = TRUE;
@@ -1595,7 +1595,7 @@ PxeBcDhcp4Dora (
   CopyMem (&PxeMode->StationIp, &Private->StationIp, sizeof (EFI_IPv4_ADDRESS));
   CopyMem (&PxeMode->SubnetMask, &Private->SubnetMask, sizeof (EFI_IPv4_ADDRESS));
 
-  Status = PxeBcFlushStationIp (Private, &Private->StationIp, &Private->SubnetMask);
+  Status = PxeBcFlushStaionIp (Private, &Private->StationIp, &Private->SubnetMask);
   if (EFI_ERROR (Status)) {
     goto ON_EXIT;
   }

@@ -124,14 +124,6 @@ EfiPxeBcStart (
     if (EFI_ERROR (Status)) {
       goto ON_ERROR;
     }
-
-    //
-    // Set Ip6 policy to Automatic to start the IP6 router discovery.
-    //
-    Status = PxeBcSetIp6Policy (Private);
-    if (EFI_ERROR (Status)) {
-      goto ON_ERROR;
-    }
   } else {
     AsciiPrint ("\n>>Start PXE over IPv4");
     //
@@ -608,7 +600,6 @@ EfiPxeBcDiscover (
     if (EFI_ERROR (Status)) {
       goto ON_EXIT;
     }
-    ASSERT (NewCreatedInfo != NULL);
     Info = NewCreatedInfo;
   } else {
     //
@@ -2033,7 +2024,7 @@ EfiPxeBcSetStationIP (
     CopyMem (&Private->SubnetMask ,NewSubnetMask, sizeof (EFI_IP_ADDRESS));
   }
 
-  Status = PxeBcFlushStationIp (Private, NewStationIp, NewSubnetMask);
+  Status = PxeBcFlushStaionIp (Private, NewStationIp, NewSubnetMask);
 ON_EXIT:
   return Status;
 }

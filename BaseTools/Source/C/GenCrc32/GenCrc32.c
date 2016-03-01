@@ -1,7 +1,6 @@
 /** @file
-Calculate Crc32 value and Verify Crc32 value for input data.
 
-Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2007 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -9,6 +8,13 @@ http://opensource.org/licenses/bsd-license.php
                                                                                           
 THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+
+Module Name:
+
+  GenCrc32.c
+
+Abstract:
+  Calculate Crc32 value and Verify Crc32 value for input data.
 
 **/
 
@@ -23,7 +29,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #define UTILITY_NAME            "GenCrc32"
 #define UTILITY_MAJOR_VERSION   0
-#define UTILITY_MINOR_VERSION   2
+#define UTILITY_MINOR_VERSION   1
 
 #define CRC32_NULL              0
 #define CRC32_ENCODE            1
@@ -49,7 +55,7 @@ Returns:
 
 --*/
 {
-  fprintf (stdout, "%s Version %d.%d %s \n", UTILITY_NAME, UTILITY_MAJOR_VERSION, UTILITY_MINOR_VERSION, __BUILD_VERSION);
+  fprintf (stdout, "%s Version %d.%d Build %s \n", UTILITY_NAME, UTILITY_MAJOR_VERSION, UTILITY_MINOR_VERSION, __BUILD_VERSION);
 }
 
 VOID
@@ -80,7 +86,7 @@ Returns:
   //
   // Copyright declaration
   // 
-  fprintf (stdout, "Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.\n\n");
+  fprintf (stdout, "Copyright (c) 2007 - 2013, Intel Corporation. All rights reserved.\n\n");
 
   //
   // Details Option
@@ -276,7 +282,7 @@ Returns:
   //
   // Open Input file and read file data.
   //
-  InFile = fopen (LongFilePath (InputFileName), "rb");
+  InFile = fopen (InputFileName, "rb");
   if (InFile == NULL) {
     Error (NULL, 0, 0001, "Error opening file", InputFileName);
     return STATUS_ERROR;
@@ -299,7 +305,7 @@ Returns:
   //
   // Open output file
   //
-  OutFile = fopen (LongFilePath (OutputFileName), "wb");
+  OutFile = fopen (OutputFileName, "wb");
   if (OutFile == NULL) {
     Error (NULL, 0, 0001, "Error opening file", OutputFileName);
     goto Finish;

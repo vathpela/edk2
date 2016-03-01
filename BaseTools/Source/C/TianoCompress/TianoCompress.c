@@ -1,11 +1,6 @@
 /** @file
-Compression routine. The compression algorithm is a mixture of LZ77 and Huffman 
-coding. LZ77 transforms the source data into a sequence of Original Characters 
-and Pointers to repeated strings.
-This sequence is further divided into Blocks and Huffman codings are applied to 
-each Block.
-  
-Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+
+Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -13,6 +8,18 @@ http://opensource.org/licenses/bsd-license.php
                                                                                           
 THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+
+Module Name:
+
+  TianoCompress.c
+
+Abstract:
+
+  Compression routine. The compression algorithm is a mixture of
+  LZ77 and Huffman coding. LZ77 transforms the source data into a
+  sequence of Original Characters and Pointers to repeated strings.
+  This sequence is further divided into Blocks and Huffman codings
+  are applied to each Block.
 
 **/
 
@@ -1606,7 +1613,7 @@ Returns:
   //
   // Copy the file contents to the output buffer.
   //
-  InputFile = fopen (LongFilePath (InputFileName), "rb");
+  InputFile = fopen (InputFileName, "rb");
     if (InputFile == NULL) {
       Error (NULL, 0, 0001, "Error opening file: %s", InputFileName);
       return EFI_ABORTED;
@@ -1688,7 +1695,7 @@ Returns:
   //
   // Copyright declaration
   // 
-  fprintf (stdout, "Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.\n\n");
+  fprintf (stdout, "Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.\n\n");
 
   //
   // Details Option
@@ -1882,7 +1889,7 @@ Returns:
     goto ERROR;
   }
     
-  InputFile = fopen (LongFilePath (InputFileName), "rb");
+  InputFile = fopen (InputFileName, "rb");
   if (InputFile == NULL) {
     Error (NULL, 0, 0001, "Error opening input file", InputFileName);
     goto ERROR;
@@ -1913,7 +1920,7 @@ Returns:
   }
    
   if (OutputFileName != NULL) {
-    OutputFile = fopen (LongFilePath (OutputFileName), "wb");
+    OutputFile = fopen (OutputFileName, "wb");
     if (OutputFile == NULL) {
       Error (NULL, 0, 0001, "Error opening output file for writing", OutputFileName);
     if (InputFile != NULL) {
@@ -1923,7 +1930,7 @@ Returns:
       }
     } else {
       OutputFileName = DEFAULT_OUTPUT_FILE;
-      OutputFile = fopen (LongFilePath (OutputFileName), "wb");
+      OutputFile = fopen (OutputFileName, "wb");
     }
     
   if (ENCODE) {

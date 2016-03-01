@@ -1,7 +1,7 @@
 /** @file
   Command header of for Debug Agent library instance.
 
-  Copyright (c) 2010 - 2015, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2013, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -67,7 +67,7 @@
 
 extern UINTN  Exception0Handle;
 extern UINTN  TimerInterruptHandle;
-extern UINT32 ExceptionStubHeaderSize;
+extern UINT16 ExceptionStubHeaderSize;
 extern BOOLEAN mSkipBreakpoint;
 extern EFI_VECTOR_HANDOFF_INFO mVectorHandoffInfoDebugAgent[];
 extern UINTN                   mVectorHandoffInfoCount;
@@ -81,7 +81,7 @@ typedef struct {
   //
   BASE_LIBRARY_JUMP_BUFFER            JumpBuffer;
   //
-  // This field returns the exception information issued by the HOST command
+  // This filed returens the exception information issued by HOST command
   //
   DEBUG_DATA_RESPONSE_GET_EXCEPTION   ExceptionContent;
 } DEBUG_AGENT_EXCEPTION_BUFFER;
@@ -205,10 +205,8 @@ ArchReadRegisterBuffer (
 /**
   Send packet with response data to HOST.
 
-  @param[in]      Data        Pointer to response data buffer.
-  @param[in]      DataSize    Size of response data in byte.
-  @param[in, out] DebugHeader Pointer to a buffer for creating response packet and receiving ACK packet,
-                              to minimize the stack usage.
+  @param[in] Data        Pointer to response data buffer.
+  @param[in] DataSize    Size of response data in byte.
 
   @retval RETURN_SUCCESS      Response data was sent successfully.
   @retval RETURN_DEVICE_ERROR Cannot receive DEBUG_COMMAND_OK from HOST.
@@ -216,9 +214,8 @@ ArchReadRegisterBuffer (
 **/
 RETURN_STATUS
 SendDataResponsePacket (
-  IN UINT8                   *Data,
-  IN UINT16                  DataSize,
-  IN OUT DEBUG_PACKET_HEADER *DebugHeader
+  IN UINT8                *Data,
+  IN UINT16               DataSize
   );
 
 /**

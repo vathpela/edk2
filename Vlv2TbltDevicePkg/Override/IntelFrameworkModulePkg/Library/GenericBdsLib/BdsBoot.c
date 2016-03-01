@@ -1,7 +1,7 @@
 /** @file
   BDS Lib functions which relate with create or process the boot option.
 
-Copyright (c) 2004 - 2015, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -14,20 +14,20 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include "InternalBdsLib.h"
 #include "String.h"
-#include <Library/NetLib.h>
-#include "Library/DebugLib.h"
+#include <Library/SerialPortLib.h>
+
 
 BOOLEAN mEnumBootDevice = FALSE;
 EFI_HII_HANDLE gBdsLibStringPackHandle = NULL;
 
 /**
   The constructor function register UNI strings into imageHandle.
-  
-  It will ASSERT() if that operation fails and it will always return EFI_SUCCESS. 
+
+  It will ASSERT() if that operation fails and it will always return EFI_SUCCESS.
 
   @param  ImageHandle   The firmware allocated handle for the EFI image.
   @param  SystemTable   A pointer to the EFI System Table.
-  
+
   @retval EFI_SUCCESS   The constructor successfully added string package.
   @retval Other value   The constructor can't add string package.
 
@@ -84,10 +84,6 @@ BdsDeleteBootOption (
                   0,
                   NULL
                   );
-  //
-  // Deleting variable with existing variable implementation shouldn't fail.
-  //
-  ASSERT_EFI_ERROR (Status);
 
   //
   // adjust boot order array
@@ -411,7 +407,7 @@ BdsCreateLegacyBootOption (
                   );
 
   FreePool (Buffer);
-  
+
   Buffer = NULL;
 
   NewBootOrderList = AllocateZeroPool (*BootOrderListSize + sizeof (UINT16));
@@ -523,15 +519,6 @@ BdsDeleteAllInvalidLegacyBootOptions (
     return Status;
   }
 
-  BootOrder = BdsLibGetVariableAndSize (
-                L"BootOrder",
-                &gEfiGlobalVariableGuid,
-                &BootOrderSize
-                );
-  if (BootOrder == NULL) {
-    return EFI_NOT_FOUND;
-  }
-
   LegacyBios->GetBbsInfo (
                 LegacyBios,
                 &HddCount,
@@ -539,6 +526,15 @@ BdsDeleteAllInvalidLegacyBootOptions (
                 &BbsCount,
                 &LocalBbsTable
                 );
+
+  BootOrder = BdsLibGetVariableAndSize (
+                L"BootOrder",
+                &gEfiGlobalVariableGuid,
+                &BootOrderSize
+                );
+  if (BootOrder == NULL) {
+    BootOrderSize = 0;
+  }
 
   Index = 0;
   while (Index < BootOrderSize / sizeof (UINT16)) {
@@ -572,10 +568,10 @@ BdsDeleteAllInvalidLegacyBootOptions (
         return EFI_OUT_OF_RESOURCES;
       }
     }
-  
+
     //
     // Skip Non-Legacy boot option
-    // 
+    //
     if (!BdsIsLegacyBootOption (BootOptionVar, &BbsEntry, &BbsIndex)) {
       if (BootOptionVar!= NULL) {
         FreePool (BootOptionVar);
@@ -632,11 +628,9 @@ BdsDeleteAllInvalidLegacyBootOptions (
                   BootOrderSize,
                   BootOrder
                   );
-  //
-  // Shrinking variable with existing variable implementation shouldn't fail.
-  //
-  ASSERT_EFI_ERROR (Status);
-  FreePool (BootOrder);
+  if (BootOrder != NULL) {
+    FreePool (BootOrder);
+  }
 
   return Status;
 }
@@ -782,7 +776,7 @@ BdsCreateOneLegacyBootOption (
 /**
   Add the legacy boot options from BBS table if they do not exist.
 
-  @retval EFI_SUCCESS          The boot options are added successfully 
+  @retval EFI_SUCCESS          The boot options are added successfully
                                or they are already in boot options.
   @retval EFI_NOT_FOUND        No legacy boot options is found.
   @retval EFI_OUT_OF_RESOURCE  No enough memory.
@@ -865,11 +859,11 @@ BdsAddNonExistingLegacyBootOptions (
                 &BootOrder,
                 &BootOrderSize
                 );
-      if (!EFI_ERROR (Status)) {
-        ASSERT (BootOrder != NULL);
-        BbsIndex     = Index;
-        OptionNumber = BootOrder[BootOrderSize / sizeof (UINT16) - 1];
+      if (EFI_ERROR (Status)) {
+        break;
       }
+      BbsIndex     = Index;
+      OptionNumber = BootOrder[BootOrderSize / sizeof (UINT16) - 1];
     }
 
     ASSERT (BbsIndex == Index);
@@ -932,7 +926,7 @@ BdsFillDevOrderBuf (
   @param BbsTable        The BBS table.
   @param BbsCount        The BBS Count.
 
-  @retval EFI_SUCCES             The buffer is created and the EFI variable named 
+  @retval EFI_SUCCES             The buffer is created and the EFI variable named
                                  VAR_LEGACY_DEV_ORDER and gEfiLegacyDevOrderVariableGuid is
                                  set correctly.
   @retval EFI_OUT_OF_RESOURCES   Memmory or storage is not enough.
@@ -1023,11 +1017,11 @@ BdsCreateDevOrder (
   DevOrderPtr->BbsType = BBS_HARDDISK;
   DevOrderPtr->Length  = (UINT16) (sizeof (UINT16) + HDCount * sizeof (UINT16));
   DevOrderPtr          = (LEGACY_DEV_ORDER_ENTRY *) BdsFillDevOrderBuf (BbsTable, BBS_HARDDISK, BbsCount, DevOrderPtr->Data);
-  
+
   DevOrderPtr->BbsType = BBS_CDROM;
   DevOrderPtr->Length  = (UINT16) (sizeof (UINT16) + CDCount * sizeof (UINT16));
   DevOrderPtr          = (LEGACY_DEV_ORDER_ENTRY *) BdsFillDevOrderBuf (BbsTable, BBS_CDROM, BbsCount, DevOrderPtr->Data);
-  
+
   DevOrderPtr->BbsType = BBS_EMBED_NETWORK;
   DevOrderPtr->Length  = (UINT16) (sizeof (UINT16) + NETCount * sizeof (UINT16));
   DevOrderPtr          = (LEGACY_DEV_ORDER_ENTRY *) BdsFillDevOrderBuf (BbsTable, BBS_EMBED_NETWORK, BbsCount, DevOrderPtr->Data);
@@ -1044,7 +1038,7 @@ BdsCreateDevOrder (
   Status = gRT->SetVariable (
                   VAR_LEGACY_DEV_ORDER,
                   &gEfiLegacyDevOrderVariableGuid,
-                  EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+                  EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
                   TotalSize,
                   DevOrder
                   );
@@ -1054,7 +1048,7 @@ BdsCreateDevOrder (
 }
 
 /**
-  Add the legacy boot devices from BBS table into 
+  Add the legacy boot devices from BBS table into
   the legacy device boot order.
 
   @retval EFI_SUCCESS           The boot devices are added successfully.
@@ -1272,7 +1266,7 @@ BdsUpdateLegacyDevOrder (
     NETIndex++;
   }
   NewNETPtr = NewPtr->Data;
-  
+
   //
   // copy BEV
   //
@@ -1365,7 +1359,7 @@ BdsUpdateLegacyDevOrder (
   Status = gRT->SetVariable (
                   VAR_LEGACY_DEV_ORDER,
                   &gEfiLegacyDevOrderVariableGuid,
-                  EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+                  EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
                   TotalSize,
                   NewDevOrder
                   );
@@ -1415,7 +1409,7 @@ BdsSetBootPriority4SameTypeDev (
       break;
     }
 
-    DevOrderPtr = (LEGACY_DEV_ORDER_ENTRY *) ((UINTN) DevOrderPtr + sizeof (BBS_TYPE) + DevOrderPtr->Length);
+    DevOrderPtr = (LEGACY_DEV_ORDER_ENTRY *) ((UINT8 *) DevOrderPtr + sizeof (BBS_TYPE) + DevOrderPtr->Length);
   }
 
   if ((UINT8 *) DevOrderPtr >= (UINT8 *) DevOrder + DevOrderSize) {
@@ -1496,7 +1490,7 @@ PrintBbsTable (
   Set the boot priority for BBS entries based on boot option entry and boot order.
 
   @param  Entry             The boot option is to be checked for refresh BBS table.
-  
+
   @retval EFI_SUCCESS           The boot priority for BBS entries is refreshed successfully.
   @retval EFI_NOT_FOUND         BBS entries can't be found.
   @retval EFI_OUT_OF_RESOURCES  Failed to get the legacy device boot order.
@@ -1644,8 +1638,6 @@ BdsRefreshBbsTableForBoot (
     }
   }
 
-  FreePool (DeviceType);
-
   if (BootOrder != NULL) {
     FreePool (BootOrder);
   }
@@ -1698,7 +1690,7 @@ BdsLibDoLegacyBoot (
     Status = EfiCreateEventLegacyBootEx(
                TPL_NOTIFY,
                WriteBootToOsPerformanceData,
-               NULL, 
+               NULL,
                &LegacyBootEvent
                );
     ASSERT_EFI_ERROR (Status);
@@ -1955,7 +1947,7 @@ BdsMatchUsbWwid (
 
 /**
   Find a USB device path which match the specified short-form device path start
-  with USB Class or USB WWID device path and load the boot file then return the 
+  with USB Class or USB WWID device path and load the boot file then return the
   image handle. If ParentDevicePath is NULL, this function will search in all USB
   devices of the platform. If ParentDevicePath is not NULL,this function will only
   search in its child devices.
@@ -2112,7 +2104,7 @@ BdsFindUsbDevice (
 
 /**
   Expand USB Class or USB WWID device path node to be full device path of a USB
-  device in platform then load the boot file on this full device path and return the 
+  device in platform then load the boot file on this full device path and return the
   image handle.
 
   This function support following 4 cases:
@@ -2275,7 +2267,7 @@ BdsLibBootViaBootOption (
     // In this case, "BootCurrent" is not created.
     // Only create the BootCurrent variable when it points to a valid Boot#### variable.
     //
-    SetVariableAndReportStatusCodeOnError (
+    gRT->SetVariable (
           L"BootCurrent",
           &gEfiGlobalVariableGuid,
           EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
@@ -2353,9 +2345,9 @@ BdsLibBootViaBootOption (
     } else {
       DEBUG ((DEBUG_INFO | DEBUG_LOAD, "Booting %S\n", Option->Description));
     }
-        
+
     DEBUG_CODE_END();
-  
+
     //
     // Report status code for OS Loader LoadImage.
     //
@@ -2409,7 +2401,7 @@ BdsLibBootViaBootOption (
     REPORT_STATUS_CODE (
       EFI_ERROR_CODE | EFI_ERROR_MINOR,
       (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_EC_BOOT_OPTION_LOAD_ERROR)
-      );    
+      );
     goto Done;
   }
 
@@ -2444,6 +2436,7 @@ BdsLibBootViaBootOption (
   //
   REPORT_STATUS_CODE (EFI_PROGRESS_CODE, PcdGet32 (PcdProgressCodeOsLoaderStart));
 
+  //SerialPortWrite((UINT8 *)"\r\nTRANSFER...\r\n", 15);
   Status = gBS->StartImage (ImageHandle, ExitDataSize, ExitData);
   DEBUG ((DEBUG_INFO | DEBUG_LOAD, "Image Return Status = %r\n", Status));
   if (EFI_ERROR (Status)) {
@@ -2473,14 +2466,13 @@ Done:
 
   //
   // Clear Boot Current
-  // Deleting variable with current implementation shouldn't fail.
   //
   gRT->SetVariable (
         L"BootCurrent",
         &gEfiGlobalVariableGuid,
         EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
         0,
-        NULL
+        &Option->BootCurrent
         );
 
   return Status;
@@ -2529,28 +2521,11 @@ BdsExpandPartitionPartialDevicePathToFull (
   // If exist, search the front path which point to partition node in the variable instants.
   // If fail to find or HD_BOOT_DEVICE_PATH_VARIABLE_NAME not exist, reconnect all and search in all system
   //
-  GetVariable2 (
-    HD_BOOT_DEVICE_PATH_VARIABLE_NAME,
-    &gHdBootDevicePathVariablGuid,
-    (VOID **) &CachedDevicePath,
-    &CachedDevicePathSize
-    );
-
-  //
-  // Delete the invalid HD_BOOT_DEVICE_PATH_VARIABLE_NAME variable.
-  //
-  if ((CachedDevicePath != NULL) && !IsDevicePathValid (CachedDevicePath, CachedDevicePathSize)) {
-    FreePool (CachedDevicePath);
-    CachedDevicePath = NULL;
-    Status = gRT->SetVariable (
-                    HD_BOOT_DEVICE_PATH_VARIABLE_NAME,
-                    &gHdBootDevicePathVariablGuid,
-                    0,
-                    0,
-                    NULL
-                    );
-    ASSERT_EFI_ERROR (Status);
-  }
+  CachedDevicePath = BdsLibGetVariableAndSize (
+                      HD_BOOT_DEVICE_PATH_VARIABLE_NAME,
+                      &gHdBootDevicePathVariablGuid,
+                      &CachedDevicePathSize
+                      );
 
   if (CachedDevicePath != NULL) {
     TempNewDevicePath = CachedDevicePath;
@@ -2608,12 +2583,11 @@ BdsExpandPartitionPartialDevicePathToFull (
         FreePool (TempNewDevicePath);
         //
         // Save the matching Device Path so we don't need to do a connect all next time
-        // Failure to set the variable only impacts the performance when next time expanding the short-form device path.
         //
         Status = gRT->SetVariable (
                         HD_BOOT_DEVICE_PATH_VARIABLE_NAME,
                         &gHdBootDevicePathVariablGuid,
-                        EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+                        EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
                         GetDevicePathSize (CachedDevicePath),
                         CachedDevicePath
                         );
@@ -2678,7 +2652,7 @@ BdsExpandPartitionPartialDevicePathToFull (
 
         //
         // Here limit the device path instance number to 12, which is max number for a system support 3 IDE controller
-        // If the user try to boot many OS in different HDs or partitions, in theory, 
+        // If the user try to boot many OS in different HDs or partitions, in theory,
         // the HD_BOOT_DEVICE_PATH_VARIABLE_NAME variable maybe become larger and larger.
         //
         InstanceNum = 0;
@@ -2707,12 +2681,11 @@ BdsExpandPartitionPartialDevicePathToFull (
 
       //
       // Save the matching Device Path so we don't need to do a connect all next time
-      // Failure to set the variable only impacts the performance when next time expanding the short-form device path.
       //
       Status = gRT->SetVariable (
                       HD_BOOT_DEVICE_PATH_VARIABLE_NAME,
                       &gHdBootDevicePathVariablGuid,
-                      EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+                      EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
                       GetDevicePathSize (CachedDevicePath),
                       CachedDevicePath
                       );
@@ -2917,10 +2890,6 @@ BdsLibDeleteOptionFromHandle (
                   BootOrderSize,
                   BootOrder
                   );
-  //
-  // Shrinking variable with existing variable implementation shouldn't fail.
-  //
-  ASSERT_EFI_ERROR (Status);
 
   FreePool (BootOrder);
 
@@ -3019,10 +2988,6 @@ BdsDeleteAllInvalidEfiBootOption (
                       NULL
                       );
       //
-      // Deleting variable with current variable implementation shouldn't fail.
-      //
-      ASSERT_EFI_ERROR (Status);
-      //
       // Mark this boot option in boot order as deleted
       //
       BootOrder[Index] = 0xffff;
@@ -3050,10 +3015,6 @@ BdsDeleteAllInvalidEfiBootOption (
                   Index2 * sizeof (UINT16),
                   BootOrder
                   );
-  //
-  // Shrinking variable with current variable implementation shouldn't fail.
-  //
-  ASSERT_EFI_ERROR (Status);
 
   FreePool (BootOrder);
 
@@ -3145,10 +3106,6 @@ BdsLibEnumerateAllBootOption (
   CHAR8                         *LastLang;
   EFI_IMAGE_OPTIONAL_HEADER_UNION       HdrData;
   EFI_IMAGE_OPTIONAL_HEADER_PTR_UNION   Hdr;
-  CHAR16                        *MacStr;
-  CHAR16                        *IPverStr;
-  EFI_HANDLE                    *NetworkHandles;
-  UINTN                         BufferSize;
 
   FloppyNumber    = 0;
   HarddriveNumber = 0;
@@ -3181,9 +3138,7 @@ BdsLibEnumerateAllBootOption (
         AsciiStrSize (PlatLang),
         PlatLang
         );
-      //
-      // Failure to set the variable only impacts the performance next time enumerating the boot options.
-      //
+      ASSERT_EFI_ERROR (Status);
 
       if (LastLang != NULL) {
         FreePool (LastLang);
@@ -3206,7 +3161,7 @@ BdsLibEnumerateAllBootOption (
 
   //
   // Parse removable media followed by fixed media.
-  // The Removable[] array is used by the for-loop below to create removable media boot options 
+  // The Removable[] array is used by the for-loop below to create removable media boot options
   // at first, and then to create fixed media boot options.
   //
   Removable[0]  = FALSE;
@@ -3228,16 +3183,9 @@ BdsLibEnumerateAllBootOption (
                       (VOID **) &BlkIo
                       );
       //
-      // skip the logical partition
+      // skip the fixed block io then the removable block io
       //
-      if (EFI_ERROR (Status) || BlkIo->Media->LogicalPartition) {
-        continue;
-      }
-
-      //
-      // firstly fixed block io then the removable block io
-      //
-      if (BlkIo->Media->RemovableMedia == Removable[RemovableIndex]) {
+      if (EFI_ERROR (Status) || (BlkIo->Media->RemovableMedia == Removable[RemovableIndex])) {
         continue;
       }
       DevicePath  = DevicePathFromHandle (BlockIoHandles[Index]);
@@ -3299,7 +3247,6 @@ BdsLibEnumerateAllBootOption (
         break;
 
       case BDS_EFI_MESSAGE_MISC_BOOT:
-      default:
         if (MiscNumber != 0) {
           UnicodeSPrint (Buffer, sizeof (Buffer), L"%s %d", BdsLibGetStringById (STRING_TOKEN (STR_DESCRIPTION_MISC)), MiscNumber);
         } else {
@@ -3307,6 +3254,9 @@ BdsLibEnumerateAllBootOption (
         }
         BdsLibBuildOptionFromHandle (BlockIoHandles[Index], BdsBootOptionList, Buffer);
         MiscNumber++;
+        break;
+
+      default:
         break;
       }
     }
@@ -3394,113 +3344,11 @@ BdsLibEnumerateAllBootOption (
         );
 
   for (Index = 0; Index < NumOfLoadFileHandles; Index++) {
-
-//
-//Locate EFI_DEVICE_PATH_PROTOCOL to dynamically get IPv4/IPv6 protocol information.
-//
-
- Status = gBS->HandleProtocol (
-                  LoadFileHandles[Index],
-                  &gEfiDevicePathProtocolGuid,
-                  (VOID **) &DevicePath
-                  );
-  
- ASSERT_EFI_ERROR (Status);
-
-  while (!IsDevicePathEnd (DevicePath)) {
-    if ((DevicePath->Type == MESSAGING_DEVICE_PATH) &&
-        (DevicePath->SubType == MSG_IPv4_DP)) {
-
-  //
-  //Get handle infomation
-  //
-  BufferSize = 0;
-  NetworkHandles = NULL;
-  Status = gBS->LocateHandle (
-                  ByProtocol, 
-                  &gEfiSimpleNetworkProtocolGuid,
-                  NULL,
-                  &BufferSize,
-                  NetworkHandles
-                  );
-
-  if (Status == EFI_BUFFER_TOO_SMALL) {
-    NetworkHandles = AllocateZeroPool(BufferSize);
-    if (NetworkHandles == NULL) {
-      return (EFI_OUT_OF_RESOURCES);
+    if (Index != 0) {
+      UnicodeSPrint (Buffer, sizeof (Buffer), L"%s %d", BdsLibGetStringById (STRING_TOKEN (STR_DESCRIPTION_NETWORK)), Index);
+    } else {
+      UnicodeSPrint (Buffer, sizeof (Buffer), L"%s", BdsLibGetStringById (STRING_TOKEN (STR_DESCRIPTION_NETWORK)));
     }
-    Status = gBS->LocateHandle(
-                    ByProtocol,
-                    &gEfiSimpleNetworkProtocolGuid,
-                    NULL,
-                    &BufferSize,
-                    NetworkHandles
-                    );
- }
-               
-  //
-  //Get the MAC string
-  //
-  Status = NetLibGetMacString (
-             *NetworkHandles,
-             NULL,
-             &MacStr
-             );
-  if (EFI_ERROR (Status)) {	
-    return Status;
-  }
-  IPverStr = L" IPv4";
-  UnicodeSPrint (Buffer, sizeof (Buffer), L"%s%s%s", BdsLibGetStringById (STRING_TOKEN (STR_DESCRIPTION_NETWORK)),MacStr,IPverStr);
-  break;
-  }
-    if((DevicePath->Type == MESSAGING_DEVICE_PATH) &&
-        (DevicePath->SubType == MSG_IPv6_DP)) {
-
-  //
-  //Get handle infomation
-  //
-  BufferSize = 0;
-  NetworkHandles = NULL;
-  Status = gBS->LocateHandle (
-                  ByProtocol, 
-                  &gEfiSimpleNetworkProtocolGuid,
-                  NULL,
-                  &BufferSize,
-                  NetworkHandles
-                  );
-
-  if (Status == EFI_BUFFER_TOO_SMALL) {
-    NetworkHandles = AllocateZeroPool(BufferSize);
-    if (NetworkHandles == NULL) {
-       return (EFI_OUT_OF_RESOURCES);
-    }
-    Status = gBS->LocateHandle(
-                    ByProtocol,
-                    &gEfiSimpleNetworkProtocolGuid,
-                    NULL,
-                    &BufferSize,
-                    NetworkHandles
-                    );
- }
-                    
-  //
-  //Get the MAC string
-  //
-  Status = NetLibGetMacString (
-             *NetworkHandles,
-             NULL,
-             &MacStr
-             );
-  if (EFI_ERROR (Status)) {	
-    return Status;
-  }
-      IPverStr = L" IPv6";
-      UnicodeSPrint (Buffer, sizeof (Buffer), L"%s%s%s", BdsLibGetStringById (STRING_TOKEN (STR_DESCRIPTION_NETWORK)),MacStr,IPverStr);
-      break;
-    }
-    DevicePath = NextDevicePathNode (DevicePath);
-  }
-  
     BdsLibBuildOptionFromHandle (LoadFileHandles[Index], BdsBootOptionList, Buffer);
   }
 
@@ -3633,7 +3481,6 @@ BdsLibBootNext (
   VOID
   )
 {
-  EFI_STATUS        Status;
   UINT16            *BootNext;
   UINTN             BootNextSize;
   CHAR16            Buffer[20];
@@ -3658,17 +3505,13 @@ BdsLibBootNext (
   // Clear the boot next variable first
   //
   if (BootNext != NULL) {
-    Status = gRT->SetVariable (
-                    L"BootNext",
-                    &gEfiGlobalVariableGuid,
-                    EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
-                    0,
-                    NULL
-                    );
-    //
-    // Deleting variable with current variable implementation shouldn't fail.
-    //
-    ASSERT_EFI_ERROR (Status);
+    gRT->SetVariable (
+          L"BootNext",
+          &gEfiGlobalVariableGuid,
+          EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+          0,
+          BootNext
+          );
 
     //
     // Start to build the boot option and try to boot
@@ -3678,8 +3521,6 @@ BdsLibBootNext (
     ASSERT (BootOption != NULL);
     BdsLibConnectDevicePath (BootOption->DevicePath);
     BdsLibBootViaBootOption (BootOption, BootOption->DevicePath, &ExitDataSize, &ExitData);
-    FreePool(BootOption);
-    FreePool(BootNext);
   }
 
 }
@@ -3723,7 +3564,7 @@ BdsLibGetBootableHandle (
   UpdatedDevicePath = DevicePath;
 
   //
-  // Enter to critical section to protect the acquired BlockIo instance 
+  // Enter to critical section to protect the acquired BlockIo instance
   // from getting released due to the USB mass storage hotplug event
   //
   OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
@@ -3747,10 +3588,10 @@ BdsLibGetBootableHandle (
     }
   } else {
     //
-    // For removable device boot option, its contained device path only point to the removable device handle, 
-    // should make sure all its children handles (its child partion or media handles) are created and connected. 
+    // For removable device boot option, its contained device path only point to the removable device handle,
+    // should make sure all its children handles (its child partion or media handles) are created and connected.
     //
-    gBS->ConnectController (Handle, NULL, NULL, TRUE); 
+    gBS->ConnectController (Handle, NULL, NULL, TRUE);
     //
     // Get BlockIo protocol and check removable attribute
     //
@@ -4011,6 +3852,25 @@ BdsGetBootTypeFromDevicePath (
           return BDS_EFI_ACPI_FLOPPY_BOOT;
         }
         break;
+
+      case HW_PCI_DP:
+        if (DevicePathSubType (TempDevicePath) == HW_CONTROLLER_DP) {
+          //
+          // Get the last device path node
+          //
+            LastDeviceNode = NextDevicePathNode (TempDevicePath);
+
+          //
+          // if the device path not only point to driver device, it is not a messaging device path,
+          //
+
+          if (!IsDevicePathEndType (LastDeviceNode)) {
+          break;
+          }
+          return BDS_EFI_MESSAGE_SATA_BOOT;
+        }
+        break;
+
       case MESSAGING_DEVICE_PATH:
         //
         // Get the last device path node
@@ -4124,7 +3984,7 @@ BdsLibIsValidEFIBootOptDevicePathExt (
 
   //
   // Check if it's a valid boot option for network boot device.
-  // Check if there is EfiLoadFileProtocol installed. 
+  // Check if there is EfiLoadFileProtocol installed.
   // If yes, that means there is a boot option for network.
   //
   Status = gBS->LocateDevicePath (
@@ -4162,7 +4022,7 @@ BdsLibIsValidEFIBootOptDevicePathExt (
       }
     } else {
       return TRUE;
-    }    
+    }
   }
 
   //
@@ -4465,7 +4325,6 @@ BdsLibUpdateFvFileDevicePath (
     NewDevicePath = DevicePathFromHandle (FoundFvHandle);
     EfiInitializeFwVolDevicepathNode (&FvFileNode, FileGuid);
     NewDevicePath = AppendDevicePathNode (NewDevicePath, (EFI_DEVICE_PATH_PROTOCOL *) &FvFileNode);
-    ASSERT (NewDevicePath != NULL);
     *DevicePath = NewDevicePath;
     return EFI_SUCCESS;
   }

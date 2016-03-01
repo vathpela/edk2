@@ -932,7 +932,6 @@ AcpiPlatformEntryPoint (
 
   mGlobalNvsArea.Area->UartSelection = mSystemConfiguration.UartInterface;
   mGlobalNvsArea.Area->PcuUart1Enable = mSystemConfiguration.PcuUart1;
-  mGlobalNvsArea.Area->NativePCIESupport = 1;
 
 
 
@@ -1094,20 +1093,7 @@ AcpiPlatformEntryPoint (
   }
 
   mGlobalNvsArea.Area->SdCardRemovable = mSystemConfiguration.SdCardRemovable;
-  
-  //
-  // Microsoft IOT
-  //
-  if ((mSystemConfiguration.LpssHsuart0FlowControlEnabled == 1) && \
-      (mSystemConfiguration.LpssPwm0Enabled == 0) && \
-      (mSystemConfiguration.LpssPwm1Enabled == 0)) {
-    mGlobalNvsArea.Area->MicrosoftIoT = GLOBAL_NVS_DEVICE_ENABLE;
-    DEBUG ((EFI_D_ERROR, "JP1 is set to be MSFT IOT configuration.\n"));
-  } else {
-    mGlobalNvsArea.Area->MicrosoftIoT = GLOBAL_NVS_DEVICE_DISABLE;
-    DEBUG ((EFI_D_ERROR, "JP1 is not set to be MSFT IOT configuration.\n"));
-  }
-  
+
   //
   // SIO related option.
   //

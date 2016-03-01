@@ -1,7 +1,7 @@
 /** @file
   Core image handling services to load and unload PeImage.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -854,9 +854,6 @@ CoreUnloadAndCloseImage (
   UINTN                               OpenInfoCount;
   UINTN                               OpenInfoIndex;
 
-  HandleBuffer = NULL;
-  ProtocolGuidArray = NULL;
-
   if (Image->Ebc != NULL) {
     //
     // If EBC protocol exists we must perform cleanups for this image.
@@ -1626,7 +1623,6 @@ CoreStartImage (
   // Subsequent calls to LongJump() cause a non-zero value to be returned by SetJump().
   //
   if (SetJumpFlag == 0) {
-    RegisterMemoryProfileImage (Image, (Image->ImageContext.ImageType == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION ? EFI_FV_FILETYPE_APPLICATION : EFI_FV_FILETYPE_DRIVER));
     //
     // Call the image's entry point
     //
@@ -1852,7 +1848,6 @@ CoreUnloadImage (
     Status = EFI_INVALID_PARAMETER;
     goto Done;
   }
-  UnregisterMemoryProfileImage (Image);
 
   if (Image->Started) {
     //

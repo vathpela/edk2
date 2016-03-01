@@ -1,8 +1,7 @@
 /** @file
     Help functions used by PCD DXE driver.
 
-Copyright (c) 2014, Hewlett-Packard Development Company, L.P.<BR>
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -458,33 +457,25 @@ GetWorker (
         // string array in string table.
         //
         StringTableIdx = *(STRING_HEAD*)((UINT8 *) PcdDb + VariableHead->DefaultValueOffset);   
-        VaraiableDefaultBuffer = (UINT8 *) (StringTable + StringTableIdx);     
+        VaraiableDefaultBuffer = (VOID *) (StringTable + StringTableIdx);     
       } else {
         VaraiableDefaultBuffer = (UINT8 *) PcdDb + VariableHead->DefaultValueOffset;
       }
       Status = GetHiiVariable (Guid, Name, &Data, &DataSize);
       if (Status == EFI_SUCCESS) {
-        if (DataSize >= (VariableHead->Offset + GetSize)) {
-          if (GetSize == 0) {
-            //
-            // It is a pointer type. So get the MaxSize reserved for
-            // this PCD entry.
-            //
-            GetPtrTypeSize (TmpTokenNumber, &GetSize);
-            if (GetSize > (DataSize - VariableHead->Offset)) {
-              //
-              // Use actual valid size.
-              //
-              GetSize = DataSize - VariableHead->Offset;
-            }
-          }
+        if (GetSize == 0) {
           //
-          // If the operation is successful, we copy the data
-          // to the default value buffer in the PCD Database.
-          // So that we can free the Data allocated in GetHiiVariable.
+          // It is a pointer type. So get the MaxSize reserved for
+          // this PCD entry.
           //
-          CopyMem (VaraiableDefaultBuffer, Data + VariableHead->Offset, GetSize);
+          GetPtrTypeSize (TmpTokenNumber, &GetSize);
         }
+        //
+        // If the operation is successful, we copy the data
+        // to the default value buffer in the PCD Database.
+        // So that we can free the Data allocated in GetHiiVariable.
+        //
+        CopyMem (VaraiableDefaultBuffer, Data + VariableHead->Offset, GetSize);
         FreePool (Data);
       }
       RetPtr = (VOID *) VaraiableDefaultBuffer;
@@ -1509,7 +1500,7 @@ GetExPcdTokenNumber (
 
       MatchGuidIdx = MatchGuid - GuidTable;
 
-      for (Index = 0; Index < mPcdDatabase.PeiDb->ExTokenCount; Index++) {
+      for (Index = 0; Index < mPeiExMapppingTableSize; Index++) {
         if ((ExTokenNumber == ExMap[Index].ExTokenNumber) &&
             (MatchGuidIdx == ExMap[Index].ExGuidIndex)) {
             return ExMap[Index].TokenNumber;
@@ -1530,7 +1521,7 @@ GetExPcdTokenNumber (
 
   MatchGuidIdx = MatchGuid - GuidTable;
 
-  for (Index = 0; Index < mPcdDatabase.DxeDb->ExTokenCount; Index++) {
+  for (Index = 0; Index < mDxeExMapppingTableSize; Index++) {
     if ((ExTokenNumber == ExMap[Index].ExTokenNumber) &&
          (MatchGuidIdx == ExMap[Index].ExGuidIndex)) {
         return ExMap[Index].TokenNumber;

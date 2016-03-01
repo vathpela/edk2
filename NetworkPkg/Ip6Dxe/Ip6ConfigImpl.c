@@ -1,7 +1,7 @@
 /** @file
   The implementation of EFI IPv6 Configuration Protocol.
 
-  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2013, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -1013,14 +1013,6 @@ Ip6ConfigSetMaunualAddress (
         );
 
       //
-      // If the new address's prefix length is not specified, just use the previous configured
-      // prefix length for this address.
-      //
-      if (NewAddress->PrefixLength == 0) {
-        NewAddress->PrefixLength = CurrentAddrInfo->PrefixLength;
-      }
-
-      //
       // This manual address is already in use, see whether prefix length is changed.
       //
       if (NewAddress->PrefixLength != CurrentAddrInfo->PrefixLength) {
@@ -1602,13 +1594,11 @@ Ip6ConfigSetStatefulAddrCallback (
       //
       // Decline those duplicates.
       //
-      if (Instance->Dhcp6 != NULL) {
-        Instance->Dhcp6->Decline (
-                           Instance->Dhcp6,
-                           Instance->DeclineAddressCount,
-                           Instance->DeclineAddress
-                           );
-      }
+      Instance->Dhcp6->Decline (
+                         Instance->Dhcp6,
+                         Instance->DeclineAddressCount,
+                         Instance->DeclineAddress
+                         );
     }
 
     if (Instance->DeclineAddress != NULL) {

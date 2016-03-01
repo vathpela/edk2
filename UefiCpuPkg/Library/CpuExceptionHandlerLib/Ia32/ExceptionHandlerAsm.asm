@@ -434,7 +434,7 @@ AsmGetTemplateAddressMap  proc near public
 AsmGetTemplateAddressMap  ENDP
 
 ;-------------------------------------------------------------------------------------
-;  AsmVectorNumFixup (*NewVectorAddr, VectorNum, *OldVectorAddr);
+;  AsmVectorNumFixup (*VectorBase, VectorNum);
 ;-------------------------------------------------------------------------------------
 AsmVectorNumFixup   proc near public
     mov     eax, dword ptr [esp + 8]

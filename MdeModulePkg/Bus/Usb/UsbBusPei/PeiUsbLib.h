@@ -70,7 +70,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define USB_DT_INTERFACE  0x04
 #define USB_DT_ENDPOINT   0x05
 #define USB_DT_HUB        0x29
-#define USB_DT_SUPERSPEED_HUB 0x2A
 #define USB_DT_HID        0x21
 
 //
@@ -203,16 +202,17 @@ IsPortConnect (
   );
 
 /**
-  Get device speed according to port status.
+  Judge if the port is connected with a low-speed usb device or not.
 
-  @param    PortStatus  The usb port status gotten.
+  @param  PortStatus  The usb port status gotten.
 
-  @return   Device speed value.
+  @retval TRUE        A low-speed usb device is connected with the port.
+  @retval FALSE       No low-speed usb device is connected with the port.
 
 **/
 UINTN
-PeiUsbGetDeviceSpeed (
-  IN UINT16 PortStatus
+IsPortLowSpeedDeviceAttached (
+  IN UINT16  PortStatus
   );
 
 /**

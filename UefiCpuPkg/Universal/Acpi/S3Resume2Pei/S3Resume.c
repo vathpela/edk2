@@ -1,10 +1,10 @@
 /** @file
-  This module produces the EFI_PEI_S3_RESUME2_PPI.
+  This module produces the EFI_PEI_S3_RESUME_PPI.
   This module works with StandAloneBootScriptExecutor to S3 resume to OS.
   This module will excute the boot script saved during last boot and after that,
   control is passed to OS waking up handler.
 
-  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions
@@ -367,7 +367,6 @@ WriteToOsS3PerformanceData (
         AsciiSPrint (PerfData->Token, PERF_TOKEN_LENGTH, "0x%11p", Handle);
       } else {
         AsciiStrnCpy (PerfData->Token, Token, PERF_TOKEN_LENGTH);
-        PerfData->Token[PERF_TOKEN_LENGTH] = '\0';
       }
       if (StartTicker == 1) {
         StartTicker = StartValue;
@@ -999,11 +998,8 @@ S3RestoreConfig2 (
   DEBUG (( EFI_D_ERROR, "AcpiS3Context = %x\n", AcpiS3Context));
   DEBUG (( EFI_D_ERROR, "Waking Vector = %x\n", ((EFI_ACPI_2_0_FIRMWARE_ACPI_CONTROL_STRUCTURE *) ((UINTN) (AcpiS3Context->AcpiFacsTable)))->FirmwareWakingVector));
   DEBUG (( EFI_D_ERROR, "AcpiS3Context->AcpiFacsTable = %x\n", AcpiS3Context->AcpiFacsTable));
-  DEBUG (( EFI_D_ERROR, "AcpiS3Context->IdtrProfile = %x\n", AcpiS3Context->IdtrProfile));  
   DEBUG (( EFI_D_ERROR, "AcpiS3Context->S3NvsPageTableAddress = %x\n", AcpiS3Context->S3NvsPageTableAddress));
   DEBUG (( EFI_D_ERROR, "AcpiS3Context->S3DebugBufferAddress = %x\n", AcpiS3Context->S3DebugBufferAddress));
-  DEBUG (( EFI_D_ERROR, "AcpiS3Context->BootScriptStackBase = %x\n", AcpiS3Context->BootScriptStackBase));
-  DEBUG (( EFI_D_ERROR, "AcpiS3Context->BootScriptStackSize = %x\n", AcpiS3Context->BootScriptStackSize));
   DEBUG (( EFI_D_ERROR, "EfiBootScriptExecutorVariable->BootScriptExecutorEntrypoint = %x\n", EfiBootScriptExecutorVariable->BootScriptExecutorEntrypoint));
 
   //

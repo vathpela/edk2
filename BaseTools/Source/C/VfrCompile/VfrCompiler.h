@@ -60,8 +60,7 @@ typedef struct {
 } OPTIONS;
 
 typedef enum {
-  STATUS_STARTED = 0,
-  STATUS_INITIALIZED,
+  STATUS_INITIALIZED = 1,
   STATUS_PREPROCESSED,
   STATUS_COMPILEED,
   STATUS_GENBINARY,
@@ -100,7 +99,6 @@ public:
   ~CVfrCompiler ();
 
   VOID                Usage (VOID);
-  VOID                Version (VOID);
 
   VOID                PreProcess (VOID);
   VOID                Compile (VOID);

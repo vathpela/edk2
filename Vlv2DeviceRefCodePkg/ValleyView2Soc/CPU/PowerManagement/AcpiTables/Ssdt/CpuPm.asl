@@ -1,5 +1,6 @@
 /*-----------------------------------------------------------------------------
 
+ Intel(R) Confidential
 
  Intel Silvermont Processor Power Management BIOS Reference Code
 

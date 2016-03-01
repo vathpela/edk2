@@ -1,7 +1,8 @@
 /**************************************************************************;
 ;*                                                                        *;
+;*    Intel Confidential                                                  *;
 ;*                                                                        *;
-;*    Intel Corporation - ACPI Reference Code for the Baytrail            *;
+;*    Intel Corporation - ACPI Reference Code for the Valleyview          *;
 ;*    Family of Customer Reference Boards.                                *;
 ;*                                                                        *;
 ;*                                                                        *;
@@ -347,6 +348,5 @@ Field(GNVS,AnyAcc,Lock,Preserve)
   Offset(792),
   EDPV,     8,      //(792) Check for eDP display device
   DIDX,     32,     //(793) Device ID for eDP device
-  IOT,      8,      //(794) MinnowBoard Max JP1 is configured for MSFT IOT project.   
 }
 

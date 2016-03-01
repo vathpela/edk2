@@ -39,7 +39,7 @@ MISC_SMBIOS_TABLE_DATA(EFI_MISC_CHASSIS_MANUFACTURER_DATA, MiscChassisManufactur
   STRING_TOKEN(STR_MISC_CHASSIS_SERIAL_NUMBER), // ChassisSerialNumber
   STRING_TOKEN(STR_MISC_CHASSIS_ASSET_TAG),     // ChassisAssetTag
   {                               // ChassisTypeStatus
-    EfiMiscChassisTypeUnknown,    // ChassisType
+    EfiMiscChassisTypeHandHeld,    // ChassisType
     0,                            // ChassisLockPresent
     0                             // Reserved
   },

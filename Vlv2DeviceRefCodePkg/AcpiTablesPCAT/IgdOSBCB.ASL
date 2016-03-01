@@ -18,7 +18,7 @@ Module Name:
 
 Abstract:
 
-  IGD OpRegion/Software SCI Reference Code for the Baytrail Family.
+  IGD OpRegion/Software SCI Reference Code for the ValleyView Family.
   This file contains the system BIOS call back functionality for the
   OpRegion/Software SCI mechanism.
 
