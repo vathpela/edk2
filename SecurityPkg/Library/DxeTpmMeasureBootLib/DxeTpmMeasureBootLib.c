@@ -15,7 +15,7 @@
   TcgMeasureGptTable() function will receive untrusted GPT partition table, and parse
   partition data carefully.
 
-Copyright (c) 2009 - 2015, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2009 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials 
 are licensed and made available under the terms and conditions of the BSD License 
 which accompanies this distribution.  The full text of the license may be found at 
@@ -371,9 +371,7 @@ TcgMeasurePeImage (
   ImageLoad->ImageLengthInMemory   = ImageSize;
   ImageLoad->ImageLinkTimeAddress  = LinkTimeBase;
   ImageLoad->LengthOfDevicePath    = FilePathSize;
-  if ((FilePath != NULL) && (FilePathSize != 0)) {
-    CopyMem (ImageLoad->DevicePath, FilePath, FilePathSize);
-  }
+  CopyMem (ImageLoad->DevicePath, FilePath, FilePathSize);
 
   //
   // Check PE/COFF image
@@ -768,7 +766,7 @@ DxeTpmMeasureBootHandler (
              &EventLogLocation,
              &EventLogLastEntry
            );
-  if (EFI_ERROR (Status) || ProtocolCapability.TPMDeactivatedFlag || (!ProtocolCapability.TPMPresentFlag)) {
+  if (EFI_ERROR (Status) || ProtocolCapability.TPMDeactivatedFlag) {
     //
     // TPM device doesn't work or activate.
     //

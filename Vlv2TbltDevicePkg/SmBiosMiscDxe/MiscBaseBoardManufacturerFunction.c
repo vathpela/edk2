@@ -1,15 +1,15 @@
 /*++
 
 Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
-                                                                                   
-  This program and the accompanying materials are licensed and made available under
-  the terms and conditions of the BSD License that accompanies this distribution.  
-  The full text of the license may be found at                                     
-  http://opensource.org/licenses/bsd-license.php.                                  
-                                                                                   
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,            
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.    
-                                                                                   
+                                                                                   
+  This program and the accompanying materials are licensed and made available under
+  the terms and conditions of the BSD License that accompanies this distribution.  
+  The full text of the license may be found at                                     
+  http://opensource.org/licenses/bsd-license.php.                                  
+                                                                                   
+  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,            
+  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.    
+                                                                                   
 
 
 Module Name:
@@ -25,11 +25,8 @@ Abstract:
 
 
 #include "CommonHeader.h"
-#include "MiscSubclassDriver.h"
-#include <Library/NetLib.h>
-#include "Library/DebugLib.h"
-#include <Uefi/UefiBaseType.h>
 
+#include "MiscSubclassDriver.h"
 
 /**
   This function makes boot time changes to the contents of the
@@ -63,10 +60,6 @@ MISC_SMBIOS_TABLE_FUNCTION(MiscBaseBoardManufacturer)
   SMBIOS_TABLE_TYPE2              *SmbiosRecord;
   EFI_MISC_BASE_BOARD_MANUFACTURER   *ForType2InputData;
 
-  CHAR16                          *MacStr; 
-  EFI_HANDLE                      *Handles;
-  UINTN                           BufferSize;
-
   ForType2InputData = (EFI_MISC_BASE_BOARD_MANUFACTURER *)RecordData;
 
   //
@@ -95,52 +88,14 @@ MISC_SMBIOS_TABLE_FUNCTION(MiscBaseBoardManufacturer)
   if (VerStrLen > SMBIOS_STRING_MAX_LENGTH) {
     return EFI_UNSUPPORTED;
   }
-              
-  //
-  //Get handle infomation
-  //
-  BufferSize = 0;
-  Handles = NULL;
-  Status = gBS->LocateHandle (
-                  ByProtocol, 
-                  &gEfiSimpleNetworkProtocolGuid,
-                  NULL,
-                  &BufferSize,
-                  Handles
-                  );
 
-  if (Status == EFI_BUFFER_TOO_SMALL) {
-  	Handles = AllocateZeroPool(BufferSize);
-  	if (Handles == NULL) {
-  		return (EFI_OUT_OF_RESOURCES);
-  	}
-  	Status = gBS->LocateHandle(
-  	                ByProtocol,
-  	                &gEfiSimpleNetworkProtocolGuid,
-  	                NULL,
-  	                &BufferSize,
-  	                Handles
-  	                );
- }
- 	                
-  //
-  //Get the MAC string
-  //
-  Status = NetLibGetMacString (
-             *Handles,
-             NULL,
-             &MacStr
-             );
-  if (EFI_ERROR (Status)) {	
-    return Status;
-  }
-  SerialNumber = MacStr;    
+  TokenToGet = STRING_TOKEN (STR_MISC_BASE_BOARD_SERIAL_NUMBER);
+  SerialNumber = SmbiosMiscGetString (TokenToGet);
   SerialNumStrLen = StrLen(SerialNumber);
   if (SerialNumStrLen > SMBIOS_STRING_MAX_LENGTH) {
     return EFI_UNSUPPORTED;
   }
-  DEBUG ((EFI_D_ERROR, "MAC Address: %S\n", MacStr)); 
-  
+
   TokenToGet = STRING_TOKEN (STR_MISC_BASE_BOARD_ASSET_TAG);
   AssertTag = SmbiosMiscGetString (TokenToGet);
   AssertTagStrLen = StrLen(AssertTag);

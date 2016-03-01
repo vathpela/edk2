@@ -18,7 +18,7 @@ Module Name:
 
 Abstract:
 
-  IGD OpRegion/Software SCI Reference Code for the Baytrail Family.
+  IGD OpRegion/Software SCI Reference Code for the ValleyView Family.
   This file contains ASL code with the purpose of handling events
   i.e. hotkeys and other system interrupts.
 

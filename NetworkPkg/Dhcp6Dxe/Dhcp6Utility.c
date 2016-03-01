@@ -1,7 +1,7 @@
 /** @file
   Dhcp6 support functions implementation.
 
-  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -143,10 +143,10 @@ Dhcp6GenerateClientId (
     //
     // Set the Duid-type, hardware-type, time and copy the hardware address.
     //
-    WriteUnaligned16 ((UINT16 *) ((UINT8 *) Duid + OFFSET_OF (EFI_DHCP6_DUID, Duid)), HTONS (Dhcp6DuidTypeLlt));
-    WriteUnaligned16 ((UINT16 *) ((UINT8 *) Duid + OFFSET_OF (EFI_DHCP6_DUID, Duid) + 2), HTONS (NET_IFTYPE_ETHERNET));
-    WriteUnaligned32 ((UINT32 *) ((UINT8 *) Duid + OFFSET_OF (EFI_DHCP6_DUID, Duid) + 4), HTONL (Stamp));
-
+    WriteUnaligned16 ((UINT16 *) (Duid->Duid), HTONS (Dhcp6DuidTypeLlt));
+    WriteUnaligned16 ((UINT16 *) (Duid->Duid + 2), HTONS (NET_IFTYPE_ETHERNET));
+    WriteUnaligned32 ((UINT32 *) (Duid->Duid + 4), HTONL (Stamp));
+  
     CopyMem (Duid->Duid + 8, &Mode->CurrentAddress, Mode->HwAddressSize);
   }
 
@@ -157,10 +157,7 @@ Dhcp6GenerateClientId (
                   Duid->Length + 2,
                   (VOID *) Duid
                   );
-  if (EFI_ERROR (Status)) {
-    FreePool (Duid);
-    return NULL;
-  }
+  ASSERT_EFI_ERROR (Status);
 
   return Duid;
 }
@@ -386,6 +383,7 @@ Dhcp6CalculateLeaseTime (
   IN DHCP6_IA_CB              *IaCb
   )
 {
+  EFI_DHCP6_IA_ADDRESS        *IaAddr;
   UINT32                      MinLt;
   UINT32                      MaxLt;
   UINTN                       Index;
@@ -400,8 +398,9 @@ Dhcp6CalculateLeaseTime (
   // valid life time.
   //
   for (Index = 0; Index < IaCb->Ia->IaAddressCount; Index++) {
-    MinLt  = MIN (MinLt, IaCb->Ia->IaAddress[Index].ValidLifetime);
-    MaxLt  = MAX (MinLt, IaCb->Ia->IaAddress[Index].ValidLifetime);
+    IaAddr = IaCb->Ia->IaAddress + Index * sizeof (EFI_DHCP6_IA_ADDRESS);
+    MinLt  = MIN (MinLt, IaAddr->ValidLifetime);
+    MaxLt  = MAX (MinLt, IaAddr->ValidLifetime);
   }
 
   //

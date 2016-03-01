@@ -1,8 +1,7 @@
 /** @file
   The implementation of a dispatch routine for processing TCP requests.
 
-  (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
-  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -99,12 +98,12 @@ Tcp4GetMode (
 
     AccessPoint->UseDefaultAddress   = Tcb->UseDefaultAddr;
 
-    IP4_COPY_ADDRESS (&AccessPoint->StationAddress, &Tcb->LocalEnd.Ip);
+    CopyMem (&AccessPoint->StationAddress, &Tcb->LocalEnd.Ip, sizeof (EFI_IPv4_ADDRESS));
 
-    IP4_COPY_ADDRESS (&AccessPoint->SubnetMask, &Tcb->SubnetMask);
+    AccessPoint->SubnetMask          = Tcb->SubnetMask;
     AccessPoint->StationPort         = NTOHS (Tcb->LocalEnd.Port);
 
-    IP4_COPY_ADDRESS (&AccessPoint->RemoteAddress, &Tcb->RemoteEnd.Ip);
+    CopyMem (&AccessPoint->RemoteAddress, &Tcb->RemoteEnd.Ip, sizeof (EFI_IPv4_ADDRESS));
 
     AccessPoint->RemotePort          = NTOHS (Tcb->RemoteEnd.Port);
     AccessPoint->ActiveFlag          = (BOOLEAN) (Tcb->State != TCP_LISTEN);
@@ -240,7 +239,7 @@ TcpBind (
   UINT16          *RandomPort;
 
   if (IpVersion == IP_VERSION_4) {
-    IP4_COPY_ADDRESS (&Local, &TcpAp->Tcp4Ap.StationAddress);
+    CopyMem (&Local, &TcpAp->Tcp4Ap.StationAddress, sizeof (EFI_IPv4_ADDRESS));
     Port       = &TcpAp->Tcp4Ap.StationPort;
     RandomPort = &mTcp4RandomPort;
   } else {
@@ -305,10 +304,12 @@ TcpFlushPcb (
   )
 {
   SOCKET                    *Sock;
+  TCP_PROTO_DATA            *TcpProto;
 
   IpIoConfigIp (Tcb->IpInfo, NULL);
 
   Sock     = Tcb->Sk;
+  TcpProto = (TCP_PROTO_DATA *) Sock->ProtoReserved;
 
   if (SOCK_IS_CONFIGURED (Sock)) {
     RemoveEntryList (&Tcb->List);
@@ -326,6 +327,8 @@ TcpFlushPcb (
       FreePool (Sock->DevicePath);
       Sock->DevicePath = NULL;
     }
+
+    TcpSetVariableData (TcpProto->TcpService);
   }
 
   NetbufFreeList (&Tcb->SndQue);
@@ -496,14 +499,12 @@ TcpConfigurePcb (
     IpCfgData.Ip4CfgData.TypeOfService      = CfgData->Tcp4CfgData.TypeOfService;
     IpCfgData.Ip4CfgData.TimeToLive         = CfgData->Tcp4CfgData.TimeToLive;
     IpCfgData.Ip4CfgData.UseDefaultAddress  = CfgData->Tcp4CfgData.AccessPoint.UseDefaultAddress;
-    IP4_COPY_ADDRESS (
-      &IpCfgData.Ip4CfgData.SubnetMask,
-      &CfgData->Tcp4CfgData.AccessPoint.SubnetMask
-      );
+    IpCfgData.Ip4CfgData.SubnetMask         = CfgData->Tcp4CfgData.AccessPoint.SubnetMask;
     IpCfgData.Ip4CfgData.ReceiveTimeout     = (UINT32) (-1);
-    IP4_COPY_ADDRESS (
+    CopyMem (
       &IpCfgData.Ip4CfgData.StationAddress,
-      &CfgData->Tcp4CfgData.AccessPoint.StationAddress
+      &CfgData->Tcp4CfgData.AccessPoint.StationAddress,
+      sizeof (EFI_IPv4_ADDRESS)
       );
 
   } else {
@@ -536,14 +537,8 @@ TcpConfigurePcb (
     //
     // Get the default address information if the instance is configured to use default address.
     //
-    IP4_COPY_ADDRESS (
-      &CfgData->Tcp4CfgData.AccessPoint.StationAddress,
-      &IpCfgData.Ip4CfgData.StationAddress
-      );
-    IP4_COPY_ADDRESS (
-      &CfgData->Tcp4CfgData.AccessPoint.SubnetMask,
-      &IpCfgData.Ip4CfgData.SubnetMask
-      );
+    CfgData->Tcp4CfgData.AccessPoint.StationAddress = IpCfgData.Ip4CfgData.StationAddress;
+    CfgData->Tcp4CfgData.AccessPoint.SubnetMask     = IpCfgData.Ip4CfgData.SubnetMask;
 
     TcpAp = (TCP_ACCESS_POINT *) &CfgData->Tcp4CfgData.AccessPoint;
   } else {
@@ -610,7 +605,7 @@ TcpConfigurePcb (
 
     CopyMem (&Tcb->LocalEnd.Ip, &CfgData->Tcp4CfgData.AccessPoint.StationAddress, sizeof (IP4_ADDR));
     Tcb->LocalEnd.Port  = HTONS (CfgData->Tcp4CfgData.AccessPoint.StationPort);
-    IP4_COPY_ADDRESS (&Tcb->SubnetMask, &CfgData->Tcp4CfgData.AccessPoint.SubnetMask);
+    Tcb->SubnetMask     = CfgData->Tcp4CfgData.AccessPoint.SubnetMask;
 
     CopyMem (&Tcb->RemoteEnd.Ip, &CfgData->Tcp4CfgData.AccessPoint.RemoteAddress, sizeof (IP4_ADDR));
     Tcb->RemoteEnd.Port = HTONS (CfgData->Tcp4CfgData.AccessPoint.RemotePort);

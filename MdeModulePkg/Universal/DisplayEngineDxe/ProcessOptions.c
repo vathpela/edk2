@@ -2,7 +2,7 @@
 Implementation for handling the User Interface option processing.
 
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2012, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -14,6 +14,12 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
 
 #include "FormDisplay.h"
+
+typedef struct {
+  EFI_EVENT   SyncEvent;
+  UINT8       *TimeOut;
+  CHAR16      *ErrorInfo;
+} WARNING_IF_CONTEXT;
 
 #define MAX_TIME_OUT_LEN  0x10
 
@@ -99,107 +105,6 @@ HiiValueToUINT64 (
 }
 
 /**
-  Check whether this value type can be transfer to EFI_IFR_TYPE_BUFFER type.
-  
-  EFI_IFR_TYPE_REF, EFI_IFR_TYPE_DATE and EFI_IFR_TYPE_TIME are converted to 
-  EFI_IFR_TYPE_BUFFER when do the value compare.
-
-  @param  Value                  Expression value to compare on.
-
-  @retval TRUE                   This value type can be transter to EFI_IFR_TYPE_BUFFER type.
-  @retval FALSE                  This value type can't be transter to EFI_IFR_TYPE_BUFFER type.
-
-**/
-BOOLEAN
-IsTypeInBuffer (
-  IN  EFI_HII_VALUE   *Value
-  )
-{
-  switch (Value->Type) {
-  case EFI_IFR_TYPE_BUFFER:
-  case EFI_IFR_TYPE_DATE:
-  case EFI_IFR_TYPE_TIME:
-  case EFI_IFR_TYPE_REF:
-    return TRUE;
-
-  default:
-    return FALSE;
-  }
-}
-
-/**
-  Check whether this value type can be transfer to EFI_IFR_TYPE_UINT64
-
-  @param  Value                  Expression value to compare on.
-
-  @retval TRUE                   This value type can be transter to EFI_IFR_TYPE_BUFFER type.
-  @retval FALSE                  This value type can't be transter to EFI_IFR_TYPE_BUFFER type.
-
-**/
-BOOLEAN
-IsTypeInUINT64 (
-  IN  EFI_HII_VALUE   *Value
-  )
-{
-  switch (Value->Type) {
-  case EFI_IFR_TYPE_NUM_SIZE_8:
-  case EFI_IFR_TYPE_NUM_SIZE_16:
-  case EFI_IFR_TYPE_NUM_SIZE_32:
-  case EFI_IFR_TYPE_NUM_SIZE_64:
-  case EFI_IFR_TYPE_BOOLEAN:
-    return TRUE;
-
-  default:
-    return FALSE;
-  }
-}
-
-/**
-  Return the buffer length and buffer pointer for this value.
-  
-  EFI_IFR_TYPE_REF, EFI_IFR_TYPE_DATE and EFI_IFR_TYPE_TIME are converted to 
-  EFI_IFR_TYPE_BUFFER when do the value compare.
-
-  @param  Value                  Expression value to compare on.
-  @param  Buf                    Return the buffer pointer.
-  @param  BufLen                 Return the buffer length.
-
-**/
-VOID
-GetBufAndLenForValue (
-  IN  EFI_HII_VALUE   *Value,
-  OUT UINT8           **Buf,
-  OUT UINT16          *BufLen
-  )
-{
-  switch (Value->Type) {
-  case EFI_IFR_TYPE_BUFFER:
-    *Buf    = Value->Buffer;
-    *BufLen = Value->BufferLen;
-    break;
-
-  case EFI_IFR_TYPE_DATE:
-    *Buf    = (UINT8 *) (&Value->Value.date);
-    *BufLen = (UINT16) sizeof (EFI_HII_DATE);
-    break;
-
-  case EFI_IFR_TYPE_TIME:
-    *Buf    = (UINT8 *) (&Value->Value.time);
-    *BufLen = (UINT16) sizeof (EFI_HII_TIME);
-    break;
-
-  case EFI_IFR_TYPE_REF:
-    *Buf    = (UINT8 *) (&Value->Value.ref);
-    *BufLen = (UINT16) sizeof (EFI_HII_REF);
-    break;
-
-  default:
-    *Buf    = NULL;
-    *BufLen = 0;
-  }
-}
-
-/**
   Compare two Hii value.
 
   @param  Value1                 Expression value to compare on left-hand.
@@ -226,12 +131,21 @@ CompareHiiValue (
   CHAR16  *Str1;
   CHAR16  *Str2;
   UINTN   Len;
-  UINT8   *Buf1;
-  UINT16  Buf1Len;
-  UINT8   *Buf2;
-  UINT16  Buf2Len;
 
-  if (Value1->Type == EFI_IFR_TYPE_STRING && Value2->Type == EFI_IFR_TYPE_STRING) {
+  if (Value1->Type >= EFI_IFR_TYPE_OTHER || Value2->Type >= EFI_IFR_TYPE_OTHER ) {
+    if (Value1->Type != EFI_IFR_TYPE_BUFFER && Value2->Type != EFI_IFR_TYPE_BUFFER) {
+      return EFI_UNSUPPORTED;
+    }
+  }
+
+  if (Value1->Type == EFI_IFR_TYPE_STRING || Value2->Type == EFI_IFR_TYPE_STRING ) {
+    if (Value1->Type != Value2->Type) {
+      //
+      // Both Operator should be type of String
+      //
+      return EFI_UNSUPPORTED;
+    }
+
     if (Value1->Value.string == 0 || Value2->Value.string == 0) {
       //
       // StringId 0 is reserved
@@ -266,21 +180,22 @@ CompareHiiValue (
     return EFI_SUCCESS;
   }
 
-  //
-  // Take types(date, time, ref, buffer) as buffer
-  //
-  if (IsTypeInBuffer(Value1) && IsTypeInBuffer(Value2)) {
-    GetBufAndLenForValue(Value1, &Buf1, &Buf1Len);
-    GetBufAndLenForValue(Value2, &Buf2, &Buf2Len);
-
-    Len = Buf1Len > Buf2Len ? Buf2Len : Buf1Len;
-    *Result = CompareMem (Buf1, Buf2, Len);
-    if ((*Result == 0) && (Buf1Len != Buf2Len)) {
+  if (Value1->Type == EFI_IFR_TYPE_BUFFER || Value2->Type == EFI_IFR_TYPE_BUFFER ) {
+    if (Value1->Type != Value2->Type) {
+      //
+      // Both Operator should be type of Buffer.
+      //
+      return EFI_UNSUPPORTED;
+    }
+    Len = Value1->BufferLen > Value2->BufferLen ? Value2->BufferLen : Value1->BufferLen;
+    *Result = CompareMem (Value1->Buffer, Value2->Buffer, Len);
+    if ((*Result == 0) && (Value1->BufferLen != Value2->BufferLen))
+    {
       //
       // In this case, means base on samll number buffer, the data is same
       // So which value has more data, which value is bigger.
       //
-      *Result = Buf1Len > Buf2Len ? 1 : -1;
+      *Result = Value1->BufferLen > Value2->BufferLen ? 1 : -1;
     }
     return EFI_SUCCESS;
   }  
@@ -288,19 +203,16 @@ CompareHiiValue (
   //
   // Take remain types(integer, boolean, date/time) as integer
   //
-  if (IsTypeInUINT64(Value1) && IsTypeInUINT64(Value2)) {
-    Temp64 = HiiValueToUINT64(Value1) - HiiValueToUINT64(Value2);
-    if (Temp64 > 0) {
-      *Result = 1;
-    } else if (Temp64 < 0) {
-      *Result = -1;
-    } else {
-      *Result = 0;
-    }
-    return EFI_SUCCESS;
+  Temp64 = HiiValueToUINT64(Value1) - HiiValueToUINT64(Value2);
+  if (Temp64 > 0) {
+    *Result = 1;
+  } else if (Temp64 < 0) {
+    *Result = -1;
+  } else {
+    *Result = 0;
   }
 
-  return EFI_UNSUPPORTED;
+  return EFI_SUCCESS;
 }
 
 /**
@@ -756,6 +668,143 @@ RefreshTimeOutProcess (
 }
 
 /**
+  Show the warning message.
+
+  @param   RetInfo    The input warning string and timeout info.
+
+**/
+VOID
+WarningIfCheck (
+  IN STATEMENT_ERROR_INFO  *RetInfo
+  )
+{
+  CHAR16             *ErrorInfo;
+  EFI_EVENT          WaitList[2];
+  EFI_EVENT          RefreshIntervalEvent;
+  EFI_EVENT          TimeOutEvent;
+  UINT8              TimeOut;
+  EFI_STATUS         Status;
+  UINTN              Index;
+  WARNING_IF_CONTEXT EventContext;
+  EFI_INPUT_KEY      Key;
+
+  TimeOutEvent         = NULL;
+  RefreshIntervalEvent = NULL;
+
+  ASSERT (RetInfo->StringId != 0);
+  ErrorInfo = GetToken (RetInfo->StringId, gFormData->HiiHandle);
+  TimeOut   = RetInfo->TimeOut;
+  if (RetInfo->TimeOut == 0) {
+    do {
+      CreateDialog (&Key, gEmptyString, ErrorInfo, gPressEnter, gEmptyString, NULL);
+    } while (Key.UnicodeChar != CHAR_CARRIAGE_RETURN);
+  } else {
+    Status = gBS->CreateEvent (EVT_NOTIFY_WAIT, TPL_CALLBACK, EmptyEventProcess, NULL, &TimeOutEvent);
+    ASSERT_EFI_ERROR (Status);
+
+    EventContext.SyncEvent = TimeOutEvent;
+    EventContext.TimeOut   = &TimeOut;
+    EventContext.ErrorInfo = ErrorInfo;
+
+    Status = gBS->CreateEvent (EVT_TIMER | EVT_NOTIFY_SIGNAL, TPL_CALLBACK, RefreshTimeOutProcess, &EventContext, &RefreshIntervalEvent);
+    ASSERT_EFI_ERROR (Status);
+
+    //
+    // Show the dialog first to avoid long time not reaction.
+    //
+    gBS->SignalEvent (RefreshIntervalEvent);
+
+    Status = gBS->SetTimer (RefreshIntervalEvent, TimerPeriodic, ONE_SECOND);
+    ASSERT_EFI_ERROR (Status);
+
+    while (TRUE) {
+      Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
+      if (!EFI_ERROR (Status) && Key.UnicodeChar == CHAR_CARRIAGE_RETURN) {
+        break;
+      }
+
+      if (Status != EFI_NOT_READY) {
+        continue;
+      }
+
+      WaitList[0] = TimeOutEvent;
+      WaitList[1] = gST->ConIn->WaitForKey;
+
+      Status = gBS->WaitForEvent (2, WaitList, &Index);
+      ASSERT_EFI_ERROR (Status);
+
+      if (Index == 0) {
+        //
+        // Timeout occur, close the hoot time out event.
+        //
+        break;
+      }
+    }
+  }
+
+  gBS->CloseEvent (TimeOutEvent);
+  gBS->CloseEvent (RefreshIntervalEvent);
+
+  FreePool (ErrorInfo);
+}
+
+/**
+  Process validate for one question.
+
+  @param  Question               The question need to be validate.
+
+  @retval EFI_SUCCESS            Question Option process success.
+  @retval EFI_INVALID_PARAMETER  Question Option process fail.
+
+**/
+EFI_STATUS 
+ValidateQuestion (
+  IN FORM_DISPLAY_ENGINE_STATEMENT   *Question
+  )
+{
+  CHAR16                          *ErrorInfo;
+  EFI_INPUT_KEY                   Key;
+  EFI_STATUS                      Status;
+  STATEMENT_ERROR_INFO            RetInfo;
+  UINT32                          RetVal;
+
+  if (Question->ValidateQuestion == NULL) {
+    return EFI_SUCCESS;
+  }
+
+  Status = EFI_SUCCESS; 
+  RetVal = Question->ValidateQuestion(gFormData, Question, &gUserInput->InputValue, &RetInfo);
+ 
+  switch (RetVal) {
+  case INCOSISTENT_IF_TRUE:
+    //
+    // Condition meet, show up error message
+    //
+    ASSERT (RetInfo.StringId != 0);
+    ErrorInfo = GetToken (RetInfo.StringId, gFormData->HiiHandle);
+    do {
+      CreateDialog (&Key, gEmptyString, ErrorInfo, gPressEnter, gEmptyString, NULL);
+    } while (Key.UnicodeChar != CHAR_CARRIAGE_RETURN);
+    FreePool (ErrorInfo);
+
+    Status = EFI_INVALID_PARAMETER;
+    break;
+
+  case WARNING_IF_TRUE:
+    //
+    // Condition meet, show up warning message
+    //
+    WarningIfCheck (&RetInfo);
+    break;
+
+  default:
+    break;
+  }
+
+  return Status;
+}
+
+/**
   Display error message for invalid password.
 
 **/
@@ -886,7 +935,7 @@ PasswordProcess (
     gUserInput->InputValue.Value.string = HiiSetString(gFormData->HiiHandle, gUserInput->InputValue.Value.string, StringPtr, NULL);
     FreePool (StringPtr); 
 
-    Status = EFI_SUCCESS;
+    Status = ValidateQuestion (Question);
 
     if (EFI_ERROR (Status)) {
       //
@@ -955,6 +1004,7 @@ ProcessOptions (
   UINTN                           Index2;
   UINT8                           *ValueArray;
   UINT8                           ValueType;
+  EFI_STRING_ID                   StringId;
   EFI_IFR_ORDERED_LIST            *OrderList;
   BOOLEAN                         ValueInvalid;
 
@@ -963,6 +1013,7 @@ ProcessOptions (
   StringPtr     = NULL;
   Character[1]  = L'\0';
   *OptionString = NULL;
+  StringId      = 0;
   ValueInvalid  = FALSE;
 
   ZeroMem (FormattedNumber, 21 * sizeof (CHAR16));
@@ -1034,7 +1085,7 @@ ProcessOptions (
           // Exit current DisplayForm with new value.
           //
           gUserInput->SelectedStatement = Question;
-          gMisMatch = TRUE;
+          
           ValueArray = AllocateZeroPool (Question->CurrentValue.BufferLen);
           ASSERT (ValueArray != NULL);
           gUserInput->InputValue.Buffer    = ValueArray;
@@ -1119,7 +1170,7 @@ ProcessOptions (
           // Exit current DisplayForm with new value.
           //
           gUserInput->SelectedStatement = Question;
-          gMisMatch = TRUE;
+          
           ValueArray = AllocateCopyPool (Question->CurrentValue.BufferLen, Question->CurrentValue.Buffer);
           ASSERT (ValueArray != NULL);
           gUserInput->InputValue.Buffer    = ValueArray;
@@ -1196,7 +1247,7 @@ ProcessOptions (
             break;
           }
           gUserInput->SelectedStatement = Question;
-          gMisMatch = TRUE;
+
           FreePool (*OptionString);
           *OptionString = NULL;
           return EFI_NOT_FOUND;
@@ -1226,7 +1277,7 @@ ProcessOptions (
       //
       // Perform inconsistent check
       //
-      return EFI_SUCCESS;
+      return ValidateQuestion (Question);
     } else {    
       *OptionString = AllocateZeroPool (BufferSize);
       ASSERT (*OptionString);
@@ -1346,7 +1397,7 @@ ProcessOptions (
       gUserInput->InputValue.Type = Question->CurrentValue.Type;
       gUserInput->InputValue.Value.string = HiiSetString(gFormData->HiiHandle, gUserInput->InputValue.Value.string, StringPtr, NULL);
       FreePool (StringPtr);
-      return EFI_SUCCESS;
+      return ValidateQuestion (Question);
     } else {
       *OptionString = AllocateZeroPool (BufferSize);
       ASSERT (*OptionString);

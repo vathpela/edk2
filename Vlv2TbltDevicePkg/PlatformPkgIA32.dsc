@@ -2,15 +2,15 @@
 # Platform description.
 #
 # Copyright (c) 2012  - 2014, Intel Corporation. All rights reserved.<BR>
-#                                                                                  
-# This program and the accompanying materials are licensed and made available under
-# the terms and conditions of the BSD License that accompanies this distribution.  
-# The full text of the license may be found at                                     
-# http://opensource.org/licenses/bsd-license.php.                                  
-#                                                                                  
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,            
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.    
-#                                                                                  
+#                                                                                  
+# This program and the accompanying materials are licensed and made available under
+# the terms and conditions of the BSD License that accompanies this distribution.  
+# The full text of the license may be found at                                     
+# http://opensource.org/licenses/bsd-license.php.                                  
+#                                                                                  
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,            
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.    
+#                                                                                  
 #
 #**/
 
@@ -142,7 +142,7 @@
   UefiCpuLib|UefiCpuPkg/Library/BaseUefiCpuLib/BaseUefiCpuLib.inf
   UefiUsbLib|MdePkg/Library/UefiUsbLib/UefiUsbLib.inf
   GenericBdsLib|$(PLATFORM_PACKAGE)/Override/IntelFrameworkModulePkg/Library/GenericBdsLib/GenericBdsLib.inf
-  PlatformBdsLib|$(PLATFORM_PACKAGE)/Library/PlatformBdsLib/PlatformBdsLib.inf
+  PlatformBdsLib|$(PLATFORM_PACKAGE)/Library/PlatformBdsLib/PlatformBdsLib_BB.inf
   NetLib|MdeModulePkg/Library/DxeNetLib/DxeNetLib.inf
   DpcLib|MdeModulePkg/Library/DxeDpcLib/DxeDpcLib.inf
   FlashDeviceLib|$(PLATFORM_PACKAGE)/Library/FlashDeviceLib/FlashDeviceLib.inf
@@ -179,7 +179,7 @@
 
   OemHookStatusCodeLib|MdeModulePkg/Library/OemHookStatusCodeLibNull/OemHookStatusCodeLibNull.inf
 !if $(CAPSULE_ENABLE) == TRUE
- CapsuleLib|IntelFrameworkModulePkg/Library/DxeCapsuleLib/DxeCapsuleLib.inf
+ CapsuleLib|Vlv2TbltDevicePkg/Override/IntelFrameworkModulePkg/Library/DxeCapsuleLib/DxeCapsuleLib_BB.inf
 !else
   CapsuleLib|MdeModulePkg/Library/DxeCapsuleLibNull/DxeCapsuleLibNull.inf
 !endif
@@ -264,8 +264,8 @@
 !endif
   ShellCEntryLib|ShellPkg/Library/UefiShellCEntryLib/UefiShellCEntryLib.inf
   ShellLib|ShellPkg/Library/UefiShellLib/UefiShellLib.inf
-  FileHandleLib|MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
-  SortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
+  FileHandleLib|ShellPkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
+  SortLib|ShellPkg/Library/UefiSortLib/UefiSortLib.inf
 
   TpmMeasurementLib|SecurityPkg/Library/DxeTpmMeasurementLib/DxeTpmMeasurementLib.inf
   TrEEPhysicalPresenceLib|SecurityPkg/Library/DxeTrEEPhysicalPresenceLib/DxeTrEEPhysicalPresenceLib.inf
@@ -294,13 +294,13 @@
   MemoryAllocationLib|MdePkg/Library/PeiMemoryAllocationLib/PeiMemoryAllocationLib.inf
   ReportStatusCodeLib|MdeModulePkg/Library/PeiReportStatusCodeLib/PeiReportStatusCodeLib.inf
   ExtractGuidedSectionLib|MdePkg/Library/PeiExtractGuidedSectionLib/PeiExtractGuidedSectionLib.inf
-  MultiPlatformLib|$(PLATFORM_PACKAGE)/Library/MultiPlatformLib/MultiPlatformLib.inf
+  MultiPlatformLib|$(PLATFORM_PACKAGE)/Library/MultiPlatformLib/MultiPlatformLibBB.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/PeiCryptLib.inf
 
 
 !if $(PERFORMANCE_ENABLE) == TRUE
   PerformanceLib|MdeModulePkg/Library/PeiPerformanceLib/PeiPerformanceLib.inf
-  TimerLib|$(PLATFORM_PACKAGE)/Library/IntelPchAcpiTimerLib/IntelPchAcpiTimerLib.inf
+  TimerLib|$(PLATFORM_PACKAGE)/Override/PerformancePkg/Library/TscTimerLib/PeiTscTimerLib.inf
 !endif
 
 !if $(TARGET) == RELEASE
@@ -353,7 +353,7 @@
   CustomizedDisplayLib|MdeModulePkg/Library/CustomizedDisplayLib/CustomizedDisplayLib.inf
 !if $(PERFORMANCE_ENABLE) == TRUE
   PerformanceLib|MdeModulePkg/Library/DxePerformanceLib/DxePerformanceLib.inf
-  TimerLib|$(PLATFORM_PACKAGE)/Library/IntelPchAcpiTimerLib/IntelPchAcpiTimerLib.inf
+  TimerLib|$(PLATFORM_PACKAGE)/Override/PerformancePkg/Library/TscTimerLib/DxeTscTimerLib.inf
 !endif
 
 !if $(SOURCE_DEBUG_ENABLE) == TRUE
@@ -366,7 +366,7 @@
   PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
 !if $(PERFORMANCE_ENABLE) == TRUE
   PerformanceLib|MdeModulePkg/Library/DxeCorePerformanceLib/DxeCorePerformanceLib.inf
-  TimerLib|$(PLATFORM_PACKAGE)/Library/IntelPchAcpiTimerLib/IntelPchAcpiTimerLib.inf
+  TimerLib|$(PLATFORM_PACKAGE)/Override/PerformancePkg/Library/TscTimerLib/DxeTscTimerLib.inf
 !endif
 
 !if $(SOURCE_DEBUG_ENABLE) == TRUE
@@ -482,7 +482,7 @@
   EdkCompatibilityPkg/Foundation/Library/EdkIIGlueLib/Library/PeiReportStatusCodeLib/PeiReportStatusCodeLib.inf
   EdkCompatibilityPkg/Foundation/Core/Dxe/ArchProtocol/ArchProtocolLib.inf
 
-  $(PLATFORM_PACKAGE)/Library/MultiPlatformLib/MultiPlatformLib.inf
+  $(PLATFORM_PACKAGE)/Library/MultiPlatformLib/MultiPlatformLibBB.inf
 [Libraries.IA32]
 
   EdkCompatibilityPkg/Foundation/Efi/Guid/EfiGuidLib.inf
@@ -775,7 +775,7 @@
 !endif
 
 !if $(RC_BINARY_RELEASE) == TRUE
-  $(PLATFORM_PACKAGE)/PlatformPei/PlatformPei.inf {
+  $(PLATFORM_PACKAGE)/PlatformPei/PlatformPeiBB2.inf {
     <BuildOptions>
       *_*_IA32_CC_FLAGS      = /DRC_BINARY_RELEASE
   !if $(TARGET) == DEBUG
@@ -806,7 +806,7 @@
 }
 !endif
 
- $(PLATFORM_PACKAGE)/PlatformInitPei/PlatformInitPei.inf {
+ $(PLATFORM_PACKAGE)/PlatformInitPei/PlatformEarlyInit.inf {
     <PcdsPatchableInModule>
       gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x803805c6
     <LibraryClasses>
@@ -864,7 +864,7 @@
 !if $(ACPI50_ENABLE) == TRUE
   MdeModulePkg/Universal/Acpi/FirmwarePerformanceDataTablePei/FirmwarePerformancePei.inf{
     <LibraryClasses>
-      TimerLib|$(PLATFORM_PACKAGE)/Library/IntelPchAcpiTimerLib/IntelPchAcpiTimerLib.inf
+      TimerLib|$(PLATFORM_PACKAGE)/Override/PerformancePkg/Library/TscTimerLib/PeiTscTimerLib.inf
   }
 
 !endif
@@ -919,7 +919,9 @@
   }
   IntelFrameworkModulePkg/Universal/CpuIoDxe/CpuIoDxe.inf
   UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe.inf
-
+!if $(PERFORMANCE_ENABLE) == TRUE
+  MdeModulePkg/Universal/ReportStatusCodeRouter/Pei/ReportStatusCodeRouterPei.inf
+!endif
   MdeModulePkg/Universal/ReportStatusCodeRouter/RuntimeDxe/ReportStatusCodeRouterRuntimeDxe.inf
   MdeModulePkg/Universal/StatusCodeHandler/RuntimeDxe/StatusCodeHandlerRuntimeDxe.inf  {
     <LibraryClasses>
@@ -951,14 +953,14 @@
 !endif
   }
   $(PLATFORM_BINARY_PACKAGE)/$(DXE_ARCHITECTURE)$(TARGET)/$(DXE_ARCHITECTURE)/MpCpu.inf
-  $(PLATFORM_PACKAGE)/Metronome/Metronome.inf
+  $(PLATFORM_PACKAGE)/Metronome/LegacyMetronome.inf
 
   IntelFrameworkModulePkg/Universal/BdsDxe/BdsDxe.inf{
     <LibraryClasses>
       OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
       IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
       BaseCryptLib|CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
-      PlatformBdsLib|$(PLATFORM_PACKAGE)/Library/PlatformBdsLib/PlatformBdsLib.inf
+      PlatformBdsLib|$(PLATFORM_PACKAGE)/Library/PlatformBdsLib/PlatformBdsLib_BB.inf
       DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
       PcdLib|MdePkg/Library/DxePcdLib/DxePcdLib.inf
       SerialPortLib|$(PLATFORM_PACKAGE)/Library/SerialPortLib/SerialPortLib.inf
@@ -998,7 +1000,7 @@
 !endif
    MdeModulePkg/Universal/CapsuleRuntimeDxe/CapsuleRuntimeDxe.inf {
     <LibraryClasses>
-      FileHandleLib|MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
+      FileHandleLib|ShellPkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
   }
 
   MdeModulePkg/Universal/MonotonicCounterRuntimeDxe/MonotonicCounterRuntimeDxe.inf
@@ -1007,7 +1009,7 @@
 
   $(PLATFORM_PACKAGE)/FvbRuntimeDxe/FvbRuntimeDxe.inf
 
-  $(PLATFORM_PACKAGE)/PlatformSetupDxe/PlatformSetupDxe.inf
+  $(PLATFORM_PACKAGE)/PlatformSetupDxe/PlatformSetupDxeVLVA0BB.inf
 
 !if $(DATAHUB_ENABLE) == TRUE
   IntelFrameworkModulePkg/Universal/DataHubDxe/DataHubDxe.inf {
@@ -1045,16 +1047,8 @@
   $(PLATFORM_BINARY_PACKAGE)/$(DXE_ARCHITECTURE)$(TARGET)/$(DXE_ARCHITECTURE)/VlvInitDxe.inf
 
   IntelFrameworkModulePkg/Universal/LegacyRegionDxe/LegacyRegionDxe.inf
-  
-  PerformancePkg/Dp_App/Dp.inf {
-  <LibraryClasses>
-  !if $(PERFORMANCE_ENABLE) == TRUE
-    PerformanceLib|MdeModulePkg/Library/DxePerformanceLib/DxePerformanceLib.inf
-    TimerLib|$(PLATFORM_PACKAGE)/Library/IntelPchAcpiTimerLib/IntelPchAcpiTimerLib.inf
-  !endif
-  }
 
-  Vlv2TbltDevicePkg/VlvPlatformInitDxe/VlvPlatformInitDxe.inf{
+  Vlv2TbltDevicePkg/VlvPlatformInitDxe/VlvPlatformInit.inf{
     <LibraryClasses>
 !if $(TARGET) != RELEASE
       DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
@@ -1091,7 +1085,7 @@
   #
   # EDK II Related Platform codes
   #
-  $(PLATFORM_PACKAGE)/PlatformSmm/PlatformSmm.inf{
+  $(PLATFORM_PACKAGE)/PlatformSmm/PlatformBB.inf{
     <LibraryClasses>
     !if $(TARGET) != RELEASE
           DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
@@ -1099,8 +1093,8 @@
           PcdLib|MdePkg/Library/DxePcdLib/DxePcdLib.inf
   }
   $(PLATFORM_PACKAGE)/PlatformInfoDxe/PlatformInfoDxe.inf
-  $(PLATFORM_PACKAGE)/PlatformCpuInfoDxe/PlatformCpuInfoDxe.inf
-  $(PLATFORM_PACKAGE)/PlatformDxe/PlatformDxe.inf
+  $(PLATFORM_PACKAGE)/PlatformCpuInfo/PlatformCpuInfoDxe.inf
+  $(PLATFORM_PACKAGE)/PlatformDxe/PlatformBB.inf
 
   $(PLATFORM_PACKAGE)/PciPlatform/PciPlatform.inf
   $(PLATFORM_PACKAGE)/SaveMemoryConfig/SaveMemoryConfig.inf
@@ -1108,7 +1102,7 @@
   $(PLATFORM_PACKAGE)/PpmPolicy/PpmPolicy.inf
   $(PLATFORM_PACKAGE)/SmramSaveInfoHandlerSmm/SmramSaveInfoHandlerSmm.inf
 !if $(GOP_DRIVER_ENABLE) == TRUE
-  $(PLATFORM_PACKAGE)/PlatformGopPolicy/PlatformGopPolicy.inf
+  $(PLATFORM_PACKAGE)/PlatformGopPolicy/PlatformGopPolicyBB.inf
 
 !endif
 
@@ -1143,12 +1137,12 @@
 
   $(PLATFORM_RC_PACKAGE)/AcpiTablesPCAT/AcpiTables.inf
 
-  $(PLATFORM_PACKAGE)/AcpiPlatform/AcpiPlatform.inf
+  $(PLATFORM_PACKAGE)/AcpiPlatform/AcpiPlatformBB.inf
 
   #
   # PCI
   #
-  MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe.inf
+  $(PLATFORM_PACKAGE)/Override/MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe.inf
 
 
   $(PLATFORM_BINARY_PACKAGE)/$(DXE_ARCHITECTURE)$(TARGET)/$(DXE_ARCHITECTURE)/ISPDxe.inf
@@ -1157,7 +1151,7 @@
 #
 # ISA
 #
-  $(PLATFORM_PACKAGE)/Wpce791/Wpce791.inf
+  $(PLATFORM_PACKAGE)/Wpce791/SiO791.inf
   IntelFrameworkModulePkg/Bus/Isa/IsaBusDxe/IsaBusDxe.inf
   IntelFrameworkModulePkg/Bus/Isa/IsaIoDxe/IsaIoDxe.inf
   IntelFrameworkModulePkg/Bus/Isa/IsaSerialDxe/IsaSerialDxe.inf
@@ -1171,11 +1165,11 @@
 !if $(ACPI50_ENABLE) == TRUE
   MdeModulePkg/Universal/Acpi/FirmwarePerformanceDataTableDxe/FirmwarePerformanceDxe.inf {
     <LibraryClasses>
-      TimerLib|$(PLATFORM_PACKAGE)/Library/IntelPchAcpiTimerLib/IntelPchAcpiTimerLib.inf
+      TimerLib|$(PLATFORM_PACKAGE)/Override/PerformancePkg/Library/TscTimerLib/DxeTscTimerLib.inf
   }
   MdeModulePkg/Universal/Acpi/FirmwarePerformanceDataTableSmm/FirmwarePerformanceSmm.inf {
     <LibraryClasses>
-      TimerLib|$(PLATFORM_PACKAGE)/Library/IntelPchAcpiTimerLib/IntelPchAcpiTimerLib.inf
+      TimerLib|$(PLATFORM_PACKAGE)/Override/PerformancePkg/Library/TscTimerLib/DxeTscTimerLib.inf
   }
 !endif
 
@@ -1199,8 +1193,8 @@
 # Console
 #
   MdeModulePkg/Universal/Console/ConPlatformDxe/ConPlatformDxe.inf
-  Vlv2TbltDevicePkg/Override/MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe.inf
-  MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
+  MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe.inf
+  $(PLATFORM_PACKAGE)/Override/MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
   IntelFrameworkModulePkg/Universal/Console/VgaClassDxe/VgaClassDxe.inf
   MdeModulePkg/Universal/Console/TerminalDxe/TerminalDxe.inf
   MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
@@ -1236,13 +1230,13 @@
   # SMBIOS
   #
   MdeModulePkg/Universal/SmbiosDxe/SmbiosDxe.inf
-  $(PLATFORM_PACKAGE)/SmBiosMiscDxe/SmBiosMiscDxe.inf
+  $(PLATFORM_PACKAGE)/SmBiosMiscDxe/MiscSubclassBB.inf
 
   $(PLATFORM_BINARY_PACKAGE)/$(DXE_ARCHITECTURE)$(TARGET)/$(DXE_ARCHITECTURE)/SmbiosMemory.inf
   #
   # CPU/FW Microde
   #
-  Vlv2MiscBinariesPkg/Microcode/MicrocodeUpdates.inf {
+  $(PLATFORM_PACKAGE)/Restricted/Microcode/MicrocodeUpdates.inf {
     <BuildOptions>
       *_*_*_GENFW_FLAGS = -a 0x800 -p 0xFF
   }
@@ -1272,7 +1266,7 @@
   # UEFI network modules
   #
     MdeModulePkg/Universal/Network/DpcDxe/DpcDxe.inf
-    MdeModulePkg/Universal/Network/SnpDxe/SnpDxe.inf
+    Vlv2TbltDevicePkg/Override/MdeModulePkg/Universal/Network/SnpDxe/SnpDxe.inf
 
     MdeModulePkg/Universal/Network/MnpDxe/MnpDxe.inf
     MdeModulePkg/Universal/Network/ArpDxe/ArpDxe.inf

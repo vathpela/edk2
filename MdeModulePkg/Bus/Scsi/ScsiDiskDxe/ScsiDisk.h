@@ -1,7 +1,7 @@
 /** @file
   Header file for SCSI Disk Driver.
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -90,10 +90,9 @@ extern EFI_COMPONENT_NAME2_PROTOCOL  gScsiDiskComponentName2;
 //
 // action code used in detect media process
 //
-#define ACTION_NO_ACTION               0x00
-#define ACTION_READ_CAPACITY           0x01
-#define ACTION_RETRY_COMMAND_LATER     0x02
-#define ACTION_RETRY_WITH_BACKOFF_ALGO 0x03
+#define ACTION_NO_ACTION            0x00
+#define ACTION_READ_CAPACITY        0x01
+#define ACTION_RETRY_COMMAND_LATER  0x02
 
 #define SCSI_COMMAND_VERSION_1      0x01
 #define SCSI_COMMAND_VERSION_2      0x02
@@ -718,15 +717,17 @@ ScsiDiskWriteSectors (
   );
 
 /**
-  Submit Read(10) command.
+  Submit Read command.
 
   @param  ScsiDiskDevice     The pointer of ScsiDiskDevice
   @param  NeedRetry          The pointer of flag indicates if needs retry if error happens
+  @param  SenseDataArray     NOT used yet in this function
+  @param  NumberOfSenseKeys  The number of sense key
   @param  Timeout            The time to complete the command
   @param  DataBuffer         The buffer to fill with the read out data
   @param  DataLength         The length of buffer
   @param  StartLba           The start logic block address
-  @param  SectorCount        The number of blocks to read
+  @param  SectorSize         The size of sector
 
   @return  EFI_STATUS is returned by calling ScsiRead10Command().
 **/
@@ -734,23 +735,27 @@ EFI_STATUS
 ScsiDiskRead10 (
   IN     SCSI_DISK_DEV         *ScsiDiskDevice,
      OUT BOOLEAN               *NeedRetry,
+     OUT EFI_SCSI_SENSE_DATA   **SenseDataArray,   OPTIONAL
+     OUT UINTN                 *NumberOfSenseKeys,
   IN     UINT64                Timeout,
      OUT UINT8                 *DataBuffer,
   IN OUT UINT32                *DataLength,
   IN     UINT32                StartLba,
-  IN     UINT32                SectorCount
+  IN     UINT32                SectorSize
   );
 
 /**
-  Submit Write(10) Command.
+  Submit Write Command.
 
   @param  ScsiDiskDevice     The pointer of ScsiDiskDevice
   @param  NeedRetry          The pointer of flag indicates if needs retry if error happens
+  @param  SenseDataArray     NOT used yet in this function
+  @param  NumberOfSenseKeys  The number of sense key
   @param  Timeout            The time to complete the command
   @param  DataBuffer         The buffer to fill with the read out data
   @param  DataLength         The length of buffer
   @param  StartLba           The start logic block address
-  @param  SectorCount        The number of blocks to write
+  @param  SectorSize         The size of sector
 
   @return  EFI_STATUS is returned by calling ScsiWrite10Command().
 
@@ -759,11 +764,13 @@ EFI_STATUS
 ScsiDiskWrite10 (
   IN     SCSI_DISK_DEV         *ScsiDiskDevice,
      OUT BOOLEAN               *NeedRetry,
+     OUT EFI_SCSI_SENSE_DATA   **SenseDataArray,   OPTIONAL
+     OUT UINTN                 *NumberOfSenseKeys,
   IN     UINT64                Timeout,
   IN     UINT8                 *DataBuffer,
   IN OUT UINT32                *DataLength,
   IN     UINT32                StartLba,
-  IN     UINT32                SectorCount
+  IN     UINT32                SectorSize
   );
 
 /**
@@ -771,23 +778,27 @@ ScsiDiskWrite10 (
 
   @param  ScsiDiskDevice     The pointer of ScsiDiskDevice
   @param  NeedRetry          The pointer of flag indicates if needs retry if error happens
+  @param  SenseDataArray     NOT used yet in this function
+  @param  NumberOfSenseKeys  The number of sense key
   @param  Timeout            The time to complete the command
   @param  DataBuffer         The buffer to fill with the read out data
   @param  DataLength         The length of buffer
   @param  StartLba           The start logic block address
-  @param  SectorCount        The number of blocks to read
+  @param  SectorSize         The size of sector
 
-  @return  EFI_STATUS is returned by calling ScsiRead16Command().
+  @return  EFI_STATUS is returned by calling ScsiRead10Command().
 **/
 EFI_STATUS
 ScsiDiskRead16 (
   IN     SCSI_DISK_DEV         *ScsiDiskDevice,
      OUT BOOLEAN               *NeedRetry,
+     OUT EFI_SCSI_SENSE_DATA   **SenseDataArray,   OPTIONAL
+     OUT UINTN                 *NumberOfSenseKeys,
   IN     UINT64                Timeout,
      OUT UINT8                 *DataBuffer,
   IN OUT UINT32                *DataLength,
   IN     UINT64                StartLba,
-  IN     UINT32                SectorCount
+  IN     UINT32                SectorSize
   );
   
 /**
@@ -795,24 +806,28 @@ ScsiDiskRead16 (
 
   @param  ScsiDiskDevice     The pointer of ScsiDiskDevice
   @param  NeedRetry          The pointer of flag indicates if needs retry if error happens
+  @param  SenseDataArray     NOT used yet in this function
+  @param  NumberOfSenseKeys  The number of sense key
   @param  Timeout            The time to complete the command
   @param  DataBuffer         The buffer to fill with the read out data
   @param  DataLength         The length of buffer
   @param  StartLba           The start logic block address
-  @param  SectorCount        The number of blocks to write
+  @param  SectorSize         The size of sector
 
-  @return  EFI_STATUS is returned by calling ScsiWrite16Command().
+  @return  EFI_STATUS is returned by calling ScsiWrite10Command().
 
 **/
 EFI_STATUS
 ScsiDiskWrite16 (
   IN     SCSI_DISK_DEV         *ScsiDiskDevice,
      OUT BOOLEAN               *NeedRetry,
+     OUT EFI_SCSI_SENSE_DATA   **SenseDataArray,   OPTIONAL
+     OUT UINTN                 *NumberOfSenseKeys,
   IN     UINT64                Timeout,
   IN     UINT8                 *DataBuffer,
   IN OUT UINT32                *DataLength,
   IN     UINT64                StartLba,
-  IN     UINT32                SectorCount
+  IN     UINT32                SectorSize
   );  
 
 /**

@@ -1,7 +1,7 @@
 /** @file
   Decode an El Torito formatted CD-ROM
 
-Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -45,8 +45,8 @@ PartitionInstallElToritoChildHandles (
   )
 {
   EFI_STATUS              Status;
-  UINT64                  VolDescriptorOffset;
-  UINT32                  Lba2KB;
+  UINT32                  VolDescriptorLba;
+  UINT32                  Lba;
   EFI_BLOCK_IO_MEDIA      *Media;
   CDROM_VOLUME_DESCRIPTOR *VolDescriptor;
   ELTORITO_CATALOG        *Catalog;
@@ -67,17 +67,13 @@ PartitionInstallElToritoChildHandles (
   VolSpaceSize  = 0;
 
   //
-  // CD_ROM has the fixed block size as 2048 bytes (SIZE_2KB)
+  // CD_ROM has the fixed block size as 2048 bytes
   //
-
-  // If the ISO image has been copied onto a different storage media
-  // then the block size might be different (eg: USB).
-  // Ensure 2048 (SIZE_2KB) is a multiple of block size
-  if (((SIZE_2KB % Media->BlockSize) != 0) || (Media->BlockSize > SIZE_2KB)) {
+  if (Media->BlockSize != 2048) {
     return EFI_NOT_FOUND;
   }
 
-  VolDescriptor = AllocatePool ((UINTN)SIZE_2KB);
+  VolDescriptor = AllocatePool ((UINTN) Media->BlockSize);
 
   if (VolDescriptor == NULL) {
     return EFI_NOT_FOUND;
@@ -86,17 +82,31 @@ PartitionInstallElToritoChildHandles (
   Catalog = (ELTORITO_CATALOG *) VolDescriptor;
 
   //
-  // Loop: handle one volume descriptor per time
-  //       The ISO-9660 volume descriptor starts at 32k on the media
+  // the ISO-9660 volume descriptor starts at 32k on the media
+  // and CD_ROM has the fixed block size as 2048 bytes, so...
   //
-  for (VolDescriptorOffset = SIZE_32KB;
-       VolDescriptorOffset <= MultU64x32 (Media->LastBlock, Media->BlockSize);
-       VolDescriptorOffset += SIZE_2KB) {
+  //
+  // ((16*2048) / Media->BlockSize) - 1;
+  //
+  VolDescriptorLba = 15;
+  //
+  // Loop: handle one volume descriptor per time
+  //
+  while (TRUE) {
+
+    VolDescriptorLba += 1;
+    if (VolDescriptorLba > Media->LastBlock) {
+      //
+      // We are pointing past the end of the device so exit
+      //
+      break;
+    }
+
     Status = DiskIo->ReadDisk (
                        DiskIo,
                        Media->MediaId,
-                       VolDescriptorOffset,
-                       SIZE_2KB,
+                       MultU64x32 (VolDescriptorLba, Media->BlockSize),
+                       Media->BlockSize,
                        VolDescriptor
                        );
     if (EFI_ERROR (Status)) {
@@ -129,19 +139,17 @@ PartitionInstallElToritoChildHandles (
     }
     //
     // Read in the boot El Torito boot catalog
-    // The LBA unit used by El Torito boot catalog is 2KB unit
     //
-    Lba2KB = UNPACK_INT32 (VolDescriptor->BootRecordVolume.EltCatalog);
-    // Ensure the LBA (in 2KB unit) fits into our media
-    if (Lba2KB * (SIZE_2KB / Media->BlockSize) > Media->LastBlock) {
+    Lba = UNPACK_INT32 (VolDescriptor->BootRecordVolume.EltCatalog);
+    if (Lba > Media->LastBlock) {
       continue;
     }
 
     Status = DiskIo->ReadDisk (
                        DiskIo,
                        Media->MediaId,
-                       MultU64x32 (Lba2KB, SIZE_2KB),
-                       SIZE_2KB,
+                       MultU64x32 (Lba, Media->BlockSize),
+                       Media->BlockSize,
                        Catalog
                        );
     if (EFI_ERROR (Status)) {
@@ -183,7 +191,7 @@ PartitionInstallElToritoChildHandles (
       }
 
       SubBlockSize  = 512;
-      SectorCount   = Catalog->Boot.SectorCount * (SIZE_2KB / Media->BlockSize);
+      SectorCount   = Catalog->Boot.SectorCount;
 
       switch (Catalog->Boot.MediaType) {
 
@@ -228,7 +236,7 @@ PartitionInstallElToritoChildHandles (
 
       CdDev.BootEntry = (UINT32) BootEntry;
       BootEntry++;
-      CdDev.PartitionStart = Catalog->Boot.Lba * (SIZE_2KB / Media->BlockSize);
+      CdDev.PartitionStart = Catalog->Boot.Lba;
       if (SectorCount < 2) {
         //
         // When the SectorCount < 2, set the Partition as the whole CD.
@@ -257,8 +265,8 @@ PartitionInstallElToritoChildHandles (
                 BlockIo2,
                 DevicePath,
                 (EFI_DEVICE_PATH_PROTOCOL *) &CdDev,
-                Catalog->Boot.Lba * (SIZE_2KB / Media->BlockSize),
-                MultU64x32 (Catalog->Boot.Lba + CdDev.PartitionSize - 1, SIZE_2KB / Media->BlockSize),
+                Catalog->Boot.Lba,
+                Catalog->Boot.Lba + CdDev.PartitionSize - 1,
                 SubBlockSize,
                 FALSE
                 );

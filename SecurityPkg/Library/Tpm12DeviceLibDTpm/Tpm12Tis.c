@@ -1,7 +1,7 @@
 /** @file
   TIS (TPM Interface Specification) functions used by TPM1.2.
   
-Copyright (c) 2013 - 2015, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials 
 are licensed and made available under the terms and conditions of the BSD License 
 which accompanies this distribution.  The full text of the license may be found at 
@@ -217,6 +217,7 @@ Tpm12TisPcPresenceCheck (
   @retval     EFI_TIMEOUT  The register can't run into the expected status in time.
 **/
 EFI_STATUS
+EFIAPI
 Tpm12TisPcWaitRegisterBits (
   IN      UINT8                     *Register,
   IN      UINT8                     BitSet,
@@ -248,6 +249,7 @@ Tpm12TisPcWaitRegisterBits (
   @retval     EFI_TIMEOUT           BurstCount can't be got in time.
 **/
 EFI_STATUS
+EFIAPI
 Tpm12TisPcReadBurstCount (
   IN      TIS_PC_REGISTERS_PTR      TisReg,
      OUT  UINT16                    *BurstCount
@@ -291,6 +293,7 @@ Tpm12TisPcReadBurstCount (
   @retval    EFI_TIMEOUT           TPM chip can't be set to ready state in time.
 **/
 EFI_STATUS
+EFIAPI
 Tpm12TisPcPrepareCommand (
   IN      TIS_PC_REGISTERS_PTR      TisReg
   )
@@ -323,6 +326,7 @@ Tpm12TisPcPrepareCommand (
   @retval    EFI_TIMEOUT           Can't get the TPM control in time.
 **/
 EFI_STATUS
+EFIAPI
 Tpm12TisPcRequestUseTpm (
   IN      TIS_PC_REGISTERS_PTR      TisReg
   )
@@ -357,6 +361,7 @@ Tpm12TisPcRequestUseTpm (
   @param[in, out] SizeOut       Size of response data.  
  
   @retval EFI_SUCCESS           Operation completed successfully.
+  @retval EFI_TIMEOUT           The register can't run into the expected status in time.
   @retval EFI_BUFFER_TOO_SMALL  Response data buffer is too small.
   @retval EFI_DEVICE_ERROR      Unexpected device behavior.
   @retval EFI_UNSUPPORTED       Unsupported TPM version
@@ -403,7 +408,7 @@ Tpm12TisTpmCommand (
   Status = Tpm12TisPcPrepareCommand (TisReg);
   if (EFI_ERROR (Status)){
     DEBUG ((DEBUG_ERROR, "Tpm12 is not ready for command!\n"));
-    return EFI_DEVICE_ERROR;
+    return Status;
   }
   //
   // Send the command data to Tpm
@@ -412,7 +417,7 @@ Tpm12TisTpmCommand (
   while (Index < SizeIn) {
     Status = Tpm12TisPcReadBurstCount (TisReg, &BurstCount);
     if (EFI_ERROR (Status)) {
-      Status = EFI_DEVICE_ERROR;
+      Status = EFI_TIMEOUT;
       goto Exit;
     }
     for (; BurstCount > 0 && Index < SizeIn; BurstCount--) {
@@ -446,7 +451,7 @@ Tpm12TisTpmCommand (
              );
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "Wait for Tpm12 response data time out!!\n"));
-    Status = EFI_DEVICE_ERROR;
+    Status = EFI_TIMEOUT;
     goto Exit;
   }
   //
@@ -457,7 +462,7 @@ Tpm12TisTpmCommand (
   while (Index < sizeof (TPM_RSP_COMMAND_HDR)) {
     Status = Tpm12TisPcReadBurstCount (TisReg, &BurstCount);
     if (EFI_ERROR (Status)) {
-      Status = EFI_DEVICE_ERROR;
+      Status = EFI_TIMEOUT;
       goto Exit;
     }
     for (; BurstCount > 0; BurstCount--) {
@@ -504,7 +509,7 @@ Tpm12TisTpmCommand (
     }
     Status = Tpm12TisPcReadBurstCount (TisReg, &BurstCount);
     if (EFI_ERROR (Status)) {
-      Status = EFI_DEVICE_ERROR;
+      Status = EFI_TIMEOUT;
       goto Exit;
     }
   }

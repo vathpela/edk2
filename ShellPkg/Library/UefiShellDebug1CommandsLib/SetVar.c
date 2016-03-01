@@ -1,7 +1,7 @@
 /** @file
   Main file for SetVar shell Debug1 function.
 
-  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2013, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -44,6 +44,7 @@ ShellCommandRunSetVar (
   EFI_GUID            Guid;
   CONST CHAR16        *StringGuid;
   UINT32              Attributes;
+  UINT32              Attributes2;
   VOID                *Buffer;
   UINTN               Size;
   UINTN               LoopVar;
@@ -97,7 +98,7 @@ ShellCommandRunSetVar (
           ShellStatus = SHELL_INVALID_PARAMETER;
         }
       }
-      if (Data == NULL || Data[0] !=  L'=') {
+      if (Data == NULL) {
         //
         // Display what's there
         //
@@ -128,43 +129,21 @@ ShellCommandRunSetVar (
           ASSERT(ShellStatus == SHELL_SUCCESS);
         }
       } else {
-        //
-        // Change what's there or create a new one.
-        //
-
-        ASSERT(Data[0] == L'=');
-        Data++;
-
-        //
-        // Determine if the variable exists and get the attributes
-        //
-        Status = gRT->GetVariable((CHAR16*)VariableName, &Guid, &Attributes, &Size, Buffer);
-        if (Status == EFI_BUFFER_TOO_SMALL) {
-          Buffer = AllocateZeroPool(Size);
-          Status = gRT->GetVariable((CHAR16*)VariableName, &Guid, &Attributes, &Size, Buffer);
+        if (Data[0] == L'=') {
+          Data++;
         }
-
-        if (EFI_ERROR(Status) || Buffer == NULL) {
-          //
-          // Creating a new variable.  determine attributes from command line.
-          //
-          Attributes = 0;
-          if (ShellCommandLineGetFlag(Package, L"-bs")) {
-            Attributes |= EFI_VARIABLE_BOOTSERVICE_ACCESS;
-          }
-          if (ShellCommandLineGetFlag(Package, L"-rt")) {
-            Attributes |= EFI_VARIABLE_RUNTIME_ACCESS |
-                          EFI_VARIABLE_BOOTSERVICE_ACCESS;
-          }
-          if (ShellCommandLineGetFlag(Package, L"-nv")) {
-            Attributes |= EFI_VARIABLE_NON_VOLATILE;
-          }
+        //
+        // Change what's there
+        //
+        if (ShellCommandLineGetFlag(Package, L"-bs")) {
+          Attributes |= EFI_VARIABLE_BOOTSERVICE_ACCESS;
         }
-        SHELL_FREE_NON_NULL(Buffer);
-
-        //
-        // What type is the new data.
-        //
+        if (ShellCommandLineGetFlag(Package, L"-rt")) {
+          Attributes |= EFI_VARIABLE_RUNTIME_ACCESS;
+        }
+        if (ShellCommandLineGetFlag(Package, L"-nv")) {
+          Attributes |= EFI_VARIABLE_NON_VOLATILE;
+        }
         if (ShellIsHexOrDecimalNumber(Data, TRUE, FALSE)) {
           if (StrLen(Data) % 2 != 0) {
             ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM_VAL), gShellDebug1HiiHandle, Data);
@@ -191,6 +170,17 @@ ShellCommandRunSetVar (
             }
           }
         } else if (StrnCmp(Data, L"\"", 1) == 0) {
+          Size = 0;
+          Attributes2 = 0;
+          Status = gRT->GetVariable((CHAR16*)VariableName, &Guid, &Attributes2, &Size, Buffer);
+          if (Status == EFI_BUFFER_TOO_SMALL) {
+            Buffer = AllocateZeroPool(Size);
+            Status = gRT->GetVariable((CHAR16*)VariableName, &Guid, &Attributes2, &Size, Buffer);
+            if (Buffer != NULL) {
+              FreePool(Buffer);
+            }
+            Attributes = Attributes2;
+          }          
           //
           // ascii text
           //

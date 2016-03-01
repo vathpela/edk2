@@ -1,7 +1,7 @@
 ## @file
 # This file is used to define a class object to describe a module
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
 #
 # This program and the accompanying materials are licensed and made available 
 # under the terms and conditions of the BSD License which accompanies this 
@@ -21,7 +21,6 @@ ModuleObject
 from Object.POM.CommonObject import CommonPropertiesObject
 from Object.POM.CommonObject import IdentificationObject
 from Object.POM.CommonObject import CommonHeaderObject
-from Object.POM.CommonObject import BinaryHeaderObject
 from Object.POM.CommonObject import HelpTextListObject
 from Object.POM.CommonObject import GuidVersionObject
                          
@@ -95,7 +94,7 @@ class SpecObject(object):
 #
 # This class defined header items used in Module file
 # 
-class ModuleHeaderObject(IdentificationObject, CommonHeaderObject, BinaryHeaderObject):
+class ModuleHeaderObject(IdentificationObject, CommonHeaderObject):
     def __init__(self):
         self.IsLibrary = False
         self.IsLibraryModList = []
@@ -104,7 +103,6 @@ class ModuleHeaderObject(IdentificationObject, CommonHeaderObject, BinaryHeaderO
         self.PcdIsDriver = ''
         self.PiSpecificationVersion = ''
         self.UefiSpecificationVersion = ''
-        self.UNIFlag = False
         #
         # SpecObject
         #
@@ -128,7 +126,6 @@ class ModuleHeaderObject(IdentificationObject, CommonHeaderObject, BinaryHeaderO
         self.SupArchList = []
         IdentificationObject.__init__(self)
         CommonHeaderObject.__init__(self)
-        BinaryHeaderObject.__init__(self)
     
     def SetIsLibrary(self, IsLibrary):
         self.IsLibrary = IsLibrary
@@ -280,7 +277,6 @@ class AsBuildLibraryClassObject(object):
     def __init__(self):
         self.LibGuid = ''
         self.LibVersion = ''
-        self.SupArchList = []
     
     def SetLibGuid(self, LibGuid):
         self.LibGuid = LibGuid
@@ -291,11 +287,6 @@ class AsBuildLibraryClassObject(object):
         self.LibVersion = LibVersion
     def GetLibVersion(self):
         return self.LibVersion
-
-    def SetSupArchList(self, SupArchList):
-        self.SupArchList = SupArchList
-    def GetSupArchList(self):
-        return self.SupArchList
 
 ##
 # AsBuiltObject
@@ -317,7 +308,7 @@ class AsBuiltObject(object):
         #
         # List of BinaryBuildFlag object
         #
-        self.BinaryBuildFlagList = []
+        self.BinaryBuildFlagList = ''
 
     def SetPatchPcdList(self, PatchPcdList):
         self.PatchPcdList = PatchPcdList

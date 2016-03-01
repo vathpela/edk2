@@ -1,7 +1,7 @@
 /** @file
   Tcp driver function.
 
-Copyright (c) 2005 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2005 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -418,6 +418,8 @@ Tcp4DriverBindingStart (
 
   InitializeListHead (&TcpServiceData->SocketList);
 
+  TcpSetVariableData (TcpServiceData);
+
   return EFI_SUCCESS;
 
 ON_ERROR:
@@ -536,6 +538,11 @@ Tcp4DriverBindingStop (
     // Destroy the heartbeat timer.
     //
     Tcp4DestroyTimer ();
+
+    //
+    // Clear the variable.
+    //
+    TcpClearVariableData (TcpServiceData);
 
     if (gTcpControllerNameTable != NULL) {
       FreeUnicodeStringTable (gTcpControllerNameTable);

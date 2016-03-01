@@ -55,7 +55,6 @@ typedef enum {
   PchB2         = 4,
   PchB3         = 5,
   PchC0         = 6,
-  PchD0         = 7,
   PchSteppingMax
 } PCH_STEPPING;
 

@@ -15,7 +15,6 @@
 **/
 
 #include <BoardGpios.h>
-#include <Guid/SetupVariable.h>
 
 //
 //AlpineValley platform ocde begin
@@ -137,10 +136,6 @@ MultiPlatformGpioTableInit (
   IN EFI_PLATFORM_INFO_HOB      *PlatformInfoHob
   )
 {
-  EFI_STATUS                      Status;
-  EFI_PEI_READ_ONLY_VARIABLE2_PPI *PeiReadOnlyVarPpi;
-  UINTN                           VarSize;
-  SYSTEM_CONFIGURATION            SystemConfiguration;
 
   DEBUG ((EFI_D_INFO, "MultiPlatformGpioTableInit()...\n"));
 
@@ -150,37 +145,11 @@ MultiPlatformGpioTableInit (
   switch (PlatformInfoHob->BoardId) {
 
   case BOARD_ID_MINNOW2: // Minnow2
-  
-   Status = (**PeiServices).LocatePpi (
-                             PeiServices,
-                             &gEfiPeiReadOnlyVariable2PpiGuid,
-                             0,
-                             NULL,
-                             (void **)&PeiReadOnlyVarPpi
-                             );
-    ASSERT_EFI_ERROR (Status);
-   
-    VarSize = sizeof (SYSTEM_CONFIGURATION);
-    Status = PeiReadOnlyVarPpi->GetVariable ( 
-                                  PeiReadOnlyVarPpi, 
-                                  PLATFORM_SETUP_VARIABLE_NAME, 
-                                  &gEfiSetupVariableGuid,
-                                  NULL,
-                                  &VarSize,
-                                  &SystemConfiguration
-                                  );
-                                                                       
-     if (SystemConfiguration.GpioWakeCapability == 1) {
-      PlatformInfoHob->PlatformCfioData     = (EFI_PHYSICAL_ADDRESS)(UINTN) &mMinnow2CfioInitData2;
-     }
-     else {
-      PlatformInfoHob->PlatformCfioData     = (EFI_PHYSICAL_ADDRESS)(UINTN) &mMinnow2CfioInitData;
-     }	
-	 
-     PlatformInfoHob->PlatformGpioData_NC  = (EFI_PHYSICAL_ADDRESS)(UINTN) &mMinnow2_GpioInitData_NC[0];
-     PlatformInfoHob->PlatformGpioData_SC  = (EFI_PHYSICAL_ADDRESS)(UINTN) &mMinnow2_GpioInitData_SC[0];
-     PlatformInfoHob->PlatformGpioData_SUS = (EFI_PHYSICAL_ADDRESS)(UINTN) &mMinnow2_GpioInitData_SUS[0];
-     break;
+    PlatformInfoHob->PlatformCfioData     = (EFI_PHYSICAL_ADDRESS)(UINTN) &mMinnow2CfioInitData;
+    PlatformInfoHob->PlatformGpioData_NC  = (EFI_PHYSICAL_ADDRESS)(UINTN) &mMinnow2_GpioInitData_NC[0];
+    PlatformInfoHob->PlatformGpioData_SC  = (EFI_PHYSICAL_ADDRESS)(UINTN) &mMinnow2_GpioInitData_SC[0];
+    PlatformInfoHob->PlatformGpioData_SUS = (EFI_PHYSICAL_ADDRESS)(UINTN) &mMinnow2_GpioInitData_SUS[0];
+    break;
 
   }
 

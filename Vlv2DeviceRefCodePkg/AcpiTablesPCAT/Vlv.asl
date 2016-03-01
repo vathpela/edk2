@@ -18,7 +18,7 @@ Module Name:
 
 Abstract:
 
-  Baytrail PCI configuration space definition.
+  Valleyview PCI configuration space definition.
 
 --*/
 Scope (\_SB.PCI0)

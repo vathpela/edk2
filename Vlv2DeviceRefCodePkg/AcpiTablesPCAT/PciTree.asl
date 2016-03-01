@@ -1,5 +1,6 @@
 /**************************************************************************;
 ;*                                                                        *;
+;*    Intel Confidential                                                  *;
 ;*                                                                        *;
 ;*    Intel Corporation - ACPI Reference Code for the Sandy Bridge        *;
 ;*    Family of Customer Reference Boards.                                *;

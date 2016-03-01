@@ -18,7 +18,7 @@ Module Name:
 
 Abstract:
 
-  Baytrail PCI configuration space definition.
+  ValleyView PCI configuration space definition.
 
 ---*/
 Device(VLVC)
@@ -341,7 +341,6 @@ Method(_OSC,4,Serialized)
       Or(CDW1,0x10,CDW1)
     }
     // Update DWORD3 in the buffer
-	And(CTRL,0xfe,CTRL)                
     Store(CTRL,CDW3)
     Store(CTRL,OSCC)
     Return(Local0)

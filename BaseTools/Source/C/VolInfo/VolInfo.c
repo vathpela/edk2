@@ -1,7 +1,6 @@
 /** @file
-The tool dumps the contents of a firmware volume
 
-Copyright (c) 1999 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 1999 - 2011, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -9,6 +8,14 @@ http://opensource.org/licenses/bsd-license.php
 
 THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+
+Module Name:
+
+  VolInfo.c
+
+Abstract:
+
+  The tool dumps the contents of a firmware volume
 
 **/
 
@@ -44,7 +51,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 EFI_GUID  gEfiCrc32GuidedSectionExtractionProtocolGuid = EFI_CRC32_GUIDED_SECTION_EXTRACTION_PROTOCOL_GUID;
 
 #define UTILITY_MAJOR_VERSION      0
-#define UTILITY_MINOR_VERSION      83
+#define UTILITY_MINOR_VERSION      82
 
 #define UTILITY_NAME         "VolInfo"
 
@@ -165,7 +172,7 @@ Returns:
   //
   // Print utility header
   //
-  printf ("%s Version %d.%d %s, %s\n",
+  printf ("%s Tiano Firmware Volume FFS image info.  Version %d.%d %s, %s\n",
     UTILITY_NAME,
     UTILITY_MAJOR_VERSION,
     UTILITY_MINOR_VERSION,
@@ -242,7 +249,7 @@ Returns:
   //
   // Open the file containing the FV
   //
-  InputFile = fopen (LongFilePath (argv[0]), "rb");
+  InputFile = fopen (argv[0], "rb");
   if (InputFile == NULL) {
     Error (NULL, 0, 0001, "Error opening the input file", argv[0]);
     return GetUtilityStatus ();
@@ -968,24 +975,22 @@ Returns:
   UINT32              FileLength;
   UINT8               FileState;
   UINT8               Checksum;
-  EFI_FFS_FILE_HEADER2 BlankHeader;
+  EFI_FFS_FILE_HEADER BlankHeader;
   EFI_STATUS          Status;
   UINT8               GuidBuffer[PRINTED_GUID_BUFFER_SIZE];
-  UINT32              HeaderSize;
 #if (PI_SPECIFICATION_VERSION < 0x00010000) 
   UINT16              *Tail;
 #endif
   //
   // Check if we have free space
   //
-  HeaderSize = FvBufGetFfsHeaderSize(FileHeader);
   if (ErasePolarity) {
-    memset (&BlankHeader, -1, HeaderSize);
+    memset (&BlankHeader, -1, sizeof (EFI_FFS_FILE_HEADER));
   } else {
-    memset (&BlankHeader, 0, HeaderSize);
+    memset (&BlankHeader, 0, sizeof (EFI_FFS_FILE_HEADER));
   }
 
-  if (memcmp (&BlankHeader, FileHeader, HeaderSize) == 0) {
+  if (memcmp (&BlankHeader, FileHeader, sizeof (EFI_FFS_FILE_HEADER)) == 0) {
     return EFI_SUCCESS;
   }
   //
@@ -1003,7 +1008,7 @@ Returns:
   //  PrintGuid (&FileHeader->Name);
   //  printf ("\n");
   //
-  FileLength = FvBufGetFfsFileSize (FileHeader);
+  FileLength = GetLength (FileHeader->Size);
   printf ("File Offset:      0x%08X\n", (unsigned) ((UINTN) FileHeader - (UINTN) FvImage));
   printf ("File Length:      0x%08X\n", (unsigned) FileLength);
   printf ("File Attributes:  0x%02X\n", FileHeader->Attributes);
@@ -1026,7 +1031,7 @@ Returns:
 
   case EFI_FILE_HEADER_VALID:
     printf ("        EFI_FILE_HEADER_VALID\n");
-    Checksum  = CalculateSum8 ((UINT8 *) FileHeader, HeaderSize);
+    Checksum  = CalculateSum8 ((UINT8 *) FileHeader, sizeof (EFI_FFS_FILE_HEADER));
     Checksum  = (UINT8) (Checksum - FileHeader->IntegrityCheck.Checksum.File);
     Checksum  = (UINT8) (Checksum - FileHeader->State);
     if (Checksum != 0) {
@@ -1048,7 +1053,7 @@ Returns:
     //
     // Calculate header checksum
     //
-    Checksum  = CalculateSum8 ((UINT8 *) FileHeader, HeaderSize);
+    Checksum  = CalculateSum8 ((UINT8 *) FileHeader, sizeof (EFI_FFS_FILE_HEADER));
     Checksum  = (UINT8) (Checksum - FileHeader->IntegrityCheck.Checksum.File);
     Checksum  = (UINT8) (Checksum - FileHeader->State);
     if (Checksum != 0) {
@@ -1056,13 +1061,13 @@ Returns:
       return EFI_ABORTED;
     }
 
-    FileLength = FvBufGetFfsFileSize (FileHeader);
+    FileLength = GetLength (FileHeader->Size);
 
     if (FileHeader->Attributes & FFS_ATTRIB_CHECKSUM) {
       //
       // Calculate file checksum
       //
-      Checksum  = CalculateSum8 ((UINT8 *)FileHeader + HeaderSize, FileLength - HeaderSize);
+      Checksum  = CalculateSum8 ((UINT8 *) (FileHeader + 1), FileLength - sizeof (EFI_FFS_FILE_HEADER));
       Checksum  = Checksum + FileHeader->IntegrityCheck.Checksum.File;
       if (Checksum != 0) {
         Error (NULL, 0, 0003, "error parsing FFS file", "FFS file with Guid %s has invalid file checksum", GuidBuffer);
@@ -1175,8 +1180,8 @@ Returns:
     // All other files have sections
     //
     Status = ParseSection (
-              (UINT8 *) ((UINTN) FileHeader + HeaderSize),
-              FvBufGetFfsFileSize (FileHeader) - HeaderSize
+              (UINT8 *) ((UINTN) FileHeader + sizeof (EFI_FFS_FILE_HEADER)),
+              GetLength (FileHeader->Size) - sizeof (EFI_FFS_FILE_HEADER)
               );
     if (EFI_ERROR (Status)) {
       //
@@ -1220,7 +1225,6 @@ Returns:
   EFI_SECTION_TYPE    Type;
   UINT8               *Ptr;
   UINT32              SectionLength;
-  UINT32              SectionHeaderLen;
   CHAR8               *SectionName;
   EFI_STATUS          Status;
   UINT32              ParsedLength;
@@ -1242,10 +1246,6 @@ Returns:
   CHAR8               *ToolOutputFile;
   CHAR8               *SystemCommandFormatString;
   CHAR8               *SystemCommand;
-  EFI_GUID            *EfiGuid;
-  UINT16              DataOffset;
-  UINT16              Attributes;
-  UINT32              RealHdrLen;
 
   ParsedLength = 0;
   while (ParsedLength < BufferLength) {
@@ -1263,12 +1263,6 @@ Returns:
       ParsedLength += 4;
       continue;
     }
-
-    //
-    // Get real section file size
-    //
-    SectionLength = GetSectionFileLength ((EFI_COMMON_SECTION_HEADER *) Ptr);
-    SectionHeaderLen = GetSectionHeaderLength((EFI_COMMON_SECTION_HEADER *)Ptr);
 
     SectionName = SectionNameToStr (Type);
     printf ("------------------------------------------------------------\n");
@@ -1289,7 +1283,7 @@ Returns:
       break;
 
     case EFI_SECTION_FIRMWARE_VOLUME_IMAGE:
-      Status = PrintFvInfo (Ptr + SectionHeaderLen, TRUE);
+      Status = PrintFvInfo (((EFI_FIRMWARE_VOLUME_IMAGE_SECTION*)Ptr) + 1, TRUE);
       if (EFI_ERROR (Status)) {
         Error (NULL, 0, 0003, "printing of FV section contents failed", NULL);
         return EFI_SECTION_ERROR;
@@ -1310,22 +1304,15 @@ Returns:
       break;
 
     case EFI_SECTION_VERSION:
-      printf ("  Build Number:  0x%02X\n", *(UINT16 *)(Ptr + SectionHeaderLen));
-      printf ("  Version Strg:  %s\n", (char*) (Ptr + SectionHeaderLen + sizeof (UINT16)));
+      printf ("  Build Number:  0x%02X\n", ((EFI_VERSION_SECTION *) Ptr)->BuildNumber);
+      printf ("  Version Strg:  %s\n", (char*) ((EFI_VERSION_SECTION *) Ptr)->VersionString);
       break;
 
     case EFI_SECTION_COMPRESSION:
       UncompressedBuffer  = NULL;
-      if (SectionHeaderLen == sizeof (EFI_COMMON_SECTION_HEADER)) {
-        RealHdrLen = sizeof(EFI_COMPRESSION_SECTION);
-        UncompressedLength  = ((EFI_COMPRESSION_SECTION *)Ptr)->UncompressedLength;
-        CompressionType     = ((EFI_COMPRESSION_SECTION *)Ptr)->CompressionType;
-      } else {
-        RealHdrLen = sizeof(EFI_COMPRESSION_SECTION2);
-        UncompressedLength  = ((EFI_COMPRESSION_SECTION2 *)Ptr)->UncompressedLength;
-        CompressionType     = ((EFI_COMPRESSION_SECTION2 *)Ptr)->CompressionType;
-      }
-      CompressedLength    = SectionLength - RealHdrLen;
+      CompressedLength    = SectionLength - sizeof (EFI_COMPRESSION_SECTION);
+      UncompressedLength  = ((EFI_COMPRESSION_SECTION *) Ptr)->UncompressedLength;
+      CompressionType     = ((EFI_COMPRESSION_SECTION *) Ptr)->CompressionType;
       printf ("  Uncompressed Length:  0x%08X\n", (unsigned) UncompressedLength);
 
       if (CompressionType == EFI_NOT_COMPRESSED) {
@@ -1341,13 +1328,13 @@ Returns:
           return EFI_SECTION_ERROR;
         }
 
-        UncompressedBuffer = Ptr + RealHdrLen;
+        UncompressedBuffer = Ptr + sizeof (EFI_COMPRESSION_SECTION);
       } else if (CompressionType == EFI_STANDARD_COMPRESSION) {
         GetInfoFunction     = EfiGetInfo;
         DecompressFunction  = EfiDecompress;
         printf ("  Compression Type:  EFI_STANDARD_COMPRESSION\n");
 
-        CompressedBuffer  = Ptr + RealHdrLen;
+        CompressedBuffer  = Ptr + sizeof (EFI_COMPRESSION_SECTION);
 
         Status            = GetInfoFunction (CompressedBuffer, CompressedLength, &DstSize, &ScratchSize);
         if (EFI_ERROR (Status)) {
@@ -1400,25 +1387,16 @@ Returns:
       break;
 
     case EFI_SECTION_GUID_DEFINED:
-      if (SectionHeaderLen == sizeof(EFI_COMMON_SECTION_HEADER)) {
-        EfiGuid = &((EFI_GUID_DEFINED_SECTION *) Ptr)->SectionDefinitionGuid;
-        DataOffset = ((EFI_GUID_DEFINED_SECTION *) Ptr)->DataOffset;
-        Attributes = ((EFI_GUID_DEFINED_SECTION *) Ptr)->Attributes;
-      } else {
-        EfiGuid = &((EFI_GUID_DEFINED_SECTION2 *) Ptr)->SectionDefinitionGuid;
-        DataOffset = ((EFI_GUID_DEFINED_SECTION2 *) Ptr)->DataOffset;
-        Attributes = ((EFI_GUID_DEFINED_SECTION2 *) Ptr)->Attributes;
-      }
       printf ("  SectionDefinitionGuid:  ");
-      PrintGuid (EfiGuid);
+      PrintGuid (&((EFI_GUID_DEFINED_SECTION *) Ptr)->SectionDefinitionGuid);
       printf ("\n");
-      printf ("  DataOffset:             0x%04X\n", (unsigned) DataOffset);
-      printf ("  Attributes:             0x%04X\n", (unsigned) Attributes);
+      printf ("  DataOffset:             0x%04X\n", (unsigned) ((EFI_GUID_DEFINED_SECTION *) Ptr)->DataOffset);
+      printf ("  Attributes:             0x%04X\n", (unsigned) ((EFI_GUID_DEFINED_SECTION *) Ptr)->Attributes);
 
       ExtractionTool =
         LookupGuidedSectionToolPath (
           mParsedGuidedSectionTools,
-          EfiGuid
+          &((EFI_GUID_DEFINED_SECTION *) Ptr)->SectionDefinitionGuid
           );
 
       if (ExtractionTool != NULL) {
@@ -1449,8 +1427,8 @@ Returns:
         Status =
           PutFileImage (
             ToolInputFile,
-            (CHAR8*) SectionBuffer + DataOffset,
-            BufferLength - DataOffset
+            (CHAR8*) SectionBuffer + ((EFI_GUID_DEFINED_SECTION *) Ptr)->DataOffset,
+            BufferLength - ((EFI_GUID_DEFINED_SECTION *) Ptr)->DataOffset
             );
 
         system (SystemCommand);
@@ -1483,7 +1461,7 @@ Returns:
       // Check for CRC32 sections which we can handle internally if needed.
       //
       } else if (!CompareGuid (
-                   EfiGuid,
+                   &((EFI_GUID_DEFINED_SECTION *) Ptr)->SectionDefinitionGuid,
                    &gEfiCrc32GuidedSectionExtractionProtocolGuid
                    )
           ) {
@@ -1491,8 +1469,8 @@ Returns:
         // CRC32 guided section
         //
         Status = ParseSection (
-                  SectionBuffer + DataOffset,
-                  BufferLength - DataOffset
+                  SectionBuffer + ((EFI_GUID_DEFINED_SECTION *) Ptr)->DataOffset,
+                  BufferLength - ((EFI_GUID_DEFINED_SECTION *) Ptr)->DataOffset
                   );
         if (EFI_ERROR (Status)) {
           Error (NULL, 0, 0003, "parse of CRC32 GUIDED section failed", NULL);
@@ -1562,8 +1540,8 @@ Returns:
     return EFI_SUCCESS;
   }
 
-  Ptr += GetSectionHeaderLength((EFI_COMMON_SECTION_HEADER *)Ptr);
-  SectionLength -= GetSectionHeaderLength((EFI_COMMON_SECTION_HEADER *)Ptr);
+  Ptr += sizeof (EFI_COMMON_SECTION_HEADER);
+  SectionLength -= sizeof (EFI_COMMON_SECTION_HEADER);
   while (SectionLength > 0) {
     printf ("        ");
     switch (*Ptr) {
@@ -1709,7 +1687,7 @@ Returns:
   CHAR8             Line[MAX_LINE_LEN];
   GUID_TO_BASENAME  *GPtr;
 
-  if ((Fptr = fopen (LongFilePath (FileName), "r")) == NULL) {
+  if ((Fptr = fopen (FileName, "r")) == NULL) {
     printf ("ERROR: Failed to open input cross-reference file '%s'\n", FileName);
     return EFI_DEVICE_ERROR;
   }
@@ -1831,8 +1809,7 @@ Returns:
   //
   // Copyright declaration
   // 
-  fprintf (stdout, "Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.\n\n");
-  fprintf (stdout, "  Display Tiano Firmware Volume FFS image information\n\n");
+  fprintf (stdout, "Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.\n\n");
 
   //
   // Details Option

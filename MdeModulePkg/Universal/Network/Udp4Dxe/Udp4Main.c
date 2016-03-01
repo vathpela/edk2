@@ -1,7 +1,6 @@
 /** @file
 
-(C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2009, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -228,8 +227,8 @@ Udp4Configure (
       // Save the configuration data.
       //
       CopyMem (&Instance->ConfigData, UdpConfigData, sizeof (Instance->ConfigData));
-      IP4_COPY_ADDRESS (&Instance->ConfigData.StationAddress, &Ip4ConfigData.StationAddress);
-      IP4_COPY_ADDRESS (&Instance->ConfigData.SubnetMask, &Ip4ConfigData.SubnetMask);
+      Instance->ConfigData.StationAddress = Ip4ConfigData.StationAddress;
+      Instance->ConfigData.SubnetMask     = Ip4ConfigData.SubnetMask;
 
       //
       // Try to allocate the required port resource.
@@ -281,7 +280,9 @@ Udp4Configure (
 
     ASSERT (IsListEmpty (&Instance->DeliveredDgramQue));
   }
- 
+
+  Udp4SetVariableData (Instance->Udp4Service);
+
 ON_EXIT:
 
   gBS->RestoreTPL (OldTpl);
@@ -589,7 +590,7 @@ Udp4Transmit (
   Udp4Header->Checksum     = 0;
 
   UdpSessionData = TxData->UdpSessionData;
-  IP4_COPY_ADDRESS (&Override.Ip4OverrideData.SourceAddress, &ConfigData->StationAddress);
+  Override.Ip4OverrideData.SourceAddress = ConfigData->StationAddress;
 
   if (UdpSessionData != NULL) {
     //
@@ -597,7 +598,7 @@ Udp4Transmit (
     // UdpSessionData.
     //
     if (!EFI_IP4_EQUAL (&UdpSessionData->SourceAddress, &mZeroIp4Addr)) {
-      IP4_COPY_ADDRESS (&Override.Ip4OverrideData.SourceAddress, &UdpSessionData->SourceAddress);
+      CopyMem (&Override.Ip4OverrideData.SourceAddress, &UdpSessionData->SourceAddress, sizeof (EFI_IPv4_ADDRESS));
     }
 
     if (UdpSessionData->SourcePort != 0) {
@@ -644,7 +645,7 @@ Udp4Transmit (
   // Fill the IpIo Override data.
   //
   if (TxData->GatewayAddress != NULL) {
-    IP4_COPY_ADDRESS (&Override.Ip4OverrideData.GatewayAddress, TxData->GatewayAddress);
+    CopyMem (&Override.Ip4OverrideData.GatewayAddress, TxData->GatewayAddress, sizeof (EFI_IPv4_ADDRESS));
   } else {
     ZeroMem (&Override.Ip4OverrideData.GatewayAddress, sizeof (EFI_IPv4_ADDRESS));
   }

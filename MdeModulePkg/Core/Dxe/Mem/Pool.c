@@ -1,7 +1,7 @@
 /** @file
   UEFI Memory pool management functions.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -175,7 +175,7 @@ LookupPoolHead (
 **/
 EFI_STATUS
 EFIAPI
-CoreInternalAllocatePool (
+CoreAllocatePool (
   IN EFI_MEMORY_TYPE  PoolType,
   IN UINTN            Size,
   OUT VOID            **Buffer
@@ -218,35 +218,7 @@ CoreInternalAllocatePool (
   return (*Buffer != NULL) ? EFI_SUCCESS : EFI_OUT_OF_RESOURCES;
 }
 
-/**
-  Allocate pool of a particular type.
 
-  @param  PoolType               Type of pool to allocate
-  @param  Size                   The amount of pool to allocate
-  @param  Buffer                 The address to return a pointer to the allocated
-                                 pool
-
-  @retval EFI_INVALID_PARAMETER  PoolType not valid or Buffer is NULL. 
-  @retval EFI_OUT_OF_RESOURCES   Size exceeds max pool size or allocation failed.
-  @retval EFI_SUCCESS            Pool successfully allocated.
-
-**/
-EFI_STATUS
-EFIAPI
-CoreAllocatePool (
-  IN EFI_MEMORY_TYPE  PoolType,
-  IN UINTN            Size,
-  OUT VOID            **Buffer
-  )
-{
-  EFI_STATUS  Status;
-
-  Status = CoreInternalAllocatePool (PoolType, Size, Buffer);
-  if (!EFI_ERROR (Status)) {
-    CoreUpdateProfile ((EFI_PHYSICAL_ADDRESS) (UINTN) RETURN_ADDRESS (0), MemoryProfileActionAllocatePool, PoolType, Size, *Buffer);
-  }
-  return Status;
-}
 
 /**
   Internal function to allocate pool of a particular type.
@@ -302,7 +274,7 @@ CoreAllocatePoolI (
   //
   if (Index >= MAX_POOL_LIST) {
     NoPages = EFI_SIZE_TO_PAGES(Size) + EFI_SIZE_TO_PAGES (DEFAULT_PAGE_ALLOCATION) - 1;
-    NoPages &= ~(UINTN)(EFI_SIZE_TO_PAGES (DEFAULT_PAGE_ALLOCATION) - 1);
+    NoPages &= ~(EFI_SIZE_TO_PAGES (DEFAULT_PAGE_ALLOCATION) - 1);
     Head = CoreAllocatePoolPages (PoolType, NoPages, DEFAULT_PAGE_ALLOCATION);
     goto Done;
   }
@@ -401,7 +373,7 @@ Done:
 **/
 EFI_STATUS
 EFIAPI
-CoreInternalFreePool (
+CoreFreePool (
   IN VOID        *Buffer
   )
 {
@@ -417,29 +389,7 @@ CoreInternalFreePool (
   return Status;
 }
 
-/**
-  Frees pool.
 
-  @param  Buffer                 The allocated pool entry to free
-
-  @retval EFI_INVALID_PARAMETER  Buffer is not a valid value.
-  @retval EFI_SUCCESS            Pool successfully freed.
-
-**/
-EFI_STATUS
-EFIAPI
-CoreFreePool (
-  IN VOID  *Buffer
-  )
-{
-  EFI_STATUS  Status;
-
-  Status = CoreInternalFreePool (Buffer);
-  if (!EFI_ERROR (Status)) {
-    CoreUpdateProfile ((EFI_PHYSICAL_ADDRESS) (UINTN) RETURN_ADDRESS (0), MemoryProfileActionFreePool, (EFI_MEMORY_TYPE) 0, 0, Buffer);
-  }
-  return Status;
-}
 
 /**
   Internal function to free a pool entry.
@@ -523,7 +473,7 @@ CoreFreePoolI (
     // Return the memory pages back to free memory
     //
     NoPages = EFI_SIZE_TO_PAGES(Size) + EFI_SIZE_TO_PAGES (DEFAULT_PAGE_ALLOCATION) - 1;
-    NoPages &= ~(UINTN)(EFI_SIZE_TO_PAGES (DEFAULT_PAGE_ALLOCATION) - 1);
+    NoPages &= ~(EFI_SIZE_TO_PAGES (DEFAULT_PAGE_ALLOCATION) - 1);
     CoreFreePoolPages ((EFI_PHYSICAL_ADDRESS) (UINTN) Head, NoPages);
 
   } else {
@@ -608,4 +558,3 @@ CoreFreePoolI (
 
   return EFI_SUCCESS;
 }
-

@@ -2,7 +2,7 @@
   The internal header file includes the common header files, defines
   internal structure and functions used by Variable modules.
 
-Copyright (c) 2009 - 2015, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2009 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials 
 are licensed and made available under the terms and conditions of the BSD License 
 which accompanies this distribution.  The full text of the license may be found at 
@@ -22,7 +22,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Protocol/FirmwareVolumeBlock.h>
 #include <Protocol/Variable.h>
 #include <Protocol/VariableLock.h>
-#include <Protocol/VarCheck.h>
 #include <Library/PcdLib.h>
 #include <Library/HobLib.h>
 #include <Library/UefiDriverEntryPoint.h>
@@ -44,7 +43,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Guid/SystemNvDataGuid.h>
 #include <Guid/FaultTolerantWrite.h>
 #include <Guid/HardwareErrorVariable.h>
-#include <Guid/VarErrorFlag.h>
 
 #define EFI_VARIABLE_ATTRIBUTES_MASK (EFI_VARIABLE_NON_VOLATILE | \
                                       EFI_VARIABLE_BOOTSERVICE_ACCESS | \
@@ -54,13 +52,14 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
                                       EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS | \
                                       EFI_VARIABLE_APPEND_WRITE)
 
-#define VARIABLE_ATTRIBUTE_NV_BS        (EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS)
 #define VARIABLE_ATTRIBUTE_BS_RT        (EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS)
 #define VARIABLE_ATTRIBUTE_NV_BS_RT     (VARIABLE_ATTRIBUTE_BS_RT | EFI_VARIABLE_NON_VOLATILE)
 #define VARIABLE_ATTRIBUTE_NV_BS_RT_AT  (VARIABLE_ATTRIBUTE_NV_BS_RT | EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS)
-#define VARIABLE_ATTRIBUTE_NV_BS_RT_HR  (VARIABLE_ATTRIBUTE_NV_BS_RT | EFI_VARIABLE_HARDWARE_ERROR_RECORD)
-#define VARIABLE_ATTRIBUTE_NV_BS_RT_AW  (VARIABLE_ATTRIBUTE_NV_BS_RT | EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS)
-#define VARIABLE_ATTRIBUTE_NV_BS_RT_AT_HR_AW  (VARIABLE_ATTRIBUTE_NV_BS_RT_AT | EFI_VARIABLE_HARDWARE_ERROR_RECORD | EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS)
+
+typedef struct {
+  CHAR16      *Name;
+  UINT32      Attributes;
+} GLOBAL_VARIABLE_ENTRY;
 
 ///
 /// The size of a 3 character ISO639 language code.
@@ -100,11 +99,7 @@ typedef struct {
   VARIABLE_GLOBAL VariableGlobal;
   UINTN           VolatileLastVariableOffset;
   UINTN           NonVolatileLastVariableOffset;
-  UINTN           CommonVariableSpace;
-  UINTN           CommonMaxUserVariableSpace;
-  UINTN           CommonRuntimeVariableSpace;
   UINTN           CommonVariableTotalSize;
-  UINTN           CommonUserVariableTotalSize;
   UINTN           HwErrVariableTotalSize;
   CHAR8           *PlatformLangCodes;
   CHAR8           *LangCodes;
@@ -116,13 +111,15 @@ typedef struct {
 typedef struct {
   EFI_GUID    *Guid;
   CHAR16      *Name;
-  UINTN       VariableSize;
-} VARIABLE_ENTRY_CONSISTENCY;
+  UINT32      Attributes;
+  UINTN       DataSize;
+  VOID        *Data;
+} VARIABLE_CACHE_ENTRY;
 
 typedef struct {
-  LIST_ENTRY  Link;
   EFI_GUID    Guid;
-  //CHAR16      *Name;
+  CHAR16      *Name;
+  LIST_ENTRY  Link;
 } VARIABLE_ENTRY;
 
 /**
@@ -222,32 +219,6 @@ DataSizeOfVariable (
   IN  VARIABLE_HEADER   *Variable
   );
 
-/**
-  This function is to check if the remaining variable space is enough to set
-  all Variables from argument list successfully. The purpose of the check
-  is to keep the consistency of the Variables to be in variable storage.
-
-  Note: Variables are assumed to be in same storage.
-  The set sequence of Variables will be same with the sequence of VariableEntry from argument list,
-  so follow the argument sequence to check the Variables.
-
-  @param[in] Attributes         Variable attributes for Variable entries.
-  @param ...                    The variable argument list with type VARIABLE_ENTRY_CONSISTENCY *.
-                                A NULL terminates the list. The VariableSize of 
-                                VARIABLE_ENTRY_CONSISTENCY is the variable data size as input.
-                                It will be changed to variable total size as output.
-
-  @retval TRUE                  Have enough variable space to set the Variables successfully.
-  @retval FALSE                 No enough variable space to set the Variables successfully.
-
-**/
-BOOLEAN
-EFIAPI
-CheckRemainingSpaceForConsistency (
-  IN UINT32                     Attributes,
-  ...
-  );
-  
 /**
   Update the variable region with Variable information. If EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS is set,
   index of associated public key is needed.
@@ -609,34 +580,6 @@ VariableServiceSetVariable (
   @param MaximumVariableSize            Pointer to the maximum size of an individual EFI variables
                                         associated with the attributes specified.
 
-  @return EFI_SUCCESS                   Query successfully.
-
-**/
-EFI_STATUS
-EFIAPI
-VariableServiceQueryVariableInfoInternal (
-  IN  UINT32                 Attributes,
-  OUT UINT64                 *MaximumVariableStorageSize,
-  OUT UINT64                 *RemainingVariableStorageSize,
-  OUT UINT64                 *MaximumVariableSize
-  );
-
-/**
-
-  This code returns information about the EFI variables.
-
-  Caution: This function may receive untrusted input.
-  This function may be invoked in SMM mode. This function will do basic validation, before parse the data.
-
-  @param Attributes                     Attributes bitmask to specify the type of variables
-                                        on which to return information.
-  @param MaximumVariableStorageSize     Pointer to the maximum size of the storage space available
-                                        for the EFI variables associated with the attributes specified.
-  @param RemainingVariableStorageSize   Pointer to the remaining size of the storage space available
-                                        for EFI variables associated with the attributes specified.
-  @param MaximumVariableSize            Pointer to the maximum size of an individual EFI variables
-                                        associated with the attributes specified.
-
   @return EFI_INVALID_PARAMETER         An invalid combination of attribute bits was supplied.
   @return EFI_SUCCESS                   Query successfully.
   @return EFI_UNSUPPORTED               The attribute is not supported on this platform.
@@ -672,144 +615,6 @@ VariableLockRequestToLock (
   IN CONST EDKII_VARIABLE_LOCK_PROTOCOL *This,
   IN       CHAR16                       *VariableName,
   IN       EFI_GUID                     *VendorGuid
-  );
-
-/**
-  Check if a Unicode character is a hexadecimal character.
-
-  This function checks if a Unicode character is a
-  hexadecimal character.  The valid hexadecimal character is
-  L'0' to L'9', L'a' to L'f', or L'A' to L'F'.
-
-
-  @param Char           The character to check against.
-
-  @retval TRUE          If the Char is a hexadecmial character.
-  @retval FALSE         If the Char is not a hexadecmial character.
-
-**/
-BOOLEAN
-EFIAPI
-IsHexaDecimalDigitCharacter (
-  IN CHAR16             Char
-  );
-
-/**
-  Internal SetVariable check.
-
-  @param[in] VariableName       Name of Variable to set.
-  @param[in] VendorGuid         Variable vendor GUID.
-  @param[in] Attributes         Attribute value of the variable.
-  @param[in] DataSize           Size of Data to set.
-  @param[in] Data               Data pointer.
-
-  @retval EFI_SUCCESS           The SetVariable check result was success.
-  @retval EFI_INVALID_PARAMETER An invalid combination of attribute bits, name, and GUID were supplied,
-                                or the DataSize exceeds the minimum or maximum allowed,
-                                or the Data value is not following UEFI spec for UEFI defined variables.
-  @retval EFI_WRITE_PROTECTED   The variable in question is read-only.
-  @retval Others                The return status from check handler.
-
-**/
-EFI_STATUS
-EFIAPI
-InternalVarCheckSetVariableCheck (
-  IN CHAR16     *VariableName,
-  IN EFI_GUID   *VendorGuid,
-  IN UINT32     Attributes,
-  IN UINTN      DataSize,
-  IN VOID       *Data
-  );
-
-/**
-  Register SetVariable check handler.
-
-  @param[in] Handler            Pointer to check handler.
-
-  @retval EFI_SUCCESS           The SetVariable check handler was registered successfully.
-  @retval EFI_INVALID_PARAMETER Handler is NULL.
-  @retval EFI_ACCESS_DENIED     EFI_END_OF_DXE_EVENT_GROUP_GUID or EFI_EVENT_GROUP_READY_TO_BOOT has
-                                already been signaled.
-  @retval EFI_OUT_OF_RESOURCES  There is not enough resource for the SetVariable check handler register request.
-  @retval EFI_UNSUPPORTED       This interface is not implemented.
-                                For example, it is unsupported in VarCheck protocol if both VarCheck and SmmVarCheck protocols are present.
-
-**/
-EFI_STATUS
-EFIAPI
-VarCheckRegisterSetVariableCheckHandler (
-  IN VAR_CHECK_SET_VARIABLE_CHECK_HANDLER   Handler
-  );
-
-/**
-  Internal variable property get.
-
-  @param[in]  Name              Pointer to the variable name.
-  @param[in]  Guid              Pointer to the vendor GUID.
-  @param[out] VariableProperty  Pointer to the output variable property.
-
-  @retval EFI_SUCCESS           The property of variable specified by the Name and Guid was got successfully.
-  @retval EFI_NOT_FOUND         The property of variable specified by the Name and Guid was not found.
-
-**/
-EFI_STATUS
-EFIAPI
-InternalVarCheckVariablePropertyGet (
-  IN CHAR16                         *Name,
-  IN EFI_GUID                       *Guid,
-  OUT VAR_CHECK_VARIABLE_PROPERTY   *VariableProperty
-  );
-
-/**
-  Variable property set.
-
-  @param[in] Name               Pointer to the variable name.
-  @param[in] Guid               Pointer to the vendor GUID.
-  @param[in] VariableProperty   Pointer to the input variable property.
-
-  @retval EFI_SUCCESS           The property of variable specified by the Name and Guid was set successfully.
-  @retval EFI_INVALID_PARAMETER Name, Guid or VariableProperty is NULL, or Name is an empty string,
-                                or the fields of VariableProperty are not valid.
-  @retval EFI_ACCESS_DENIED     EFI_END_OF_DXE_EVENT_GROUP_GUID or EFI_EVENT_GROUP_READY_TO_BOOT has
-                                already been signaled.
-  @retval EFI_OUT_OF_RESOURCES  There is not enough resource for the variable property set request.
-
-**/
-EFI_STATUS
-EFIAPI
-VarCheckVariablePropertySet (
-  IN CHAR16                         *Name,
-  IN EFI_GUID                       *Guid,
-  IN VAR_CHECK_VARIABLE_PROPERTY    *VariableProperty
-  );
-
-/**
-  Variable property get.
-
-  @param[in]  Name              Pointer to the variable name.
-  @param[in]  Guid              Pointer to the vendor GUID.
-  @param[out] VariableProperty  Pointer to the output variable property.
-
-  @retval EFI_SUCCESS           The property of variable specified by the Name and Guid was got successfully.
-  @retval EFI_INVALID_PARAMETER Name, Guid or VariableProperty is NULL, or Name is an empty string.
-  @retval EFI_NOT_FOUND         The property of variable specified by the Name and Guid was not found.
-
-**/
-EFI_STATUS
-EFIAPI
-VarCheckVariablePropertyGet (
-  IN CHAR16                         *Name,
-  IN EFI_GUID                       *Guid,
-  OUT VAR_CHECK_VARIABLE_PROPERTY   *VariableProperty
-  );
-
-/**
-  Initialize variable quota.
-
-**/
-VOID
-InitializeVariableQuota (
-  VOID
   );
 
 extern VARIABLE_MODULE_GLOBAL  *mVariableModuleGlobal;

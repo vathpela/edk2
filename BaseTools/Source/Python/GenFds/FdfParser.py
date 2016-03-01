@@ -55,8 +55,7 @@ from Common.String import ReplaceMacro
 from Common.Misc import tdict
 
 import re
-import Common.LongFilePathOs as os
-from Common.LongFilePathSupport import OpenLongFilePath as open
+import os
 
 ##define T_CHAR_SPACE                ' '
 ##define T_CHAR_NULL                 '\0'
@@ -218,7 +217,6 @@ class FdfParser:
         self.CurrentFvName = None
         self.__Token = ""
         self.__SkippedChars = ""
-        GlobalData.gFdfParser = self
 
         # Used to section info
         self.__CurSection = []
@@ -715,8 +713,6 @@ class FdfParser:
                     self.__SetMacroValue(Macro, Value)
                     self.__WipeOffArea.append(((DefineLine, DefineOffset), (self.CurrentLineNumber - 1, self.CurrentOffsetWithinLine - 1)))
             elif self.__Token == 'SET':
-                if not self.__GetIfListCurrentItemStat(IfList):
-                    continue
                 SetLine = self.CurrentLineNumber - 1
                 SetOffset = self.CurrentOffsetWithinLine - len('SET')
                 PcdPair = self.__GetNextPcdName()
@@ -2359,9 +2355,6 @@ class FdfParser:
         ffsInf.CurrentLineNum = self.CurrentLineNumber
         ffsInf.CurrentLineContent = self.__CurrentLine()
 
-        #Replace $(SAPCE) with real space
-        ffsInf.InfFileName = ffsInf.InfFileName.replace('$(SPACE)', ' ')
-
         if ffsInf.InfFileName.replace('$(WORKSPACE)', '').find('$') == -1:
             #do case sensitive check for file path
             ErrorCode, ErrorInfo = PathClass(NormPath(ffsInf.InfFileName), GenFdsGlobalVariable.WorkSpaceDir).Validate()
@@ -2397,12 +2390,6 @@ class FdfParser:
     #   @param  FfsInfObj   for whom option is got
     #
     def __GetInfOptions(self, FfsInfObj):
-        if self.__IsKeyword("FILE_GUID"):
-            if not self.__IsToken("="):
-                raise Warning("expected '='", self.FileName, self.CurrentLineNumber)
-            if not self.__GetNextGuid():
-                raise Warning("expected GUID value", self.FileName, self.CurrentLineNumber)
-            FfsInfObj.OverrideGuid = self.__Token
 
         if self.__IsKeyword( "RuleOverride"):
             if not self.__IsToken( "="):
@@ -2438,8 +2425,8 @@ class FdfParser:
 
                 
         if self.__GetNextToken():
-            p = re.compile(r'([a-zA-Z0-9\-]+|\$\(TARGET\)|\*)_([a-zA-Z0-9\-]+|\$\(TOOL_CHAIN_TAG\)|\*)_([a-zA-Z0-9\-]+|\$\(ARCH\))')
-            if p.match(self.__Token) and p.match(self.__Token).span()[1] == len(self.__Token):
+            p = re.compile(r'([a-zA-Z0-9\-]+|\$\(TARGET\)|\*)_([a-zA-Z0-9\-]+|\$\(TOOL_CHAIN_TAG\)|\*)_([a-zA-Z0-9\-]+|\$\(ARCH\)|\*)')
+            if p.match(self.__Token):
                 FfsInfObj.KeyStringList.append(self.__Token)
                 if not self.__IsToken(","):
                     return
@@ -2588,7 +2575,7 @@ class FdfParser:
         else:
             FfsFileObj.CurrentLineNum = self.CurrentLineNumber
             FfsFileObj.CurrentLineContent = self.__CurrentLine()
-            FfsFileObj.FileName = self.__Token.replace('$(SPACE)', ' ')
+            FfsFileObj.FileName = self.__Token
             self.__VerifyFile(FfsFileObj.FileName)
 
         if not self.__IsToken( "}"):

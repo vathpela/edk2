@@ -1,7 +1,7 @@
 /** @file
   Main file for NULL named library for Profile1 shell command functions.
 
-  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2013, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -23,8 +23,6 @@
 #include <Guid/ConsoleOutDevice.h>
 #include <Guid/ShellLibHiiGuid.h>
 
-#include <IndustryStandard/Pci.h>
-
 #include <Protocol/EfiShell.h>
 #include <Protocol/EfiShellParameters.h>
 #include <Protocol/DevicePath.h>
@@ -38,8 +36,6 @@
 #include <Protocol/DriverSupportedEfiVersion.h>
 #include <Protocol/DriverFamilyOverride.h>
 #include <Protocol/DriverHealth.h>
-#include <Protocol/PciIo.h>
-#include <Protocol/PciRootBridgeIo.h>
 
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -206,21 +202,6 @@ ShellCommandRunUnload (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable
   );
-
-/**
-  Do a connect from an EFI variable via it's key name.
-
-  @param[in] Key      The name of the EFI Variable.
-
-  @retval EFI_SUCCESS   The operation was successful.
-**/
-EFI_STATUS
-EFIAPI
-ShellConnectFromDevPaths (
-  IN CONST CHAR16 *Key
-  );
-
-
 
 #endif
 

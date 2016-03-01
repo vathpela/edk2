@@ -1,11 +1,12 @@
 /**************************************************************************;
 ;*                                                                        *;
+;*    Intel Confidential                                                  *;
 ;*                                                                        *;
 ;*    Intel Corporation - ACPI Reference Code for the Sandy Bridge        *;
 ;*    Family of Customer Reference Boards.                                *;
 ;*                                                                        *;
 ;*                                                                        *;
-;*    Copyright (c) 2012  - 2015, Intel Corporation. All rights reserved    *;
+;*    Copyright (c) 2012  - 2014, Intel Corporation. All rights reserved    *;
 ;
 ; This program and the accompanying materials are licensed and made available under
 ; the terms and conditions of the BSD License that accompanies this distribution.
@@ -56,14 +57,12 @@ DefinitionBlock (
   include ("PCI_DRC.ASL")
   include ("Video.asl")
   include ("Gpe.asl")
-  //include ("IoTVirtualDevice.asl")
 
   // Sleep states supported by Chipset/Board.
   // SSx - BIOS setup controlled enabled _Sx Sleep state status
   // Values to be written to SLP_TYPE register are provided by SBACPI.SDL (South Bridge ACPI ModulePart)
 
   Name(\_S0, Package(4) {0x0,0x0,0,0}) // mandatory System state
-  Name(\_S1, Package(4) {0x1,0x0,0,0})
   Name(\_S3, Package(4) {0x5,0x0,0,0})
   Name(\_S4, Package(4) {0x6,0x0,0,0})
   Name(\_S5, Package(4) {0x7,0x0,0,0}) // mandatory System state

@@ -509,20 +509,21 @@ FileInterfaceStdInRead(
         if (StrStr(CurrentString + TabPos, L":") == NULL) {
           Cwd = ShellInfoObject.NewEfiShellProtocol->GetCurDir(NULL);
           if (Cwd != NULL) {
-            StrnCpy(TabStr, Cwd, (*BufferSize)/sizeof(CHAR16) - 1);
+            StrCpy(TabStr, Cwd);
             if (TabStr[StrLen(TabStr)-1] == L'\\' && *(CurrentString + TabPos) == L'\\' ) {
               TabStr[StrLen(TabStr)-1] = CHAR_NULL;
             }
             StrnCat(TabStr, CurrentString + TabPos, (StringLen - TabPos) * sizeof (CHAR16));
           } else {
-            *TabStr = CHAR_NULL;
+            StrCpy(TabStr, L"");
             StrnCat(TabStr, CurrentString + TabPos, (StringLen - TabPos) * sizeof (CHAR16));
           }
         } else {
-          StrnCpy(TabStr, CurrentString + TabPos, (*BufferSize)/sizeof(CHAR16) - 1);
+          StrCpy(TabStr, CurrentString + TabPos);
         }
-        StrnCat(TabStr, L"*", (*BufferSize)/sizeof(CHAR16) - 1 - StrLen(TabStr));
+        StrCat(TabStr, L"*");
         FoundFileList = NULL;
+//        TabStr = PathCleanUpDirectories(TabStr);
         Status  = ShellInfoObject.NewEfiShellProtocol->FindFiles(TabStr, &FoundFileList);
         for ( TempStr = CurrentString
             ; *TempStr == L' '
@@ -1140,7 +1141,6 @@ CreateFileInterfaceEnv(
   )
 {
   EFI_FILE_PROTOCOL_ENVIRONMENT  *EnvFileInterface;
-  UINTN                          EnvNameSize;
 
   if (EnvName == NULL) {
     return (NULL);
@@ -1149,8 +1149,7 @@ CreateFileInterfaceEnv(
   //
   // Get some memory
   //
-  EnvNameSize = StrSize(EnvName);
-  EnvFileInterface = AllocateZeroPool(sizeof(EFI_FILE_PROTOCOL_ENVIRONMENT)+EnvNameSize);
+  EnvFileInterface = AllocateZeroPool(sizeof(EFI_FILE_PROTOCOL_ENVIRONMENT)+StrSize(EnvName));
   if (EnvFileInterface == NULL){
     return (NULL);
   }
@@ -1168,8 +1167,8 @@ CreateFileInterfaceEnv(
   EnvFileInterface->Flush       = FileInterfaceNopGeneric;
   EnvFileInterface->Delete      = FileInterfaceEnvDelete;
   EnvFileInterface->Read        = FileInterfaceEnvRead;
-  
-  CopyMem(EnvFileInterface->Name, EnvName, EnvNameSize);
+
+  StrCpy(EnvFileInterface->Name, EnvName);
 
   //
   // Assign the different members for Volatile and Non-Volatile variables

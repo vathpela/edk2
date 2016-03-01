@@ -95,7 +95,7 @@ SPendingAssign::GetKey (
 }
 
 CFormPkg::CFormPkg (
-  IN UINT32 BufferSize
+  IN UINT32 BufferSize = 4096
   )
 {
   CHAR8       *BufferStart;

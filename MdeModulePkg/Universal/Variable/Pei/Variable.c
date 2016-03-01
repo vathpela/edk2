@@ -3,7 +3,7 @@
   Implement ReadOnly Variable Services required by PEIM and install
   PEI ReadOnly Varaiable2 PPI. These services operates the non volatile storage space.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -547,25 +547,14 @@ GetVariableHeader (
   EFI_HOB_GUID_TYPE     *GuidHob;
   UINTN                 PartialHeaderSize;
 
-  if (Variable == NULL) {
-    return FALSE;
-  }
-
    //
    // First assume variable header pointed by Variable is consecutive.
    //
   *VariableHeader = Variable;
 
-  if (StoreInfo->FtwLastWriteData != NULL) {
+  if ((Variable != NULL) && (StoreInfo->FtwLastWriteData != NULL)) {
     TargetAddress = StoreInfo->FtwLastWriteData->TargetAddress;
     SpareAddress = StoreInfo->FtwLastWriteData->SpareAddress;
-    if (((UINTN) Variable > (UINTN) SpareAddress) &&
-        (((UINTN) Variable - (UINTN) SpareAddress + (UINTN) TargetAddress) >= (UINTN) GetEndPointer (StoreInfo->VariableStoreHeader))) {
-      //
-      // Reach the end of variable store.
-      //
-      return FALSE;
-    }
     if (((UINTN) Variable < (UINTN) TargetAddress) && (((UINTN) Variable + sizeof (VARIABLE_HEADER)) > (UINTN) TargetAddress)) {
       //
       // Variable header pointed by Variable is inconsecutive,
@@ -586,13 +575,6 @@ GetVariableHeader (
         //
         CopyMem ((UINT8 *) *VariableHeader + PartialHeaderSize, (UINT8 *) (UINTN) SpareAddress, sizeof (VARIABLE_HEADER) - PartialHeaderSize);
       }
-    }
-  } else {
-    if (Variable >= GetEndPointer (StoreInfo->VariableStoreHeader)) {
-      //
-      // Reach the end of variable store.
-      //
-      return FALSE;
     }
   }
 
@@ -884,8 +866,6 @@ PeiGetVariable (
     return EFI_INVALID_PARAMETER;
   }
 
-  VariableHeader = NULL;
-
   //
   // Find existing variable
   //
@@ -971,8 +951,6 @@ PeiGetNextVariableName (
   if (VariableName == NULL || VariableGuid == NULL || VariableNameSize == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
-  VariableHeader = NULL;
 
   Status = FindVariable (VariableName, VariableGuid, &Variable, &StoreInfo);
   if (Variable.CurrPtr == NULL || Status != EFI_SUCCESS) {

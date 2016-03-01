@@ -2,9 +2,8 @@
   Member functions of EFI_SHELL_PARAMETERS_PROTOCOL and functions for creation,
   manipulation, and initialization of EFI_SHELL_PARAMETERS_PROTOCOL.
 
-  Copyright (C) 2014, Red Hat, Inc.
   Copyright (c) 2013 Hewlett-Packard Development Company, L.P.
-  Copyright (c) 2009 - 2015, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -18,79 +17,7 @@
 #include "Shell.h"
 
 /**
-  Return the next location of a non-escaped character from a command line string;
-
-  @param[in] String        the string to parse
-  @param[in] Character     the character to look for
-
-  @retval the location of the character in the string or the end of the string
-**/
-CONST CHAR16*
-EFIAPI
-FindCharacter(
-  IN CONST CHAR16 *String,
-  IN CONST CHAR16 Character
-  )
-{
-  CONST CHAR16 *Walker;
-
-  for (Walker = String ; *Walker != Character && *Walker != CHAR_NULL; Walker++) {
-    if (*Walker == L'^') {
-      Walker++;
-    }
-  }
-  return Walker;
-}
-
-/**
-  Return the next parameter's end from a command line string;
-
-  @param[in] String        the string to parse
-**/
-CONST CHAR16*
-EFIAPI
-FindEndOfParameter(
-  IN CONST CHAR16 *String
-  )
-{
-  CONST CHAR16 *NextSpace;
-  CONST CHAR16 *NextQuote;
-  CONST CHAR16 *First;
-  CONST CHAR16 *CloseQuote;
-
-  NextSpace = FindCharacter (String, L' ' );
-  NextQuote = FindCharacter (String, L'\"');
-  First = MIN (NextQuote, NextSpace);
-
-  //
-  // nothing, all one parameter remaining
-  //
-  if (*First == CHAR_NULL) {
-    return (First);
-  }
-
-  //
-  // If space before a quote (or neither found, i.e. both CHAR_NULL),
-  // then that's the end.
-  //
-  if (First == NextSpace) {
-    return (NextSpace);
-  }
-
-  CloseQuote = FindCharacter (First+1, L'\"');
-
-  //
-  // We did not find a terminator... return the end of the string
-  //
-  if (*CloseQuote == CHAR_NULL) {
-    return (NULL);
-  }
-
-  return (FindEndOfParameter (CloseQuote+1));
-}
-
-/**
-  Return the next parameter from a command line string;
+  return the next parameter from a command line string;
 
   This function moves the next parameter from Walker into TempParameter and moves
   Walker up past that parameter for recursive calling.  When the final parameter
@@ -99,34 +26,25 @@ FindEndOfParameter(
   Temp Parameter must be large enough to hold the parameter before calling this
   function.
 
-  This will also remove all remaining ^ characters after processing.
-
   @param[in, out] Walker        pointer to string of command line.  Adjusted to
                                 reminaing command line on return
   @param[in, out] TempParameter pointer to string of command line item extracted.
-  @param[in]      Length        buffer size of TempParameter.
 
-  @return   EFI_INALID_PARAMETER  A required parameter was NULL or pointed to a NULL or empty string.
-  @return   EFI_NOT_FOUND         A closing " could not be found on the specified string
 **/
-EFI_STATUS
+VOID
 EFIAPI
 GetNextParameter(
-  IN OUT CHAR16   **Walker,
-  IN OUT CHAR16   **TempParameter,
-  IN CONST UINTN  Length
+  CHAR16 **Walker,
+  CHAR16 **TempParameter
   )
 {
   CHAR16 *NextDelim;
+  CHAR16 *TempLoc;
 
-  if (Walker           == NULL
-    ||*Walker          == NULL
-    ||TempParameter    == NULL
-    ||*TempParameter   == NULL
-    ){
-    return (EFI_INVALID_PARAMETER);
-  }
-
+  ASSERT(Walker           != NULL);
+  ASSERT(*Walker          != NULL);
+  ASSERT(TempParameter    != NULL);
+  ASSERT(*TempParameter   != NULL);
 
   //
   // make sure we dont have any leading spaces
@@ -139,80 +57,77 @@ GetNextParameter(
   // make sure we still have some params now...
   //
   if (StrLen(*Walker) == 0) {
-DEBUG_CODE_BEGIN();
-    *Walker        = NULL;
-DEBUG_CODE_END();
-    return (EFI_INVALID_PARAMETER);
-  }
-
-  NextDelim = (CHAR16*)FindEndOfParameter(*Walker);
-
-  if (NextDelim == NULL){
-DEBUG_CODE_BEGIN();
-    *Walker        = NULL;
-DEBUG_CODE_END();
-    return (EFI_NOT_FOUND);
-  }
-
-  StrnCpy(*TempParameter, (*Walker), NextDelim - *Walker);
-
-  //
-  // Add a CHAR_NULL if we didnt get one via the copy
-  //
-  if (*NextDelim != CHAR_NULL) {
-    (*TempParameter)[NextDelim - *Walker] = CHAR_NULL;
-  }
-
-  *Walker = NextDelim;
-
-  //
-  // Now remove any quotes surrounding entire parameters
-  //
-  if ((*TempParameter)[0] == L'\"' && (*TempParameter)[StrLen (*TempParameter)-1] == L'\"') {
-    (*TempParameter)[StrLen (*TempParameter)-1] = CHAR_NULL;
-    CopyMem ((*TempParameter), (*TempParameter)+1, StrSize ((*TempParameter)+1));
+    ASSERT((*Walker)[0] == CHAR_NULL);
+    *Walker = NULL;
+    return;
   }
 
   //
-  // Remove any non-escaped quotes in the string
+  // we have a quoted parameter
+  // could be the last parameter, but SHOULD have a trailing quote
   //
-  for (NextDelim = StrStr(*TempParameter, L"\""); NextDelim != NULL && *NextDelim != CHAR_NULL; NextDelim = StrStr(NextDelim, L"\"")) {
-    //
-    // Make sure I found a quote character properly.
-    //
-    ASSERT(*NextDelim == L'\"');
+  if ((*Walker)[0] == L'\"') {
+    NextDelim = NULL;
+    for (TempLoc = *Walker + 1 ; TempLoc != NULL && *TempLoc != CHAR_NULL ; TempLoc++) {
+      if (*TempLoc == L'^' && *(TempLoc+1) == L'\"') {
+        TempLoc++;
+      } else if (*TempLoc == L'\"') {
+        NextDelim = TempLoc;
+        break;
+      }
+    }
 
-    //
-    // Only remove quotes that do not have a preceeding ^
-    //
-    if ((NextDelim > (*TempParameter) && (*(NextDelim - 1) != L'^')) || (NextDelim == (*TempParameter))) {
-      CopyMem (NextDelim, NextDelim + 1, StrSize (NextDelim + 1));
+    if (NextDelim - ((*Walker)+1) == 0) {
+      //
+      // found ""
+      //
+      StrCpy(*TempParameter, L"");
+      *Walker = NextDelim + 1;
+    } else if (NextDelim != NULL) {
+      StrnCpy(*TempParameter, (*Walker)+1, NextDelim - ((*Walker)+1));
+      *Walker = NextDelim + 1;
     } else {
-      NextDelim++;
+      //
+      // last one... someone forgot the training quote!
+      //
+      StrCpy(*TempParameter, *Walker);
+      *Walker = NULL;
+    }
+    for (TempLoc = *TempParameter ; TempLoc != NULL && *TempLoc != CHAR_NULL ; TempLoc++) {
+      if (*TempLoc == L'^' && *(TempLoc+1) == L'\"') {
+        CopyMem(TempLoc, TempLoc+1, StrSize(TempLoc) - sizeof(TempLoc[0]));
+      }
+    }
+  } else {
+    //
+    // we have a regular parameter (no quote) OR
+    // we have the final parameter (no trailing space)
+    //
+    NextDelim = StrStr((*Walker), L" ");
+    if (NextDelim != NULL) {
+      StrnCpy(*TempParameter, *Walker, NextDelim - (*Walker));
+      (*TempParameter)[NextDelim - (*Walker)] = CHAR_NULL;
+      *Walker = NextDelim+1;
+    } else {
+      //
+      // last one.
+      //
+      StrCpy(*TempParameter, *Walker);
+      *Walker = NULL;
+    }
+    for (NextDelim = *TempParameter ; NextDelim != NULL && *NextDelim != CHAR_NULL ; NextDelim++) {
+      if (*NextDelim == L'^' && *(NextDelim+1) == L'^') {
+        CopyMem(NextDelim, NextDelim+1, StrSize(NextDelim) - sizeof(NextDelim[0]));
+      }
+    }
+    while ((*TempParameter)[StrLen(*TempParameter)-1] == L' ') {
+      (*TempParameter)[StrLen(*TempParameter)-1] = CHAR_NULL;
+    }
+    while ((*TempParameter)[0] == L' ') {
+      CopyMem(*TempParameter, (*TempParameter)+1, StrSize(*TempParameter) - sizeof((*TempParameter)[0]));
     }
   }
-
-  //
-  // Remove any escape charactersin the parameter before returning it
-  // all escape character processing is complete at this time
-  //
-  for (NextDelim = StrStr(*TempParameter, L"^"); NextDelim != NULL && *NextDelim != CHAR_NULL; NextDelim = StrStr(NextDelim, L"^")) {
-    //
-    // Make sure I found an escape character properly.
-    //
-    ASSERT(*NextDelim == L'^');
-
-    CopyMem (NextDelim, NextDelim + 1, StrSize (NextDelim + 1));
-
-    //
-    // If we had 2 escapes in a row, leave one behind
-    //
-    if (*NextDelim == L'^') {
-      NextDelim++;
-    }
-  }
-
-  return EFI_SUCCESS;
+  return;
 }
 
 /**
@@ -221,9 +136,6 @@ DEBUG_CODE_END();
   This function parses the CommandLine and divides it into standard C style Argc/Argv
   parameters for inclusion in EFI_SHELL_PARAMETERS_PROTOCOL.  this supports space
   delimited and quote surrounded parameter definition.
-
-  All special character processing (alias, environment variable, redirection, 
-  etc... must be complete before calling this API.
 
   @param[in] CommandLine         String of command line to parse
   @param[in, out] Argv           pointer to array of strings; one for each parameter
@@ -264,13 +176,17 @@ ParseCommandLineToArgs(
   for ( Count = 0
       , Walker = (CHAR16*)CommandLine
       ; Walker != NULL && *Walker != CHAR_NULL
-      ; Count++
-      ) {
-    if (EFI_ERROR(GetNextParameter(&Walker, &TempParameter, Size))) {
-      break;
-    }
-  }
+      ; GetNextParameter(&Walker, &TempParameter)
+      , Count++
+     );
 
+/*  Count = 0;
+  Walker = (CHAR16*)CommandLine;
+  while(Walker != NULL) {
+    GetNextParameter(&Walker, &TempParameter);
+    Count++;
+  }
+*/
   //
   // lets allocate the pointer array
   //
@@ -284,16 +200,10 @@ ParseCommandLineToArgs(
   Walker = (CHAR16*)CommandLine;
   while(Walker != NULL && *Walker != CHAR_NULL) {
     SetMem16(TempParameter, Size, CHAR_NULL);
-    if (EFI_ERROR(GetNextParameter(&Walker, &TempParameter, Size))) {
-      SHELL_FREE_NON_NULL(TempParameter);
-      return (EFI_INVALID_PARAMETER);
-    }
-
-    NewParam = AllocateCopyPool(StrSize(TempParameter), TempParameter);
-    if (NewParam == NULL){
-      SHELL_FREE_NON_NULL(TempParameter);
-      return (EFI_OUT_OF_RESOURCES);
-    }
+    GetNextParameter(&Walker, &TempParameter);
+    NewParam = AllocateZeroPool(StrSize(TempParameter));
+    ASSERT(NewParam != NULL);
+    StrCpy(NewParam, TempParameter);
     ((CHAR16**)(*Argv))[(*Argc)] = NewParam;
     (*Argc)++;
   }
@@ -684,35 +594,6 @@ RemoveFileTag(
 }
 
 /**
-  Write the unicode file tag to the specified file.
-
-  It is the caller's responsibility to ensure that
-  ShellInfoObject.NewEfiShellProtocol has been initialized before calling this
-  function.
-
-  @param[in] FileHandle  The file to write the unicode file tag to.
-
-  @return  Status code from ShellInfoObject.NewEfiShellProtocol->WriteFile.
-**/
-EFI_STATUS
-WriteFileTag (
-  IN SHELL_FILE_HANDLE FileHandle
-  )
-{
-  CHAR16     FileTag;
-  UINTN      Size;
-  EFI_STATUS Status;
-
-  FileTag = gUnicodeFileTag;
-  Size = sizeof FileTag;
-  Status = ShellInfoObject.NewEfiShellProtocol->WriteFile (FileHandle, &Size,
-                                                  &FileTag);
-  ASSERT (EFI_ERROR (Status) || Size == sizeof FileTag);
-  return Status;
-}
-
-
-/**
   Funcion will replace the current StdIn and StdOut in the ShellParameters protocol
   structure by parsing NewCommandLine.  The current values are returned to the
   user.
@@ -757,6 +638,7 @@ UpdateStdInStdOutStdErr(
   BOOLEAN           OutAppend;
   BOOLEAN           ErrAppend;
   UINTN             Size;
+  CHAR16            TagBuffer[2];
   SPLIT_LIST        *Split;
   CHAR16            *FirstLocation;
 
@@ -1061,7 +943,7 @@ UpdateStdInStdOutStdErr(
   //
   // re-populate the string to support any filenames that were in quotes.
   //
-  StrnCpy(CommandLineCopy, NewCommandLine, StrLen(NewCommandLine));
+  StrCpy(CommandLineCopy, NewCommandLine);
 
   if (FirstLocation != CommandLineCopy + StrLen(CommandLineCopy)
     && ((UINTN)(FirstLocation - CommandLineCopy) < StrLen(NewCommandLine))
@@ -1168,7 +1050,13 @@ UpdateStdInStdOutStdErr(
         }
         Status = ShellOpenFileByName(StdErrFileName, &TempHandle, EFI_FILE_MODE_WRITE|EFI_FILE_MODE_READ|EFI_FILE_MODE_CREATE,0);
         if (!ErrAppend && ErrUnicode && !EFI_ERROR(Status)) {
-          Status = WriteFileTag (TempHandle);
+          //
+          // Write out the gUnicodeFileTag
+          //
+          Size = sizeof(CHAR16);
+          TagBuffer[0] = gUnicodeFileTag;
+          TagBuffer[1] = CHAR_NULL;
+          ShellInfoObject.NewEfiShellProtocol->WriteFile(TempHandle, &Size, TagBuffer);
         }
         if (!ErrUnicode && !EFI_ERROR(Status)) {
           TempHandle = CreateFileInterfaceFile(TempHandle, FALSE);
@@ -1197,20 +1085,20 @@ UpdateStdInStdOutStdErr(
           if (StrStr(StdOutFileName, L"NUL")==StdOutFileName) {
             //no-op
           } else if (!OutAppend && OutUnicode && !EFI_ERROR(Status)) {
-            Status = WriteFileTag (TempHandle);
+            //
+            // Write out the gUnicodeFileTag
+            //
+            Size = sizeof(CHAR16);
+            TagBuffer[0] = gUnicodeFileTag;
+            TagBuffer[1] = CHAR_NULL;
+            ShellInfoObject.NewEfiShellProtocol->WriteFile(TempHandle, &Size, TagBuffer);
           } else if (OutAppend) {
+            //
+            // Move to end of file
+            //
             Status = ShellInfoObject.NewEfiShellProtocol->GetFileSize(TempHandle, &FileSize);
             if (!EFI_ERROR(Status)) {
-              //
-              // When appending to a new unicode file, write the file tag.
-              // Otherwise (ie. when appending to a new ASCII file, or an
-              // existent file with any encoding), just seek to the end.
-              //
-              Status = (FileSize == 0 && OutUnicode) ?
-                         WriteFileTag (TempHandle) :
-                         ShellInfoObject.NewEfiShellProtocol->SetFilePosition (
-                                                                TempHandle,
-                                                                FileSize);
+              Status = ShellInfoObject.NewEfiShellProtocol->SetFilePosition(TempHandle, FileSize);
             }
           }
           if (!OutUnicode && !EFI_ERROR(Status)) {

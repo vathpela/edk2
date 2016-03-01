@@ -378,7 +378,7 @@ AsmGetTemplateAddressMap   PROC
 AsmGetTemplateAddressMap   ENDP
 
 ;-------------------------------------------------------------------------------------
-;  AsmVectorNumFixup (*NewVectorAddr, VectorNum, *OldVectorAddr);
+;  AsmVectorNumFixup (*VectorBase, VectorNum);
 ;-------------------------------------------------------------------------------------
 AsmVectorNumFixup   PROC
     mov     rax, rdx

@@ -439,6 +439,7 @@ GetNumericInput (
   IN  UI_MENU_OPTION              *MenuOption
   )
 {
+  EFI_STATUS              Status;
   UINTN                   Column;
   UINTN                   Row;
   CHAR16                  InputText[MAX_NUMERIC_INPUT_WIDTH];
@@ -684,7 +685,7 @@ GetNumericInput (
       goto TheKey2;
     }
 
-    WaitForKeyStroke (&Key);
+    Status = WaitForKeyStroke (&Key);
 
 TheKey2:
     switch (Key.UnicodeChar) {
@@ -871,7 +872,7 @@ EnterCarriageReturn:
         AdjustQuestionValue (QuestionValue, (UINT8)MenuOption->Sequence);
       }
 
-      return EFI_SUCCESS;
+      return ValidateQuestion (Question);
       break;
 
     case CHAR_BACKSPACE:
@@ -1117,6 +1118,7 @@ GetSelectionInputPopUp (
   IN  UI_MENU_OPTION              *MenuOption
   )
 {
+  EFI_STATUS              Status;
   EFI_INPUT_KEY           Key;
   UINTN                   Index;
   CHAR16                  *StringPtr;
@@ -1349,7 +1351,7 @@ GetSelectionInputPopUp (
       goto TheKey;
     }
 
-    WaitForKeyStroke (&Key);
+    Status = WaitForKeyStroke (&Key);
 
 TheKey:
     switch (Key.UnicodeChar) {
@@ -1503,6 +1505,7 @@ TheKey:
         } else {
           gUserInput->InputValue.Buffer = ReturnValue;
           gUserInput->InputValue.BufferLen = Question->CurrentValue.BufferLen;
+          Status = EFI_SUCCESS;
         }
       } else {
         ASSERT (CurrentOption != NULL);
@@ -1511,12 +1514,13 @@ TheKey:
           return EFI_DEVICE_ERROR;
         } else {
           SetValuesByType (&gUserInput->InputValue.Value, &CurrentOption->OptionOpCode->Value, gUserInput->InputValue.Type);
+          Status = EFI_SUCCESS;
         }
       }
 
       gST->ConOut->SetAttribute (gST->ConOut, SavedAttribute);
 
-      return EFI_SUCCESS;
+      return ValidateQuestion (Question);
       
     default:
       break;

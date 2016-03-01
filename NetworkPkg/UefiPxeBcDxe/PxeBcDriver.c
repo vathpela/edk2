@@ -1,7 +1,6 @@
 /** @file
   Driver Binding functions implementationfor for UefiPxeBc Driver.
 
-  (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
   Copyright (c) 2007 - 2013, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
@@ -1401,6 +1400,7 @@ PxeBcStop (
   EFI_LOAD_FILE_PROTOCOL          *LoadFile;
   EFI_STATUS                      Status;
   EFI_HANDLE                      NicHandle;
+  BOOLEAN                         IsIpv6;
   PXEBC_PRIVATE_PROTOCOL          *Id;
 
   Private    = NULL;
@@ -1408,6 +1408,7 @@ PxeBcStop (
   VirtualNic = NULL;
   LoadFile   = NULL;
   Id         = NULL;
+  IsIpv6     = FALSE;
 
   Status = gBS->OpenProtocol (
                   ControllerHandle,

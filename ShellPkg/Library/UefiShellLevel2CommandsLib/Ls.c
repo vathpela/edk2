@@ -1,7 +1,7 @@
 /** @file
   Main file for ls shell level 2 function.
 
-  Copyright (c) 2013 - 2014, Hewlett-Packard Development Company, L.P.<BR>
+  Copyright (c) 2013 Hewlett-Packard Development Company, L.P.
   Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -379,9 +379,6 @@ PrintLsOutput(
   }
 
   CorrectedPath = StrnCatGrow(&CorrectedPath, &LongestPath, RootPath,     0);
-  if (CorrectedPath == NULL) {
-    return SHELL_OUT_OF_RESOURCES;
-  }
   if (CorrectedPath[StrLen(CorrectedPath)-1] != L'\\'
     &&CorrectedPath[StrLen(CorrectedPath)-1] != L'/') {
     CorrectedPath = StrnCatGrow(&CorrectedPath, &LongestPath, L"\\",     0);
@@ -408,10 +405,6 @@ PrintLsOutput(
         ; !IsNull(&ListHead->Link, &Node->Link)
         ; Node = (EFI_SHELL_FILE_INFO *)GetNextNode(&ListHead->Link, &Node->Link)
         ){
-      if (ShellGetExecutionBreakFlag ()) {
-        ShellStatus = SHELL_ABORTED;
-        break;
-      }
       ASSERT(Node != NULL);
       if (LongestPath < StrSize(Node->FullName)) {
         LongestPath = StrSize(Node->FullName);
@@ -441,7 +434,7 @@ PrintLsOutput(
         }
       }
 
-      if (!Sfo && !HeaderPrinted) {
+      if (!Sfo && HeaderPrinted == FALSE) {
         PrintNonSfoHeader(CorrectedPath);
       }
       PrintFileInformation(Sfo, Node, &FileCount, &FileSize, &DirCount);
@@ -449,21 +442,18 @@ PrintLsOutput(
       HeaderPrinted = TRUE;
     }
 
-    if (!Sfo && ShellStatus != SHELL_ABORTED) {
+    if (!Sfo) {
       PrintNonSfoFooter(FileCount, FileSize, DirCount);
     }
   }
 
-  if (Rec && ShellStatus != SHELL_ABORTED) {
+  if (Rec) {
     //
     // Re-Open all the files under the starting path for directories that didnt necessarily match our file filter
     //
     ShellCloseFileMetaArg(&ListHead);
     CorrectedPath[0] = CHAR_NULL;
     CorrectedPath = StrnCatGrow(&CorrectedPath, &LongestPath, RootPath, 0);
-    if (CorrectedPath == NULL) {
-      return SHELL_OUT_OF_RESOURCES;
-    }
     if (CorrectedPath[StrLen(CorrectedPath)-1] != L'\\'
       &&CorrectedPath[StrLen(CorrectedPath)-1] != L'/') {
       CorrectedPath = StrnCatGrow(&CorrectedPath, &LongestPath, L"\\",     0);
@@ -497,13 +487,6 @@ PrintLsOutput(
             &FoundOne,
             Count,
             TimeZone);
-            
-          //
-          // Since it's running recursively, we have to break immediately when returned SHELL_ABORTED
-          //
-          if (ShellStatus == SHELL_ABORTED) {
-            break;
-          }
         }
       }
     }
@@ -512,7 +495,7 @@ PrintLsOutput(
   SHELL_FREE_NON_NULL(CorrectedPath);
   ShellCloseFileMetaArg(&ListHead);
 
-  if (Found == NULL && !FoundOne) {
+  if (Found == NULL && FoundOne == FALSE) {
     return (SHELL_NOT_FOUND);
   }
 
@@ -683,17 +666,8 @@ ShellCommandRunLs (
             ASSERT((FullPath == NULL && Size == 0) || (FullPath != NULL));
             if (StrStr(PathName, L":") == NULL) {
               StrnCatGrow(&FullPath, &Size, gEfiShellProtocol->GetCurDir(NULL), 0);
-              if (FullPath == NULL) {
-                ShellCommandLineFreeVarList (Package);
-                return SHELL_OUT_OF_RESOURCES;
-              }
             }
             StrnCatGrow(&FullPath, &Size, PathName, 0);
-            if (FullPath == NULL) {
-                ShellCommandLineFreeVarList (Package);
-                return SHELL_OUT_OF_RESOURCES;
-            }
-               
             if  (ShellIsDirectory(PathName) == EFI_SUCCESS) {
               //
               // is listing ends with a directory, then we list all files in that directory

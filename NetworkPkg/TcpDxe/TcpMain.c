@@ -1,7 +1,6 @@
 /** @file
   Implementation of EFI_TCP4_PROTOCOL and EFI_TCP6_PROTOCOL.
 
-  (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
   Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
@@ -230,9 +229,9 @@ Tcp4Routes (
   Sock                      = SOCK_FROM_THIS (This);
 
   RouteInfo.DeleteRoute     = DeleteRoute;
-  IP4_COPY_ADDRESS (&RouteInfo.SubnetAddress, &SubnetAddress);
-  IP4_COPY_ADDRESS (&RouteInfo.SubnetMask, &SubnetMask);
-  IP4_COPY_ADDRESS (&RouteInfo.GatewayAddress, &GatewayAddress);
+  RouteInfo.SubnetAddress   = SubnetAddress;
+  RouteInfo.SubnetMask      = SubnetMask;
+  RouteInfo.GatewayAddress  = GatewayAddress;
 
   return SockRoute (Sock, &RouteInfo);
 }

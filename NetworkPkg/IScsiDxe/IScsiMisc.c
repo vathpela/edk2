@@ -209,7 +209,7 @@ IScsiLunToUnicodeStr (
   for (Index = 0; Index < 4; Index++) {
 
     if ((Lun[2 * Index] | Lun[2 * Index + 1]) == 0) {
-      CopyMem (TempStr, L"0-", sizeof (L"0-"));
+      StrCpy (TempStr, L"0-");
     } else {
       TempStr[0]  = (CHAR16) IScsiHexString[Lun[2 * Index] >> 4];
       TempStr[1]  = (CHAR16) IScsiHexString[Lun[2 * Index] & 0x0F];
@@ -223,10 +223,7 @@ IScsiLunToUnicodeStr (
 
     TempStr += StrLen (TempStr);
   }
-  //
-  // Remove the last '-'
-  //
-  ASSERT (StrLen(Str) >= 1);
+
   Str[StrLen (Str) - 1] = 0;
 
   for (Index = StrLen (Str) - 1; Index > 1; Index = Index - 2) {

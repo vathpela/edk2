@@ -2,7 +2,7 @@
   Firmware File System protocol. Layers on top of Firmware
   Block protocol to produce a file abstraction of FV based files.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -26,7 +26,6 @@ typedef struct {
   LIST_ENTRY                      Link;
   EFI_FFS_FILE_HEADER             *FfsHeader;
   UINTN                           StreamHandle;
-  BOOLEAN                         FileCached;
 } FFS_FILE_LIST_ENTRY;
 
 typedef struct {
@@ -43,10 +42,9 @@ typedef struct {
 
   LIST_ENTRY                              FfsFileListHeader;
 
-  UINT32                                  AuthenticationStatus;
   UINT8                                   ErasePolarity;
   BOOLEAN                                 IsFfs3Fv;
-  BOOLEAN                                 IsMemoryMapped;
+  UINT32                                  AuthenticationStatus;
 } FV_DEVICE;
 
 #define FV_DEVICE_FROM_THIS(a) CR(a, FV_DEVICE, Fv, FV2_DEVICE_SIGNATURE)
@@ -403,6 +401,27 @@ BOOLEAN
 IsValidFfsFile (
   IN UINT8                ErasePolarity,
   IN EFI_FFS_FILE_HEADER  *FfsHeader
+  );
+
+
+/**
+  given the supplied FW_VOL_BLOCK_PROTOCOL, allocate a buffer for output and
+  copy the volume header into it.
+
+  @param  Fvb                   The FW_VOL_BLOCK_PROTOCOL instance from which to
+                                read the volume header
+  @param  FwVolHeader           Pointer to pointer to allocated buffer in which
+                                the volume header is returned.
+
+  @retval EFI_OUT_OF_RESOURCES  No enough buffer could be allocated.
+  @retval EFI_SUCCESS           Successfully read volume header to the allocated
+                                buffer.
+
+**/
+EFI_STATUS
+GetFwVolHeader (
+  IN     EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL     *Fvb,
+  OUT    EFI_FIRMWARE_VOLUME_HEADER             **FwVolHeader
   );
 
 #endif

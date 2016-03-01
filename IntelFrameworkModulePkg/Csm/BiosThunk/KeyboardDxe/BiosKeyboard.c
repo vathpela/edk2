@@ -1,7 +1,7 @@
 /** @file
   ConsoleOut Routines that speak VGA.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -2202,18 +2202,15 @@ BiosKeyboardSetState (
 
   Status = KeyboardWrite (BiosKeyboardPrivate, 0xed);
   if (EFI_ERROR (Status)) {
-    Status = EFI_DEVICE_ERROR;
-    goto Exit;
+    return EFI_DEVICE_ERROR;
   }  
   Status = KeyboardWaitForValue (BiosKeyboardPrivate, 0xfa, KEYBOARD_WAITFORVALUE_TIMEOUT);
   if (EFI_ERROR (Status)) {
-    Status = EFI_DEVICE_ERROR;
-    goto Exit;
+    return EFI_DEVICE_ERROR;
   }
   Status = KeyboardWrite (BiosKeyboardPrivate, Command);
   if (EFI_ERROR (Status)) {
-    Status = EFI_DEVICE_ERROR;
-    goto Exit;
+    return EFI_DEVICE_ERROR;
   }  
   //
   // Call Legacy BIOS Protocol to set whatever is necessary
@@ -2222,7 +2219,6 @@ BiosKeyboardSetState (
 
   Status = EFI_SUCCESS;
 
-Exit:
   //
   // Leave critical section and return
   //

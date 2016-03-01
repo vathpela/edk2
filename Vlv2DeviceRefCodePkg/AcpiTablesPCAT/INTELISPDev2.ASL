@@ -18,7 +18,7 @@ Module Name:
 
 Abstract:
 
-  ISP Exist as B0D2F0 Software ACPI Reference Code for the Baytrail Family.
+  ISP Exist as B0D2F0 Software ACPI Reference Code for the ValleyView Family.
 
 --*/
 ////Device ISP0

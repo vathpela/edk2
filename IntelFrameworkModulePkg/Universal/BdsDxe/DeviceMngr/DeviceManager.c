@@ -1,7 +1,7 @@
 /** @file
   The platform device manager reference implementation
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -208,10 +208,8 @@ InitializeDeviceManager (
 
   @param Handle          The HII handle.
   @param SetupClassGuid  The class guid specifies which form set will be displayed.
-  @param SkipCount       Skip some formsets which has processed before.
   @param FormSetTitle    Formset title string.
   @param FormSetHelp     Formset help string.
-  @param FormSetGuid     Return the formset guid for this formset.
 
   @retval  TRUE          The formset for given HII handle will be displayed.
   @return  FALSE         The formset for given HII handle will not be displayed.
@@ -221,10 +219,8 @@ BOOLEAN
 ExtractDisplayedHiiFormFromHiiHandle (
   IN      EFI_HII_HANDLE      Handle,
   IN      EFI_GUID            *SetupClassGuid,
-  IN      UINTN               SkipCount,
   OUT     EFI_STRING_ID       *FormSetTitle,
-  OUT     EFI_STRING_ID       *FormSetHelp,
-  OUT     EFI_GUID            **FormSetGuid
+  OUT     EFI_STRING_ID       *FormSetHelp
   )
 {
   EFI_STATUS                   Status;
@@ -290,14 +286,8 @@ ExtractDisplayedHiiFormFromHiiHandle (
       Offset2 = sizeof (EFI_HII_PACKAGE_HEADER);
       while (Offset2 < PackageHeader.Length) {
         OpCodeData = Package + Offset2;
-        Offset2 += ((EFI_IFR_OP_HEADER *) OpCodeData)->Length;
 
         if (((EFI_IFR_OP_HEADER *) OpCodeData)->OpCode == EFI_IFR_FORM_SET_OP) {
-          if (SkipCount != 0) {
-            SkipCount --;
-            continue;
-          }
-
           if (((EFI_IFR_OP_HEADER *) OpCodeData)->Length > OFFSET_OF (EFI_IFR_FORM_SET, Flags)) {
             //
             // Find FormSet OpCode
@@ -308,8 +298,6 @@ ExtractDisplayedHiiFormFromHiiHandle (
               if (CompareGuid (SetupClassGuid, ClassGuid)) {
                 CopyMem (FormSetTitle, &((EFI_IFR_FORM_SET *) OpCodeData)->FormSetTitle, sizeof (EFI_STRING_ID));
                 CopyMem (FormSetHelp, &((EFI_IFR_FORM_SET *) OpCodeData)->Help, sizeof (EFI_STRING_ID));
-                *FormSetGuid = AllocateCopyPool (sizeof (EFI_GUID), &((EFI_IFR_FORM_SET *) OpCodeData)->Guid);
-                ASSERT (*FormSetGuid != NULL);
                 FreePool (HiiPackageList);
                 return TRUE;
               }
@@ -318,12 +306,15 @@ ExtractDisplayedHiiFormFromHiiHandle (
            } else {
              CopyMem (FormSetTitle, &((EFI_IFR_FORM_SET *) OpCodeData)->FormSetTitle, sizeof (EFI_STRING_ID));
              CopyMem (FormSetHelp, &((EFI_IFR_FORM_SET *) OpCodeData)->Help, sizeof (EFI_STRING_ID));
-             *FormSetGuid = AllocateCopyPool (sizeof (EFI_GUID), &((EFI_IFR_FORM_SET *) OpCodeData)->Guid);
-             ASSERT (*FormSetGuid != NULL);
              FreePool (HiiPackageList);
              return TRUE;
           }
         }
+        
+        //
+        // Go to next opcode
+        //
+        Offset2 += ((EFI_IFR_OP_HEADER *) OpCodeData)->Length;
       }
     }
     
@@ -709,71 +700,6 @@ Done:
 }
 
 /**
-  Get HiiHandle total number.
-
-  @param   HiiHandles              The input HiiHandle array.
-
-  @retval  the Hiihandle count.
-
-**/
-UINTN
-GetHiiHandleCount (
-  IN EFI_HII_HANDLE              *HiiHandles
-  )
-{
-  UINTN  Index;
-
-  for (Index = 0; HiiHandles[Index] != NULL; Index++) {
-  }
-
-  return Index;
-}
-
-/**
-  Insert the new HiiHandle + FormsetGuid at the NewPair[InsertOffset].
-
-  @param   HiiHandles              The input HiiHandle array.
-  @param   GuidLists               The input form set guid lists.
-  @param   ArrayCount              The input array count, new array will be arraycount + 1 size.
-  @param   Offset                  The current used HiiHandle's Offset. 
-  @param   FormSetGuid             The new found formset guid.
-
-**/
-VOID
-AdjustArrayData (
-  IN OUT EFI_HII_HANDLE              **HiiHandles,
-  IN OUT EFI_GUID                    ***GuidLists,
-  IN     UINTN                       ArrayCount,
-  IN     UINTN                       Offset,
-  IN     EFI_GUID                    *FormSetGuid
-  )
-{
-  EFI_HII_HANDLE              *NewHiiHandles;
-  EFI_GUID                    **NewGuidLists;
-
-  //
-  // +2 means include the new HiiHandle and the last empty NULL pointer.
-  //
-  NewHiiHandles = AllocateZeroPool ((ArrayCount + 2) * sizeof (EFI_HII_HANDLE));
-  ASSERT (NewHiiHandles != NULL);
-
-  CopyMem (NewHiiHandles, *HiiHandles, Offset * sizeof (EFI_HII_HANDLE));
-  NewHiiHandles[Offset] = NewHiiHandles[Offset - 1];
-  CopyMem (NewHiiHandles + Offset + 1, *HiiHandles + Offset, (ArrayCount - Offset) * sizeof (EFI_HII_HANDLE));
-
-  NewGuidLists = AllocateZeroPool ((ArrayCount + 2) * sizeof (EFI_GUID *));
-  ASSERT (NewGuidLists != NULL);
-
-  CopyMem (NewGuidLists, *GuidLists, Offset * sizeof (EFI_GUID *));
-  NewGuidLists[Offset] = FormSetGuid;
-
-  FreePool (*HiiHandles);
-  *HiiHandles = NewHiiHandles;
-  FreePool (*GuidLists);
-  *GuidLists = NewGuidLists;
-}
-
-/**
   Call the browser and display the device manager to allow user
   to configure the platform.
 
@@ -810,12 +736,7 @@ CallDeviceManager (
   UINTN                       AddItemCount;
   UINTN                       NewStringLen;
   EFI_STRING                  NewStringTitle;
-  EFI_GUID                    **GuidLists;
-  UINTN                       HandleNum;
-  UINTN                       SkipCount;
-  EFI_GUID                    *FormSetGuid;
 
-  GuidLists     = NULL;
   HiiHandles    = NULL;
   Status        = EFI_SUCCESS;
   gCallbackKey  = 0;
@@ -823,8 +744,6 @@ CallDeviceManager (
   DriverHealthHandles = NULL;
   AddNetworkMenu = FALSE;
   AddItemCount   = 0;
-  SkipCount      = 0;
-  FormSetGuid    = NULL;
 
   //
   // Connect all prior to entering the platform setup menu.
@@ -906,10 +825,6 @@ CallDeviceManager (
   HiiHandles = HiiGetHiiHandles (NULL);
   ASSERT (HiiHandles != NULL);
 
-  HandleNum = GetHiiHandleCount (HiiHandles);
-  GuidLists = AllocateZeroPool ((HandleNum + 1) * sizeof (EFI_GUID *));
-  ASSERT (GuidLists != NULL);
-
   //
   // Search for formset of each class type
   //
@@ -921,19 +836,8 @@ CallDeviceManager (
     //
     ASSERT(Index < MAX_KEY_SECTION_LEN);
 
-    if (!ExtractDisplayedHiiFormFromHiiHandle (HiiHandles[Index], &gEfiHiiPlatformSetupFormsetGuid, SkipCount, &FormSetTitle, &FormSetHelp, &FormSetGuid)) {
-      SkipCount = 0;
+    if (!ExtractDisplayedHiiFormFromHiiHandle (HiiHandles[Index], &gEfiHiiPlatformSetupFormsetGuid, &FormSetTitle, &FormSetHelp)) {
       continue;
-    }
-
-    //
-    // One HiiHandle has more than one formset can be shown, 
-    // Insert a new pair of HiiHandle + Guid to the HiiHandles and GuidLists list.
-    // 
-    if (SkipCount > 0) {
-      AdjustArrayData (&HiiHandles, &GuidLists, HandleNum, Index + 1, FormSetGuid);
-      HandleNum ++;
-      Index ++;
     }
 
     String = HiiGetString (HiiHandles[Index], FormSetTitle, NULL);
@@ -1015,12 +919,6 @@ CallDeviceManager (
           );
       }
     }
-
-    //
-    // Try to find more formset in this HiiHandle.
-    //
-    SkipCount++;
-    Index--;
   }
 
   Status = gBS->LocateHandleBuffer (
@@ -1096,7 +994,7 @@ CallDeviceManager (
                              gFormBrowser2,
                              &HiiHandles[gCallbackKey - DEVICE_KEY_OFFSET],
                              1,
-                             GuidLists[gCallbackKey - DEVICE_KEY_OFFSET],
+                             NULL,
                              0,
                              NULL,
                              &ActionRequest
@@ -1163,13 +1061,6 @@ Done:
   HiiFreeOpCodeHandle (StartOpCodeHandle);
   HiiFreeOpCodeHandle (EndOpCodeHandle);
   FreePool (HiiHandles);
-
-  for (Index = 0; Index < HandleNum; Index++) {
-    if (GuidLists[Index] != NULL) {
-      FreePool (GuidLists[Index]);
-    }
-  }
-  FreePool (GuidLists);
 
   return Status;
 }
@@ -1260,13 +1151,10 @@ CallDriverHealth (
   LIST_ENTRY                  *Link;
   EFI_DEVICE_PATH_PROTOCOL    *DriverDevicePath;
   BOOLEAN                     RebootRequired;
-  BOOLEAN                     IsControllerNameEmpty;
-  UINTN                       StringSize;
 
   Index               = 0;
   DriverHealthInfo    = NULL;  
   DriverDevicePath    = NULL;
-  IsControllerNameEmpty = FALSE;
   InitializeListHead (&DriverHealthList);
 
   HiiHandle = gDeviceManagerPrivate.DriverHealthHiiHandle;
@@ -1339,7 +1227,13 @@ CallDriverHealth (
   Link = GetFirstNode (&DriverHealthList);
 
   while (!IsNull (&DriverHealthList, Link)) {   
-    DriverHealthInfo = DEVICE_MANAGER_HEALTH_INFO_FROM_LINK (Link);    
+    DriverHealthInfo = DEVICE_MANAGER_HEALTH_INFO_FROM_LINK (Link);
+    
+    //
+    // Assume no line strings is longer than 512 bytes.
+    //
+    String = (EFI_STRING) AllocateZeroPool (0x200);
+    ASSERT (String != NULL);
 
     Status = DriverHealthGetDriverName (DriverHealthInfo->DriverHandle, &DriverName);
     if (EFI_ERROR (Status)) {
@@ -1349,7 +1243,11 @@ CallDriverHealth (
       DriverDevicePath = DevicePathFromHandle (DriverHealthInfo->DriverHandle);
       DriverName       = DevicePathToStr (DriverDevicePath);
     }
-    StringSize = StrSize (DriverName);
+    //
+    // Add the Driver name & Controller name into FormSetTitle string
+    // 
+    StrnCat (String, DriverName, StrLen (DriverName));
+
 
     Status = DriverHealthGetControllerName (
                DriverHealthInfo->DriverHandle, 
@@ -1359,39 +1257,23 @@ CallDriverHealth (
                );
 
     if (!EFI_ERROR (Status)) {
-      IsControllerNameEmpty = FALSE;
-      StringSize += StrLen (L"    ") * sizeof(CHAR16);
-      StringSize += StrLen (ControllerName) * sizeof(CHAR16);
-    } else {
-      IsControllerNameEmpty = TRUE;
+      //
+      // Can not get the Controller name, just let it empty.
+      //
+      StrnCat (String, L"    ", StrLen (L"    "));
+      StrnCat (String, ControllerName, StrLen (ControllerName));   
     }
    
     //
     // Add the message of the Module itself provided after the string item.
     //
     if ((DriverHealthInfo->MessageList != NULL) && (DriverHealthInfo->MessageList->StringId != 0)) {
+       StrnCat (String, L"    ", StrLen (L"    "));
        TmpString = HiiGetString (
                      DriverHealthInfo->MessageList->HiiHandle, 
                      DriverHealthInfo->MessageList->StringId, 
                      NULL
                      );
-       ASSERT (TmpString != NULL);
-       
-       StringSize += StrLen (L"    ") * sizeof(CHAR16);
-       StringSize += StrLen (TmpString) * sizeof(CHAR16);
-
-       String = (EFI_STRING) AllocateZeroPool (StringSize);
-       ASSERT (String != NULL);
-       
-       StrnCpy (String, DriverName, StringSize / sizeof(CHAR16));
-       if (!IsControllerNameEmpty) {
-        StrnCat (String, L"    ", StringSize / sizeof(CHAR16) - StrLen(String) - 1);
-        StrnCat (String, ControllerName, StringSize / sizeof(CHAR16) - StrLen(String) - 1);
-       }
-
-       StrnCat (String, L"    ", StringSize / sizeof(CHAR16) - StrLen(String) - 1);
-       StrnCat (String, TmpString, StringSize / sizeof(CHAR16) - StrLen(String) - 1);
-       
     } else {
       //
       // Update the string will be displayed base on the driver's health status
@@ -1416,22 +1298,10 @@ CallDriverHealth (
         TmpString = GetStringById (STRING_TOKEN (STR_DRIVER_HEALTH_HEALTHY));
         break;
       }
-      ASSERT (TmpString != NULL);
-
-      StringSize += StrLen (TmpString) * sizeof(CHAR16);
-
-      String = (EFI_STRING) AllocateZeroPool (StringSize);
-      ASSERT (String != NULL);
-      
-      StrnCpy (String, DriverName, StringSize / sizeof(CHAR16));
-      if (!IsControllerNameEmpty) {
-        StrnCat (String, L"    ", StringSize / sizeof(CHAR16) - StrLen(String) - 1);
-        StrnCat (String, ControllerName, StringSize / sizeof(CHAR16) - StrLen(String) - 1);
-      }
-
-      StrnCat (String, TmpString, StringSize / sizeof(CHAR16) - StrLen(String) - 1);
     }
 
+    ASSERT (TmpString != NULL);
+    StrCat (String, TmpString);
     FreePool (TmpString);
 
     Token = HiiSetString (HiiHandle, 0, String, NULL);

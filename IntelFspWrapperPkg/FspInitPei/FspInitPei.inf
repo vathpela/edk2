@@ -5,7 +5,7 @@
 # In 2nd entry, it will parse the hoblist from fsp and report them into pei core.
 # including install the memory as required.
 #
-#  Copyright (c) 2014 - 2015, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2014, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -64,18 +64,18 @@
   FspApiLib
 
 [Ppis]
-  gTopOfTemporaryRamPpiGuid             ## PRODUCES
-  gFspInitDonePpiGuid                   ## PRODUCES
-  gEfiEndOfPeiSignalPpiGuid             ## PRODUCES
+  gTopOfTemporaryRamPpiGuid
+  gFspInitDonePpiGuid
+  gEfiEndOfPeiSignalPpiGuid
 
 [FixedPcd]
-  gFspWrapperTokenSpaceGuid.PcdSecCoreMaxPpiSupported         ## CONSUMES
+  gFspWrapperTokenSpaceGuid.PcdSecCoreMaxPpiSupported
 
 [Pcd]
-  gFspWrapperTokenSpaceGuid.PcdPeiTemporaryRamStackSize       ## CONSUMES
-  gFspWrapperTokenSpaceGuid.PcdFlashFvFspBase                 ## CONSUMES
-  gFspWrapperTokenSpaceGuid.PcdFlashFvFspSize                 ## CONSUMES
-  gFspWrapperTokenSpaceGuid.PcdMaxUpdRegionSize               ## CONSUMES
+  gFspWrapperTokenSpaceGuid.PcdPeiTemporaryRamStackSize
+  gFspWrapperTokenSpaceGuid.PcdFlashFvFspBase
+  gFspWrapperTokenSpaceGuid.PcdFlashFvFspSize
+  gFspWrapperTokenSpaceGuid.PcdMaxUpdRegionSize
 
 [Depex]
   gEfiPeiMasterBootModePpiGuid

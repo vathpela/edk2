@@ -39,18 +39,9 @@ ifeq ($(ARCH), ARM)
 ARCH_INCLUDE = -I $(MAKEROOT)/Include/Arm/
 endif
 
-ifeq ($(ARCH), AARCH64)
-ARCH_INCLUDE = -I $(MAKEROOT)/Include/AArch64/
-endif
-
 INCLUDE = $(TOOL_INCLUDE) -I $(MAKEROOT) -I $(MAKEROOT)/Include/Common -I $(MAKEROOT)/Include/ -I $(MAKEROOT)/Include/IndustryStandard -I $(MAKEROOT)/Common/ -I .. -I . $(ARCH_INCLUDE) 
 CPPFLAGS = $(INCLUDE)
-ifeq ($(DARWIN),Darwin)
-# assume clang or clang compatible flags on OS X
-CFLAGS = -MD -fshort-wchar -fno-strict-aliasing -Wall -Werror -Wno-deprecated-declarations -Wno-self-assign -nostdlib -c -g
-else
-CFLAGS = -MD -fshort-wchar -fno-strict-aliasing -Wall -Werror -Wno-deprecated-declarations -nostdlib -c -g
-endif
+CFLAGS = -MD -fshort-wchar -fno-strict-aliasing -fno-merge-constants -nostdlib -Wall -Werror -c -g
 LFLAGS =
 
 ifeq ($(ARCH), IA32)
@@ -59,7 +50,8 @@ ifeq ($(ARCH), IA32)
 #  to x86_64. So make sure tools match uname -m. You can manual have a 64-bit kernal on Snow Leopard
 #  so only do this is uname -m returns i386.
 #
-ifeq ($(DARWIN),Darwin)
+uname_s = $(shell uname -s)
+ifeq ($(uname_s),Darwin)
   CFLAGS   += -arch i386
   CPPFLAGS += -arch i386
   LFLAGS   += -arch i386

@@ -1,7 +1,7 @@
 ## @file
 # This file is used to define helper class and function for DEC parser
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
 #
 # This program and the accompanying materials are licensed and made available 
 # under the terms and conditions of the BSD License which accompanies this 
@@ -25,7 +25,6 @@ from Library.DataType import TAB_COMMENT_SPLIT
 from Library.DataType import TAB_COMMENT_EDK1_SPLIT
 from Library.ExpressionValidate import IsValidBareCString
 from Library.ParserValidate import IsValidCFormatGuid
-from Library.ExpressionValidate import IsValidFeatureFlagExp
 from Library.ExpressionValidate import IsValidLogicalExpr
 from Library.ExpressionValidate import IsValidStringTest
 from Library.Misc import CheckGuidRegFormat
@@ -135,38 +134,26 @@ def CleanString(Line, CommentCharacter=TAB_COMMENT_SPLIT, \
     return Line, Comment
 
 
-## IsValidNumValUint8
+## IsValidHexByte
 #
-# Check if Token is NumValUint8: <NumValUint8> ::= {<ShortNum>} {<UINT8>} {<Expression>}
+# Check if Token is HexByte: <HexByte> ::= 0x <HexDigit>{1,2}
 #
 # @param Token: Token to be checked
 #
-def IsValidNumValUint8(Token):
-    Valid = True
-    Cause = ""
-    TokenValue = None
+def IsValidHexByte(Token):
     Token = Token.strip()
-    if Token.lower().startswith('0x'):
-        Base = 16
-    else:
-        Base = 10
+    if not Token.lower().startswith('0x') or not (len(Token) < 5 and len(Token) > 2):
+        return False
     try:
-        TokenValue = long(Token, Base)
+        Token = long(Token, 0)
     except BaseException:
-        Valid, Cause = IsValidLogicalExpr(Token, True)
-        if Cause:
-            pass
-    if not Valid:
         return False
-    if TokenValue and (TokenValue < 0 or TokenValue > 0xFF):
-        return False
-    else:
-        return True
+    return True
 
 ## IsValidNList
 #
-# Check if Value has the format of <NumValUint8> ["," <NumValUint8>]{0,}
-# <NumValUint8> ::= {<ShortNum>} {<UINT8>} {<Expression>}
+# Check if Value has the format of <HexByte> ["," <HexByte>]{0,}
+# <HexByte> ::= "0x" <HexDigit>{1,2}
 #
 # @param Value: Value to be checked
 #
@@ -175,8 +162,8 @@ def IsValidNList(Value):
     if Par.End():
         return False
     while not Par.End():
-        Token = Par.GetToken(',')
-        if not IsValidNumValUint8(Token):
+        Token = Par.GetToken(',\t ')
+        if not IsValidHexByte(Token):
             return False
         if Par.Expect(','):
             if Par.End():
@@ -199,11 +186,11 @@ def IsValidCArray(Array):
     if Par.End():
         return False
     while not Par.End():
-        Token = Par.GetToken(',}')
+        Token = Par.GetToken(',}\t ')
         #
-        # ShortNum, UINT8, Expression
+        # 0xa, 0xaa
         #
-        if not IsValidNumValUint8(Token):
+        if not IsValidHexByte(Token):
             return False
         if Par.Expect(','):
             if Par.End():
@@ -226,10 +213,6 @@ def IsValidCArray(Array):
 # @param Value:    The pcd Value
 #
 def IsValidPcdDatum(Type, Value):
-    if not Value:
-        return False, ST.ERR_DECPARSE_PCD_VALUE_EMPTY
-    Valid = True
-    Cause = ""
     if Type not in ["UINT8", "UINT16", "UINT32", "UINT64", "VOID*", "BOOLEAN"]:
         return False, ST.ERR_DECPARSE_PCD_TYPE
     if Type == "VOID*":
@@ -247,9 +230,9 @@ def IsValidPcdDatum(Type, Value):
         if Value in ['TRUE', 'FALSE', 'true', 'false', 'True', 'False',
                      '0x1', '0x01', '1', '0x0', '0x00', '0']:
             return True, ""
-        Valid, Cause = IsValidStringTest(Value, True)
+        Valid, Cause = IsValidStringTest(Value)
         if not Valid:
-            Valid, Cause = IsValidFeatureFlagExp(Value, True)
+            Valid, Cause = IsValidLogicalExpr(Value)
         if not Valid:
             return False, Cause
     else:
@@ -288,10 +271,8 @@ def IsValidPcdDatum(Type, Value):
             if TypeLenMap[Type] < len(HexStr) - 3:
                 return False, ST.ERR_DECPARSE_PCD_INT_EXCEED % (StrVal, Type)
         except BaseException:
-            Valid, Cause = IsValidLogicalExpr(Value, True)
-        if not Valid:
-            return False, Cause
-        
+            return False, ST.ERR_DECPARSE_PCD_INT % (Value, Type)
+
     return True, ""
 
 ## ParserHelper

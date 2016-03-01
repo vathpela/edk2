@@ -41,7 +41,6 @@
   DebugLib
   UefiDriverEntryPoint
   UefiRuntimeServicesTableLib
-#  DxeKscLib
 
 [Guids]
   gBmpImageGuid

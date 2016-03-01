@@ -39,7 +39,6 @@ Abstract:
 #include "PchAccess.h"
 #include "PchRegs/PchRegsSata.h"
 #include <Library/SerialPortLib.h>
-#include <Library/DebugLib.h>
 
 
 EFI_GUID *ConnectDriverTable[] = {
@@ -74,11 +73,6 @@ PlatformBdsConnectSimpleConsole (
   IN BDS_CONSOLE_CONNECT_ENTRY   *PlatformConsole
 );
 
-VOID 
-BootIntoFirmwareInterface(
-  VOID
-  );
-  
 VOID
 EFIAPI
 PlatformBdsInitHotKeyEvent (
@@ -1225,12 +1219,6 @@ PlatformBdsPolicyBehavior (
     // Close boot script and install ready to lock
     //
     InstallReadyToLock ();
-
-    //
-    // Give one chance to enter the setup if we 
-    // select Gummiboot "Reboot Into Firmware Interface" and Fast Boot is enabled.
-    //
-    BootIntoFirmwareInterface();
     break;
 
   case BOOT_ASSUMING_NO_CONFIGURATION_CHANGES:
@@ -1419,12 +1407,6 @@ FULL_CONFIGURATION:
     // have the time out
     //
     PlatformBdsEnterFrontPageWithHotKey (Timeout, FALSE);
-
-	//
-	// Give one chance to enter the setup if we 
-	// select Gummiboot "Reboot Into Firmware Interface"
-	//
-	BootIntoFirmwareInterface();
 
     //
     // In default boot mode, always find all boot
@@ -1813,18 +1795,8 @@ ShowProgressHotKey (
     return EFI_TIMEOUT;
   }
 
-  if (DebugAssertEnabled())
-  {
-    DEBUG ((EFI_D_INFO, "\n\nStart showing progress bar... Press any key to stop it, or press <F2> or <DEL> to enter setup page! ...Zzz....\n"));
-  }
-  else
-  {  
-    #ifdef __GNUC__
-    SerialPortWrite((UINT8 *)"\n\n>>>>Start boot option, Press <F2> or <DEL> to enter setup page(5 Sec)[GCC]", 76);
-    #else
-    SerialPortWrite((UINT8 *)"\n\n>>>>Start boot option, Press <F2> or <DEL> to enter setup page(5 Sec)", 71);
-    #endif
-  } 
+  DEBUG ((EFI_D_INFO, "\n\nStart showing progress bar... Press any key to stop it, or press <F2> to enter setup page! ...Zzz....\n"));
+
   SetMem (&Foreground, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0xff);
   SetMem (&Background, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0x0);
   SetMem (&Color, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0xff);
@@ -1832,19 +1804,13 @@ ShowProgressHotKey (
   //
   // Clear the progress status bar first
   //
-  TmpStr = L"Start boot option, Press <F2> or <DEL> to enter setup page.";
+  TmpStr = L"Start boot option, Press <F2> to enter setup page.";
   PlatformBdsShowProgress (Foreground, Background, TmpStr, Color, 0, 0);
 
   TimeoutRemain = TimeoutDefault;
   while (TimeoutRemain != 0) {
-    if (DebugAssertEnabled())
-    {
     DEBUG ((EFI_D_INFO, "Showing progress bar...Remaining %d second!\n", TimeoutRemain));
-    }
-    else
-    {	
-    SerialPortWrite ((UINT8 *)".", 1);
-    }
+
     Status = WaitForSingleEvent (gST->ConIn->WaitForKey, ONE_SECOND);
     if (Status != EFI_TIMEOUT) {
       break;
@@ -1870,13 +1836,6 @@ ShowProgressHotKey (
   // Timeout expired
   //
   if (TimeoutRemain == 0) {
-    if (DebugAssertEnabled())
-	{
-	}
-    else
-    {	
-    SerialPortWrite ((UINT8 *)"\r\n", 2);
-    }
     return EFI_TIMEOUT;
   }
 
@@ -1914,10 +1873,6 @@ ShowProgressHotKey (
   DEBUG ((EFI_D_INFO, "[Key Pressed]: ScanCode 0x%x\n", Key.ScanCode));
   switch(Key.ScanCode) {
       case SCAN_F2:
-          gHotKey = 0;
-          break;
-
-      case SCAN_DELETE:
           gHotKey = 0;
           break;
 
@@ -2051,11 +2006,7 @@ PlatformBdsEnterFrontPageWithHotKey (
       goto Exit;
     }
   }
-  //
-  // Install BM HiiPackages. 
-  // Keep BootMaint HiiPackage, so that it can be covered by global setting. 
-  //
-	InitBMPackage ();
+
   do {
 
     BdsSetConsoleMode (TRUE);
@@ -2117,20 +2068,11 @@ PlatformBdsEnterFrontPageWithHotKey (
       break;
 
     case FRONT_PAGE_KEY_BOOT_MANAGER:
-      //
-	  // Remove the installed BootMaint HiiPackages when exit.
-      //
-      FreeBMPackage ();
 
       //
       // User chose to run the Boot Manager
       //
       CallBootManager ();
-	  
-	  //
-      // Reinstall BootMaint HiiPackages after exiting from Boot Manager.
-      //
-      InitBMPackage ();
       break;
 
     case FRONT_PAGE_KEY_DEVICE_MANAGER:
@@ -2158,10 +2100,6 @@ PlatformBdsEnterFrontPageWithHotKey (
   //Will leave browser, check any reset required change is applied? if yes, reset system
   //
   SetupResetReminder ();
-  //
-  // Remove the installed BootMaint HiiPackages when exit.
-  //
-  FreeBMPackage ();
 
 Exit:
   //
@@ -2170,38 +2108,6 @@ Exit:
   // takes affect
   //
   PERF_END (NULL, "BdsTimeOut", "BDS", 0);
-}
-
-
-VOID 
-BootIntoFirmwareInterface(
-VOID
-)
-{
-  EFI_STATUS        Status;
-  UINTN             DataSize;
-  UINT16            Timeout;    
-  UINT64            OsIndication;
-
-  
-  OsIndication = 0;
-  DataSize = sizeof(UINT64);
-  Status = gRT->GetVariable (
-                  L"OsIndications",
-                  &gEfiGlobalVariableGuid,
-                  NULL,
-                  &DataSize,
-                  &OsIndication
-                  );
-				  
-  DEBUG ((EFI_D_INFO, "OSIndication Variable Value %d\n", OsIndication));
-  //
-  //Goto FrontPage directly when bit EFI_OS_INDICATIONS_BOOT_TO_FW_UI in OSIndication Variable is setted.
-  //  
-  if (!EFI_ERROR(Status) && (OsIndication != 0)) {				  
-   Timeout = 0xffff;
-   PlatformBdsEnterFrontPage (Timeout, FALSE);
-   }
 }
 
 

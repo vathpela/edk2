@@ -4,7 +4,7 @@
   This driver is dispatched by Dxe core and the driver will reload itself to ACPI reserved memory
   in the entry point. The functionality is to interpret and restore the S3 boot script
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -209,52 +209,11 @@ S3BootScriptExecutorEntryFunction (
 }
 
 /**
-  Register image to memory profile.
-
-  @param FileName       File name of the image.
-  @param ImageBase      Image base address.
-  @param ImageSize      Image size.
-  @param FileType       File type of the image.
-
-**/
-VOID
-RegisterMemoryProfileImage (
-  IN EFI_GUID                       *FileName,
-  IN PHYSICAL_ADDRESS               ImageBase,
-  IN UINT64                         ImageSize,
-  IN EFI_FV_FILETYPE                FileType
-  )
-{
-  EFI_STATUS                        Status;
-  EDKII_MEMORY_PROFILE_PROTOCOL     *ProfileProtocol;
-  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *FilePath;
-  UINT8                             TempBuffer[sizeof (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH) + sizeof (EFI_DEVICE_PATH_PROTOCOL)];
-
-  if ((PcdGet8 (PcdMemoryProfilePropertyMask) & BIT0) != 0) {
-
-    FilePath = (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *)TempBuffer;
-    Status = gBS->LocateProtocol (&gEdkiiMemoryProfileGuid, NULL, (VOID **) &ProfileProtocol);
-    if (!EFI_ERROR (Status)) {
-      EfiInitializeFwVolDevicepathNode (FilePath, FileName);
-      SetDevicePathEndNode (FilePath + 1);
-
-      Status = ProfileProtocol->RegisterImage (
-                                  ProfileProtocol,
-                                  (EFI_DEVICE_PATH_PROTOCOL *) FilePath,
-                                  ImageBase,
-                                  ImageSize,
-                                  FileType
-                                  );
-    }
-  }
-}
-
-/**
   This is the Event notification function to reload BootScriptExecutor image
   to RESERVED mem and save it to LockBox.
   
   @param    Event   Pointer to this event
-  @param    Context Event handler private data 
+  @param    Context Event hanlder private data 
  **/
 VOID
 EFIAPI
@@ -321,7 +280,7 @@ ReadyToLockEventNotify (
   // Align buffer on section boundry
   //
   ImageContext.ImageAddress += ImageContext.SectionAlignment - 1;
-  ImageContext.ImageAddress &= ~((EFI_PHYSICAL_ADDRESS)(ImageContext.SectionAlignment - 1));
+  ImageContext.ImageAddress &= ~(ImageContext.SectionAlignment - 1);
   //
   // Load the image to our new buffer
   //
@@ -343,14 +302,6 @@ ReadyToLockEventNotify (
   // Flush the instruction cache so the image data is written before we execute it
   //
   InvalidateInstructionCacheRange ((VOID *)(UINTN)ImageContext.ImageAddress, (UINTN)ImageContext.ImageSize);
-
-  RegisterMemoryProfileImage (
-    &gEfiCallerIdGuid,
-    ImageContext.ImageAddress,
-    ImageContext.ImageSize,
-    EFI_FV_FILETYPE_DRIVER
-    );
-
   Status = ((EFI_IMAGE_ENTRY_POINT)(UINTN)(ImageContext.EntryPoint)) (NewImageHandle, gST);
   ASSERT_EFI_ERROR (Status);
 

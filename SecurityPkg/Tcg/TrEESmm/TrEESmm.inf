@@ -1,7 +1,5 @@
 ## @file
-#  Provides ACPI metholds for TPM 2.0 support
-#
-#  This driver implements TPM 2.0 definition block in ACPI table and 
+#  This driver implements TPM2 definition block in ACPI table and 
 #  registers SMI callback functions for TrEE physical presence and 
 #  MemoryClear to handle the requests from ACPI method.
 #
@@ -9,7 +7,7 @@
 #  This driver will have external input - variable and ACPINvs data in SMM mode.
 #  This external input must be validated carefully to avoid security issue.
 #
-# Copyright (c) 2013 - 2015, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2013, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution. The full text of the license may be found at
@@ -22,7 +20,6 @@
 [Defines]
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = TrEESmm
-  MODULE_UNI_FILE                = TrEESmm.uni
   FILE_GUID                      = 114B7105-6CC9-453c-BADC-16DF227BB4EF
   MODULE_TYPE                    = DXE_SMM_DRIVER
   PI_SPECIFICATION_VERSION       = 0x0001000A
@@ -49,37 +46,26 @@
   DxeServicesLib
   TpmMeasurementLib
   Tpm2DeviceLib
-  TrEEPpVendorLib
 
 [Guids]
-  ## SOMETIMES_PRODUCES ## Variable:L"PhysicalPresence"
-  ## SOMETIMES_CONSUMES ## Variable:L"PhysicalPresence"
-  ## SOMETIMES_CONSUMES ## Variable:L"PhysicalPresenceFlags"
   gEfiTrEEPhysicalPresenceGuid
-
-  ## SOMETIMES_PRODUCES ## Variable:L"MemoryOverwriteRequestControl"
-  ## SOMETIMES_CONSUMES ## Variable:L"MemoryOverwriteRequestControl"  
   gEfiMemoryOverwriteControlDataGuid
-  
-  gEfiTpmDeviceInstanceTpm20DtpmGuid                            ## PRODUCES           ## GUID       # TPM device identifier
+  gEfiTpmDeviceInstanceTpm20DtpmGuid
 
 [Protocols]
-  gEfiSmmSwDispatch2ProtocolGuid                                ## CONSUMES
-  gEfiSmmVariableProtocolGuid                                   ## CONSUMES
-  gEfiAcpiTableProtocolGuid                                     ## CONSUMES
+  gEfiSmmSwDispatch2ProtocolGuid                # PROTOCOL ALWAYS_CONSUMED
+  gEfiSmmVariableProtocolGuid                   # PROTOCOL ALWAYS_CONSUMED
+  gEfiAcpiTableProtocolGuid                     # PROTOCOL ALWAYS_CONSUMED
 
 [Pcd]
-  gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid              ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemId            ## SOMETIMES_CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemTableId       ## SOMETIMES_CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemRevision      ## SOMETIMES_CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorId        ## SOMETIMES_CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorRevision  ## SOMETIMES_CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemId
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemTableId
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemRevision
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorId
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorRevision
 
 [Depex]
   gEfiAcpiTableProtocolGuid AND
   gEfiSmmSwDispatch2ProtocolGuid AND
   gEfiSmmVariableProtocolGuid
-
-[UserExtensions.TianoCore."ExtraFiles"]
-  TrEESmmExtra.uni

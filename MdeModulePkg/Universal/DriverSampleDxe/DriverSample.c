@@ -2,7 +2,7 @@
 This is an example of how a driver might export data to the HII protocol to be
 later utilized by the Setup Protocol
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -388,7 +388,7 @@ SetPassword (
   //
   // Get user input password
   //
-  Password = PrivateData->Configuration.WhatIsThePassword2;
+  Password = &PrivateData->Configuration.WhatIsThePassword2[0];
   PasswordSize = sizeof (PrivateData->Configuration.WhatIsThePassword2);
   ZeroMem (Password, PasswordSize);
 
@@ -671,7 +671,6 @@ AppendAltCfgString (
   UINTN                               ValueWidth;
   EFI_STATUS                          Status;
 
-  TmpBuffer = NULL;
   StringPtr = *RequestResult;
   StringPtr = StrStr (StringPtr, L"OFFSET");
   BlockSize = sizeof (DRIVER_SAMPLE_CONFIGURATION);
@@ -1982,40 +1981,25 @@ DriverSampleInit (
                     sizeof (DRIVER_SAMPLE_CONFIGURATION),
                     Configuration
                     );
-    if (EFI_ERROR (Status)) {
-      DriverSampleUnload (ImageHandle);
-      return Status;
-    }
+    ASSERT (Status == EFI_SUCCESS);
     //
     // EFI variable for NV config doesn't exit, we should build this variable
     // based on default values stored in IFR
     //
     ActionFlag = HiiSetToDefaults (NameRequestHdr, EFI_HII_DEFAULT_CLASS_STANDARD);
-    if (!ActionFlag) {
-      DriverSampleUnload (ImageHandle);
-      return EFI_INVALID_PARAMETER;
-    }
+    ASSERT (ActionFlag);
 
     ActionFlag = HiiSetToDefaults (ConfigRequestHdr, EFI_HII_DEFAULT_CLASS_STANDARD);
-    if (!ActionFlag) {
-      DriverSampleUnload (ImageHandle);
-      return EFI_INVALID_PARAMETER;
-    }
+    ASSERT (ActionFlag);
   } else {
     //
     // EFI variable does exist and Validate Current Setting
     //
     ActionFlag = HiiValidateSettings (NameRequestHdr);
-    if (!ActionFlag) {
-      DriverSampleUnload (ImageHandle);
-      return EFI_INVALID_PARAMETER;
-    }
+    ASSERT (ActionFlag);
 
     ActionFlag = HiiValidateSettings (ConfigRequestHdr);
-    if (!ActionFlag) {
-      DriverSampleUnload (ImageHandle);
-      return EFI_INVALID_PARAMETER;
-    }
+    ASSERT (ActionFlag);
   }
   FreePool (ConfigRequestHdr);
 
@@ -2041,28 +2025,19 @@ DriverSampleInit (
                     sizeof (MY_EFI_VARSTORE_DATA),
                     VarStoreConfig
                     );
-    if (EFI_ERROR (Status)) {
-      DriverSampleUnload (ImageHandle);
-      return Status;
-    }
+    ASSERT (Status == EFI_SUCCESS);
     //
     // EFI variable for NV config doesn't exit, we should build this variable
     // based on default values stored in IFR
     //
     ActionFlag = HiiSetToDefaults (ConfigRequestHdr, EFI_HII_DEFAULT_CLASS_STANDARD);
-    if (!ActionFlag) {
-      DriverSampleUnload (ImageHandle);
-      return EFI_INVALID_PARAMETER;
-    }
+    ASSERT (ActionFlag);
   } else {
     //
     // EFI variable does exist and Validate Current Setting
     //
     ActionFlag = HiiValidateSettings (ConfigRequestHdr);
-    if (!ActionFlag) {
-      DriverSampleUnload (ImageHandle);
-      return EFI_INVALID_PARAMETER;
-    }
+    ASSERT (ActionFlag);
   }
   FreePool (ConfigRequestHdr);
 

@@ -1,7 +1,7 @@
 /** @file
   TPM1.2/dTPM2.0 auto detection.
 
-Copyright (c) 2013 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials 
 are licensed and made available under the terms and conditions of the BSD License 
 which accompanies this distribution.  The full text of the license may be found at 
@@ -14,7 +14,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 
 #include <PiPei.h>
-#include <Ppi/ReadOnlyVariable2.h>
 
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -46,7 +45,7 @@ IsDtpmPresent (
     DEBUG ((EFI_D_ERROR, "DetectTpmDevice: Dtpm not present\n"));
     return FALSE;
   } else {
-    DEBUG ((EFI_D_INFO, "DetectTpmDevice: Dtpm present\n"));
+    DEBUG ((EFI_D_ERROR, "DetectTpmDevice: Dtpm present\n"));
     return TRUE;
   }
 }
@@ -65,42 +64,25 @@ DetectTpmDevice (
 {
   EFI_STATUS                        Status;
   EFI_BOOT_MODE                     BootMode;
-  TREE_DEVICE_DETECTION             TrEEDeviceDetection;
-  EFI_PEI_READ_ONLY_VARIABLE2_PPI   *VariablePpi;
-  UINTN                             Size;
 
   Status = PeiServicesGetBootMode (&BootMode);
   ASSERT_EFI_ERROR (Status);
 
   //
-  // In S3, we rely on normal boot Detection, because we save to ReadOnly Variable in normal boot.
+  // In S3, we rely on Setup option, because we save to Setup in normal boot.
   //
   if (BootMode == BOOT_ON_S3_RESUME) {
-    DEBUG ((EFI_D_INFO, "DetectTpmDevice: S3 mode\n"));
-
-    Status = PeiServicesLocatePpi (&gEfiPeiReadOnlyVariable2PpiGuid, 0, NULL, (VOID **) &VariablePpi);
-    ASSERT_EFI_ERROR (Status);
-
-    Size = sizeof(TREE_DEVICE_DETECTION);
-    ZeroMem (&TrEEDeviceDetection, sizeof(TrEEDeviceDetection));
-    Status = VariablePpi->GetVariable (
-                            VariablePpi,
-                            TREE_DEVICE_DETECTION_NAME,
-                            &gTrEEConfigFormSetGuid,
-                            NULL,
-                            &Size,
-                            &TrEEDeviceDetection
-                            );
-    if (!EFI_ERROR (Status) &&
-        (TrEEDeviceDetection.TpmDeviceDetected >= TPM_DEVICE_MIN) &&
-        (TrEEDeviceDetection.TpmDeviceDetected <= TPM_DEVICE_MAX)) {
-      DEBUG ((EFI_D_ERROR, "TpmDevice from DeviceDetection: %x\n", TrEEDeviceDetection.TpmDeviceDetected));
-      return TrEEDeviceDetection.TpmDeviceDetected;
-    }
+    DEBUG ((EFI_D_ERROR, "DetectTpmDevice: S3 mode\n"));
+    return SetupTpmDevice;
   }
 
-  DEBUG ((EFI_D_INFO, "DetectTpmDevice:\n"));
-  if (!IsDtpmPresent ()) {
+  if (PcdGetBool (PcdHideTpmSupport) && PcdGetBool (PcdHideTpm)) {
+    DEBUG ((EFI_D_ERROR, "DetectTpmDevice: Tpm is hide\n"));
+    return TPM_DEVICE_NULL;
+  }
+
+  DEBUG ((EFI_D_ERROR, "DetectTpmDevice:\n"));
+  if ((!IsDtpmPresent ()) || (SetupTpmDevice == TPM_DEVICE_NULL)) {
     // dTPM not available
     return TPM_DEVICE_NULL;
   }
@@ -114,11 +96,7 @@ DetectTpmDevice (
     return TPM_DEVICE_2_0_DTPM;
   }
 
-  if (BootMode == BOOT_ON_S3_RESUME) {
-    Status = Tpm12Startup (TPM_ST_STATE);
-  } else {
-    Status = Tpm12Startup (TPM_ST_CLEAR);
-  }
+  Status = Tpm12Startup (TPM_ST_CLEAR);
   if (EFI_ERROR (Status)) {
     return TPM_DEVICE_2_0_DTPM;
   }

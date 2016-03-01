@@ -574,7 +574,6 @@ GetCapsuleDescriptors (
   TempVarName       = NULL;
   CapsuleVarName[0] = 0;
   ValidIndex        = 0;
-  CapsuleDataPtr64  = 0;
   
   Status = PeiServicesLocatePpi (
               &gEfiPeiReadOnlyVariable2PpiGuid,
@@ -746,7 +745,6 @@ CapsuleCoalesce (
   Index                   = 0;
   VariableCount           = 0;
   CapsuleVarName[0]       = 0;
-  CapsuleDataPtr64        = 0;
 
   //
   // Someone should have already ascertained the boot mode. If it's not

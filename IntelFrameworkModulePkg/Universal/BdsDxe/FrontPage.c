@@ -1,7 +1,7 @@
 /** @file
   FrontPage routines to handle the callbacks and browser calls
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2013, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -182,6 +182,7 @@ FrontPageCallback (
   CHAR8                         *LangCode;
   CHAR8                         *Lang;
   UINTN                         Index;
+  EFI_STATUS                    Status;
 
   if (Action != EFI_BROWSER_ACTION_CHANGING && Action != EFI_BROWSER_ACTION_CHANGED) {
     //
@@ -225,13 +226,14 @@ FrontPageCallback (
       }
 
       if (Index == Value->u8) {
-        BdsDxeSetVariableAndReportStatusCodeOnError (
+        Status = gRT->SetVariable (
                         L"PlatformLang",
                         &gEfiGlobalVariableGuid,
                         EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
                         AsciiStrSize (Lang),
                         Lang
                         );
+        ASSERT_EFI_ERROR(Status);
       } else {
         ASSERT (FALSE);
       }
@@ -741,66 +743,66 @@ UpdateFrontPageStrings (
                   NULL,
                   (VOID **) &Smbios
                   );
-  if (!EFI_ERROR (Status)) {
-    SmbiosHandle = SMBIOS_HANDLE_PI_RESERVED;
-    do {
-      Status = Smbios->GetNext (Smbios, &SmbiosHandle, NULL, &Record, NULL);
-      if (EFI_ERROR(Status)) {
-        break;
-      }
+  ASSERT_EFI_ERROR (Status);
 
-      if (Record->Type == EFI_SMBIOS_TYPE_BIOS_INFORMATION) {
-        Type0Record = (SMBIOS_TABLE_TYPE0 *) Record;
-        StrIndex = Type0Record->BiosVersion;
-        GetOptionalStringByIndex ((CHAR8*)((UINT8*)Type0Record + Type0Record->Hdr.Length), StrIndex, &NewString);
-        TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_BIOS_VERSION);
-        HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
-        FreePool (NewString);
-        Find[0] = TRUE;
-      }
+  SmbiosHandle = SMBIOS_HANDLE_PI_RESERVED;
+  do {
+    Status = Smbios->GetNext (Smbios, &SmbiosHandle, NULL, &Record, NULL);
+    if (EFI_ERROR(Status)) {
+      break;
+    }
 
-      if (Record->Type == EFI_SMBIOS_TYPE_SYSTEM_INFORMATION) {
-        Type1Record = (SMBIOS_TABLE_TYPE1 *) Record;
-        StrIndex = Type1Record->ProductName;
-        GetOptionalStringByIndex ((CHAR8*)((UINT8*)Type1Record + Type1Record->Hdr.Length), StrIndex, &NewString);
-        TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_COMPUTER_MODEL);
-        HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
-        FreePool (NewString);
-        Find[1] = TRUE;
-      }
+    if (Record->Type == EFI_SMBIOS_TYPE_BIOS_INFORMATION) {
+      Type0Record = (SMBIOS_TABLE_TYPE0 *) Record;
+      StrIndex = Type0Record->BiosVersion;
+      GetOptionalStringByIndex ((CHAR8*)((UINT8*)Type0Record + Type0Record->Hdr.Length), StrIndex, &NewString);
+      TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_BIOS_VERSION);
+      HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
+      FreePool (NewString);
+      Find[0] = TRUE;
+    }  
 
-      if (Record->Type == EFI_SMBIOS_TYPE_PROCESSOR_INFORMATION) {
-        Type4Record = (SMBIOS_TABLE_TYPE4 *) Record;
-        StrIndex = Type4Record->ProcessorVersion;
-        GetOptionalStringByIndex ((CHAR8*)((UINT8*)Type4Record + Type4Record->Hdr.Length), StrIndex, &NewString);
-        TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_CPU_MODEL);
-        HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
-        FreePool (NewString);
-        Find[2] = TRUE;
-      }
+    if (Record->Type == EFI_SMBIOS_TYPE_SYSTEM_INFORMATION) {
+      Type1Record = (SMBIOS_TABLE_TYPE1 *) Record;
+      StrIndex = Type1Record->ProductName;
+      GetOptionalStringByIndex ((CHAR8*)((UINT8*)Type1Record + Type1Record->Hdr.Length), StrIndex, &NewString);
+      TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_COMPUTER_MODEL);
+      HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
+      FreePool (NewString);
+      Find[1] = TRUE;
+    }
+      
+    if (Record->Type == EFI_SMBIOS_TYPE_PROCESSOR_INFORMATION) {
+      Type4Record = (SMBIOS_TABLE_TYPE4 *) Record;
+      StrIndex = Type4Record->ProcessorVersion;
+      GetOptionalStringByIndex ((CHAR8*)((UINT8*)Type4Record + Type4Record->Hdr.Length), StrIndex, &NewString);
+      TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_CPU_MODEL);
+      HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
+      FreePool (NewString);
+      Find[2] = TRUE;
+    }    
 
-      if (Record->Type == EFI_SMBIOS_TYPE_PROCESSOR_INFORMATION) {
-        Type4Record = (SMBIOS_TABLE_TYPE4 *) Record;
-        ConvertProcessorToString(Type4Record->CurrentSpeed, 6, &NewString);
-        TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_CPU_SPEED);
-        HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
-        FreePool (NewString);
-        Find[3] = TRUE;
-      }
+    if (Record->Type == EFI_SMBIOS_TYPE_PROCESSOR_INFORMATION) {
+      Type4Record = (SMBIOS_TABLE_TYPE4 *) Record;
+      ConvertProcessorToString(Type4Record->CurrentSpeed, 6, &NewString);
+      TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_CPU_SPEED);
+      HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
+      FreePool (NewString);
+      Find[3] = TRUE;
+    } 
 
-      if ( Record->Type == EFI_SMBIOS_TYPE_MEMORY_ARRAY_MAPPED_ADDRESS ) {
-        Type19Record = (SMBIOS_TABLE_TYPE19 *) Record;
-        ConvertMemorySizeToString (
-          (UINT32)(RShiftU64((Type19Record->EndingAddress - Type19Record->StartingAddress + 1), 10)),
-          &NewString
-          );
-        TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_MEMORY_SIZE);
-        HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
-        FreePool (NewString);
-        Find[4] = TRUE;
-      }
-    } while ( !(Find[0] && Find[1] && Find[2] && Find[3] && Find[4]));
-  }
+    if ( Record->Type == EFI_SMBIOS_TYPE_MEMORY_ARRAY_MAPPED_ADDRESS ) {
+      Type19Record = (SMBIOS_TABLE_TYPE19 *) Record;
+      ConvertMemorySizeToString (
+        (UINT32)(RShiftU64((Type19Record->EndingAddress - Type19Record->StartingAddress + 1), 10)),
+        &NewString
+        );
+      TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_MEMORY_SIZE);
+      HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
+      FreePool (NewString);
+      Find[4] = TRUE;  
+    }
+  } while ( !(Find[0] && Find[1] && Find[2] && Find[3] && Find[4]));
   return ;
 }
 
@@ -891,62 +893,64 @@ ShowProgress (
   EFI_GRAPHICS_OUTPUT_BLT_PIXEL Background;
   EFI_GRAPHICS_OUTPUT_BLT_PIXEL Color;
 
-  if (TimeoutDefault != 0) {
-    DEBUG ((EFI_D_INFO, "\n\nStart showing progress bar... Press any key to stop it! ...Zzz....\n"));
+  if (TimeoutDefault == 0) {
+    return EFI_TIMEOUT;
+  }
 
-    SetMem (&Foreground, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0xff);
-    SetMem (&Background, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0x0);
-    SetMem (&Color, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0xff);
+  DEBUG ((EFI_D_INFO, "\n\nStart showing progress bar... Press any key to stop it! ...Zzz....\n"));
+
+  SetMem (&Foreground, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0xff);
+  SetMem (&Background, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0x0);
+  SetMem (&Color, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0xff);
+  
+  TmpStr = GetStringById (STRING_TOKEN (STR_START_BOOT_OPTION));
+
+  if (!FeaturePcdGet(PcdBootlogoOnlyEnable)) {
+    //
+    // Clear the progress status bar first
+    //
+    if (TmpStr != NULL) {
+      PlatformBdsShowProgress (Foreground, Background, TmpStr, Color, 0, 0);
+    }
+  }
+  
+
+  TimeoutRemain = TimeoutDefault;
+  while (TimeoutRemain != 0) {
+    DEBUG ((EFI_D_INFO, "Showing progress bar...Remaining %d second!\n", TimeoutRemain));
+
+    Status = WaitForSingleEvent (gST->ConIn->WaitForKey, ONE_SECOND);
+    if (Status != EFI_TIMEOUT) {
+      break;
+    }
+    TimeoutRemain--;
     
-    TmpStr = GetStringById (STRING_TOKEN (STR_START_BOOT_OPTION));
-
     if (!FeaturePcdGet(PcdBootlogoOnlyEnable)) {
       //
-      // Clear the progress status bar first
+      // Show progress
       //
       if (TmpStr != NULL) {
-        PlatformBdsShowProgress (Foreground, Background, TmpStr, Color, 0, 0);
+        PlatformBdsShowProgress (
+          Foreground,
+          Background,
+          TmpStr,
+          Color,
+          ((TimeoutDefault - TimeoutRemain) * 100 / TimeoutDefault),
+          0
+          );
       }
     }
-    
+  }
+  
+  if (TmpStr != NULL) {
+    gBS->FreePool (TmpStr);
+  }
 
-    TimeoutRemain = TimeoutDefault;
-    while (TimeoutRemain != 0) {
-      DEBUG ((EFI_D_INFO, "Showing progress bar...Remaining %d second!\n", TimeoutRemain));
-
-      Status = WaitForSingleEvent (gST->ConIn->WaitForKey, ONE_SECOND);
-      if (Status != EFI_TIMEOUT) {
-        break;
-      }
-      TimeoutRemain--;
-      
-      if (!FeaturePcdGet(PcdBootlogoOnlyEnable)) {
-        //
-        // Show progress
-        //
-        if (TmpStr != NULL) {
-          PlatformBdsShowProgress (
-            Foreground,
-            Background,
-            TmpStr,
-            Color,
-            ((TimeoutDefault - TimeoutRemain) * 100 / TimeoutDefault),
-            0
-            );
-        }
-      }
-    }
-    
-    if (TmpStr != NULL) {
-      gBS->FreePool (TmpStr);
-    }
-
-    //
-    // Timeout expired
-    //
-    if (TimeoutRemain == 0) {
-      return EFI_TIMEOUT;
-    }
+  //
+  // Timeout expired
+  //
+  if (TimeoutRemain == 0) {
+    return EFI_TIMEOUT;
   }
 
   //
@@ -1083,7 +1087,7 @@ PlatformBdsEnterFrontPage (
     //
     // Clear EFI_OS_INDICATIONS_BOOT_TO_FW_UI to acknowledge OS
     // 
-    OsIndication &= ~((UINT64)EFI_OS_INDICATIONS_BOOT_TO_FW_UI);
+    OsIndication &= ~EFI_OS_INDICATIONS_BOOT_TO_FW_UI;
     Status = gRT->SetVariable (
                     L"OsIndications",
                     &gEfiGlobalVariableGuid,
@@ -1091,9 +1095,6 @@ PlatformBdsEnterFrontPage (
                     sizeof(UINT64),
                     &OsIndication
                     );
-    //
-    // Changing the content without increasing its size with current variable implementation shouldn't fail.
-    //
     ASSERT_EFI_ERROR (Status);
 
     //
@@ -1141,12 +1142,6 @@ PlatformBdsEnterFrontPage (
   if (!EFI_ERROR (Status) && (BootLogo != NULL)) {
     BootLogo->SetBootLogo (BootLogo, NULL, 0, 0, 0, 0);
   }
-
-  //
-  // Install BM HiiPackages. 
-  // Keep BootMaint HiiPackage, so that it can be covered by global setting. 
-  //
-  InitBMPackage ();
 
   Status = EFI_SUCCESS;
   do {
@@ -1204,19 +1199,9 @@ PlatformBdsEnterFrontPage (
 
     case FRONT_PAGE_KEY_BOOT_MANAGER:
       //
-      // Remove the installed BootMaint HiiPackages when exit.
-      //
-      FreeBMPackage ();
-
-      //
       // User chose to run the Boot Manager
       //
       CallBootManager ();
-
-      //
-      // Reinstall BootMaint HiiPackages after exiting from Boot Manager.
-      //
-      InitBMPackage ();
       break;
 
     case FRONT_PAGE_KEY_DEVICE_MANAGER:
@@ -1246,11 +1231,6 @@ PlatformBdsEnterFrontPage (
   //Will leave browser, check any reset required change is applied? if yes, reset system
   //
   SetupResetReminder ();
-
-  //
-  // Remove the installed BootMaint HiiPackages when exit.
-  //
-  FreeBMPackage ();
 
 Exit:
   //

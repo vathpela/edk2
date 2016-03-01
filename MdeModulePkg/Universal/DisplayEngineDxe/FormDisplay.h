@@ -63,7 +63,6 @@ extern CHAR16            gPromptBlockWidth;
 extern CHAR16            gOptionBlockWidth;
 extern CHAR16            gHelpBlockWidth;
 extern CHAR16            *mUnknownString;
-extern BOOLEAN           gMisMatch;
 
 //
 // Screen definitions
@@ -73,8 +72,6 @@ extern BOOLEAN           gMisMatch;
 #define SCROLL_ARROW_HEIGHT           1
 #define POPUP_PAD_SPACE_COUNT         5
 #define POPUP_FRAME_WIDTH             2
-
-#define UPPER_LOWER_CASE_OFFSET       0x20
 
 //
 // Display definitions
@@ -172,6 +169,7 @@ typedef enum {
   CfUiPageUp,
   CfUiPageDown,
   CfUiDown,
+  CfUiDefault,
   CfUiNoOperation,
   CfExit,
   CfUiHotKey,
@@ -197,39 +195,11 @@ typedef struct {
 
 typedef struct {
   EFI_HII_HANDLE     HiiHandle;
-  UINT16             FormId;
-  
-  //
-  // Info for the highlight question.
-  // HLT means highlight
-  //
-  // If one statement has questionid, save questionid info to find the question.
-  // If one statement not has questionid info, save the opcode info to find the 
-  // statement. If more than one statement has same opcode in one form(just like
-  // empty subtitle info may has more than one info one form), also use Index 
-  // info to find the statement.
-  //
-  EFI_QUESTION_ID    HLTQuestionId;
-  EFI_IFR_OP_HEADER  *HLTOpCode;
-  UINTN              HLTIndex;
-  UINTN              HLTSequence;
-  
-  //
-  // Info for the top of screen question.
-  // TOS means Top Of Screen
-  //
-  EFI_QUESTION_ID    TOSQuestionId;
-  EFI_IFR_OP_HEADER  *TOSOpCode;
-  UINTN              TOSIndex;
-
+  EFI_QUESTION_ID    QuestionId;
+  EFI_IFR_OP_HEADER  *OpCode;
+  UINT16             DisplayRow;
   UINT16             SkipValue;
 } DISPLAY_HIGHLIGHT_MENU_INFO;
-
-typedef struct {
-  EFI_EVENT   SyncEvent;
-  UINT8       *TimeOut;
-  CHAR16      *ErrorInfo;
-} WARNING_IF_CONTEXT;
 
 #define UI_MENU_OPTION_SIGNATURE  SIGNATURE_32 ('u', 'i', 'm', 'm')
 
@@ -606,31 +576,17 @@ ExitDisplay (
   );
 
 /**
-  Process nothing.
+  Process validate for one question.
 
-  @param Event    The Event need to be process
-  @param Context  The context of the event.
+  @param  Question               The question which need to validate.
 
-**/
-VOID
-EFIAPI
-EmptyEventProcess (
-  IN  EFI_EVENT    Event,
-  IN  VOID         *Context
-  );
-
-/**
-  Process for the refresh interval statement.
-
-  @param Event    The Event need to be process
-  @param Context  The context of the event.
+  @retval EFI_SUCCESS            Question Option process success.
+  @retval Other                  Question Option process fail.
 
 **/
-VOID
-EFIAPI
-RefreshTimeOutProcess (
-  IN  EFI_EVENT    Event,
-  IN  VOID         *Context
+EFI_STATUS 
+ValidateQuestion (
+  IN FORM_DISPLAY_ENGINE_STATEMENT   *Question
   );
 
 #endif

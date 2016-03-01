@@ -1,8 +1,7 @@
 ## @file
 # process FFS generation from INF statement
 #
-#  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
-#  Copyright (c) 2014 Hewlett-Packard Development Company, L.P.<BR>
+#  Copyright (c) 2007 - 2011, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -17,7 +16,8 @@
 # Import Modules
 #
 import Rule
-import Common.LongFilePathOs as os
+import os
+import shutil
 import StringIO
 from struct import *
 from GenFdsGlobalVariable import GenFdsGlobalVariable
@@ -31,7 +31,6 @@ from CommonDataClass.FdfClass import FfsInfStatementClassObject
 from Common.String import *
 from Common.Misc import PathClass
 from Common.Misc import GuidStructureByteArrayToGuidString
-from Common.Misc import ProcessDuplicatedInf
 from Common import EdkLogger
 from Common.BuildToolError import *
 from GuidSection import GuidSection
@@ -39,8 +38,6 @@ from FvImageSection import FvImageSection
 from Common.Misc import PeImageClass
 from AutoGen.GenDepex import DependencyExpression
 from PatchPcdValue.PatchPcdValue import PatchBinaryFile
-from Common.LongFilePathSupport import CopyLongFilePath
-from Common.LongFilePathSupport import OpenLongFilePath as open
 
 ## generate FFS from INF
 #
@@ -66,9 +63,6 @@ class FfsInfStatement(FfsInfStatementClassObject):
         self.CurrentLineContent = None
         self.FileName = None
         self.InfFileName = None
-        self.OverrideGuid = None
-        self.PatchedBinFile = ''
-        self.MacroDict = {}
 
     ## GetFinalTargetSuffixMap() method
     #
@@ -150,9 +144,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
         GenFdsGlobalVariable.VerboseLogger( " Begine parsing INf file : %s" %self.InfFileName)
 
         self.InfFileName = self.InfFileName.replace('$(WORKSPACE)', '')
-        if len(self.InfFileName) > 1 and self.InfFileName[0] == '\\' and self.InfFileName[1] == '\\':
-            pass
-        elif self.InfFileName[0] == '\\' or self.InfFileName[0] == '/' :
+        if self.InfFileName[0] == '\\' or self.InfFileName[0] == '/' :
             self.InfFileName = self.InfFileName[1:]
 
         if self.InfFileName.find('$') == -1:
@@ -171,9 +163,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
         ErrorCode, ErrorInfo = PathClassObj.Validate(".inf")
         if ErrorCode != 0:
             EdkLogger.error("GenFds", ErrorCode, ExtraData=ErrorInfo)
-
-        if self.OverrideGuid:
-            PathClassObj = ProcessDuplicatedInf(PathClassObj, self.OverrideGuid, GenFdsGlobalVariable.WorkSpaceDir)
+        
         if self.CurrentArch != None:
 
             Inf = GenFdsGlobalVariable.WorkSpace.BuildObject[PathClassObj, self.CurrentArch, GenFdsGlobalVariable.TargetName, GenFdsGlobalVariable.ToolChainTag]
@@ -207,9 +197,6 @@ class FfsInfStatement(FfsInfStatementClassObject):
                 EdkLogger.error("GenFds", GENFDS_ERROR,
                                 "INF %s specified in FDF could not be found in build ARCH %s!" \
                                 % (self.InfFileName, GenFdsGlobalVariable.ArchList))
-
-        if self.OverrideGuid:
-            self.ModuleGuid = self.OverrideGuid
 
         if len(self.SourceFileList) != 0 and not self.InDsc:
             EdkLogger.warn("GenFds", GENFDS_ERROR, "Module %s NOT found in DSC file; Is it really a binary module?" % (self.InfFileName))
@@ -297,8 +284,8 @@ class FfsInfStatement(FfsInfStatementClassObject):
                     or PcdValueInImg > FfsInfStatement._MAX_SIZE_TYPE[Pcd.DatumType]:
                     EdkLogger.error("GenFds", GENFDS_ERROR, "The size of %s type PCD '%s.%s' doesn't match its data type." \
                                     % (Pcd.DatumType, Pcd.TokenSpaceGuidCName, Pcd.TokenCName))
-            self.PatchPcds.append((Pcd, DefaultValue))
-
+            Pcd.DefaultValue = DefaultValue
+            self.PatchPcds.append(Pcd)
         self.InfModule = Inf
         self.PcdIsDriver = Inf.PcdIsDriver
         self.IsBinaryModule = Inf.IsBinaryModule
@@ -320,7 +307,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
         self.EfiOutputPath = self.__GetEFIOutPutPath__()
         GenFdsGlobalVariable.VerboseLogger( "ModuelEFIPath: " + self.EfiOutputPath)
 
-    ## PatchEfiFile
+## PatchEfiFile
     #
     #  Patch EFI file with patch PCD
     #
@@ -328,25 +315,18 @@ class FfsInfStatement(FfsInfStatementClassObject):
     #  @retval: Full path of patched EFI file: self.OutputPath + EfiFile base name
     #           If passed in file does not end with efi, return as is
     #
-    def PatchEfiFile(self, EfiFile, FileType):
+    def PatchEfiFile(self, EfiFile):
+        if os.path.splitext(EfiFile)[1].lower() != '.efi':
+            return EfiFile
         if not self.PatchPcds:
             return EfiFile
-        if FileType != 'PE32' and self.ModuleType != "USER_DEFINED":
-            return EfiFile
-        if self.PatchedBinFile:
-            EdkLogger.error("GenFds", GENFDS_ERROR,
-                            'Only one binary file can be patched:\n'
-                            '  a binary file has been patched: %s\n'
-                            '  current file: %s' % (self.PatchedBinFile, EfiFile),
-                            File=self.InfFileName)
         Basename = os.path.basename(EfiFile)
         Output = os.path.join(self.OutputPath, Basename)
-        CopyLongFilePath(EfiFile, Output)
-        for Pcd, Value in self.PatchPcds:
-            RetVal, RetStr = PatchBinaryFile(Output, int(Pcd.Offset, 0), Pcd.DatumType, Value, Pcd.MaxDatumSize)
+        shutil.copy(EfiFile, Output)
+        for Pcd in self.PatchPcds:
+            RetVal, RetStr = PatchBinaryFile(Output, int(Pcd.Offset, 0), Pcd.DatumType, Pcd.DefaultValue, Pcd.MaxDatumSize)
             if RetVal:
                 EdkLogger.error("GenFds", GENFDS_ERROR, RetStr, File=self.InfFileName)
-        self.PatchedBinFile = os.path.normpath(EfiFile)
         return Output
     ## GenFfs() method
     #
@@ -364,35 +344,11 @@ class FfsInfStatement(FfsInfStatementClassObject):
         #
 
         self.__InfParse__(Dict)
-        SrcFile = os.path.join( GenFdsGlobalVariable.WorkSpaceDir , self.InfFileName);
-        DestFile = os.path.join( self.OutputPath, self.ModuleGuid + '.ffs')
         
-        SrcFileDir = "."
-        SrcPath = os.path.dirname(SrcFile)
-        SrcFileName = os.path.basename(SrcFile)
-        SrcFileBase, SrcFileExt = os.path.splitext(SrcFileName)   
-        DestPath = os.path.dirname(DestFile)
-        DestFileName = os.path.basename(DestFile)
-        DestFileBase, DestFileExt = os.path.splitext(DestFileName)   
-        self.MacroDict = {
-            # source file
-            "${src}"      :   SrcFile,
-            "${s_path}"   :   SrcPath,
-            "${s_dir}"    :   SrcFileDir,
-            "${s_name}"   :   SrcFileName,
-            "${s_base}"   :   SrcFileBase,
-            "${s_ext}"    :   SrcFileExt,
-            # destination file
-            "${dst}"      :   DestFile,
-            "${d_path}"   :   DestPath,
-            "${d_name}"   :   DestFileName,
-            "${d_base}"   :   DestFileBase,
-            "${d_ext}"    :   DestFileExt
-        }
         #
         # Allow binary type module not specify override rule in FDF file.
         # 
-        if len(self.BinFileList) > 0:
+        if len(self.BinFileList) >0 and not self.InDsc:
             if self.Rule == None or self.Rule == "":
                 self.Rule = "BINARY"
                 
@@ -446,7 +402,6 @@ class FfsInfStatement(FfsInfStatementClassObject):
             '$(NAMED_GUID)'  : self.ModuleGuid
         }
         String = GenFdsGlobalVariable.MacroExtend(String, MacroDict)
-        String = GenFdsGlobalVariable.MacroExtend(String, self.MacroDict)        
         return String
 
     ## __GetRule__() method
@@ -612,8 +567,6 @@ class FfsInfStatement(FfsInfStatementClassObject):
         (ModulePath, FileName) = os.path.split(self.InfFileName)
         Index = FileName.rfind('.')
         FileName = FileName[0:Index]
-        if self.OverrideGuid:
-            FileName = self.OverrideGuid
         Arch = "NoneArch"
         if self.CurrentArch != None:
             Arch = self.CurrentArch
@@ -695,8 +648,8 @@ class FfsInfStatement(FfsInfStatementClassObject):
                 if not NoStrip:
                     FileBeforeStrip = os.path.join(self.OutputPath, ModuleName + '.reloc')
                     if not os.path.exists(FileBeforeStrip) or \
-                           (os.path.getmtime(File) > os.path.getmtime(FileBeforeStrip)):
-                        CopyLongFilePath(File, FileBeforeStrip)
+                        (os.path.getmtime(File) > os.path.getmtime(FileBeforeStrip)):
+                        shutil.copyfile(File, FileBeforeStrip)
                     StrippedFile = os.path.join(self.OutputPath, ModuleName + '.stipped')
                     GenFdsGlobalVariable.GenerateFirmwareImage(
                                             StrippedFile,
@@ -734,9 +687,8 @@ class FfsInfStatement(FfsInfStatementClassObject):
             if not NoStrip:
                 FileBeforeStrip = os.path.join(self.OutputPath, ModuleName + '.reloc')
                 if not os.path.exists(FileBeforeStrip) or \
-                       (os.path.getmtime(GenSecInputFile) > os.path.getmtime(FileBeforeStrip)):
-                    CopyLongFilePath(GenSecInputFile, FileBeforeStrip)
-
+                    (os.path.getmtime(GenSecInputFile) > os.path.getmtime(FileBeforeStrip)):
+                    shutil.copyfile(GenSecInputFile, FileBeforeStrip)
                 StrippedFile = os.path.join(self.OutputPath, ModuleName + '.stipped')
                 GenFdsGlobalVariable.GenerateFirmwareImage(
                                         StrippedFile,

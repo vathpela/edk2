@@ -26,9 +26,8 @@ SUPPORT_OBJS = set.obj
 
 # Dependencies
 
-$(EDK_TOOLS_PATH)\Bin\Win32\dlg.exe: $(DLG_OBJS) $(SUPPORT_OBJS)
+dlg.exe: $(DLG_OBJS) $(SUPPORT_OBJS)
     $(CC) $(CFLAGS) -Fedlg.exe $(DLG_OBJS) $(SUPPORT_OBJS)
-    -@if not exist $(EDK_TOOLS_PATH)\Bin\Win32 mkdir $(EDK_TOOLS_PATH)\Bin\Win32
 		copy dlg.exe $(EDK_TOOLS_PATH)\Bin\Win32
 
 dlg_p.obj: $(DLG_SRC)\dlg_p.c \

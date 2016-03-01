@@ -1,7 +1,7 @@
 /** @file
   Helper functions for configuring or obtaining the parameters relating to IP6.
 
-  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2013, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -600,7 +600,6 @@ Ip6ParseAddressListFromString (
     return EFI_INVALID_PARAMETER;
   }
 
-  ZeroMem (&AddressInfo, sizeof (EFI_IP6_ADDRESS_INFO));
   LocalString = (CHAR16 *) AllocateCopyPool (StrSize (String), String);
   if (LocalString == NULL) {
     return EFI_OUT_OF_RESOURCES;
@@ -718,9 +717,9 @@ Ip6ConvertInterfaceInfoToString (
   // Print the interface type.
   //
   if (IfInfo->IfType == Ip6InterfaceTypeEthernet) {
-    CopyMem (PortString, IP6_ETHERNET, sizeof (IP6_ETHERNET));
+    StrCpy (PortString, IP6_ETHERNET);
   } else if (IfInfo->IfType == Ip6InterfaceTypeExperimentalEthernet) {
-    CopyMem (PortString, IP6_EXPERIMENTAL_ETHERNET, sizeof (IP6_EXPERIMENTAL_ETHERNET));
+    StrCpy (PortString, IP6_EXPERIMENTAL_ETHERNET);
   } else {
     //
     // Refer to RFC1700, chapter Number Hardware Type.
@@ -747,9 +746,9 @@ Ip6ConvertInterfaceInfoToString (
   for (Index = 0; Index < IfInfo->HwAddressSize; Index++) {
 
     if (IfInfo->HwAddress.Addr[Index] < 0x10) {
-      CopyMem (FormatString, L"0%x-", sizeof (L"0%x-"));
+      StrCpy (FormatString, L"0%x-");
     } else {
-      CopyMem (FormatString, L"%x-", sizeof (L"%x-"));
+      StrCpy (FormatString, L"%x-");
     }
 
     Number = UnicodeSPrint (

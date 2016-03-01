@@ -1,8 +1,7 @@
 /** @file
   Main file for map shell level 2 command.
 
-  (C) Copyright 2013-2014, Hewlett-Packard Development Company, L.P.
-  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2013, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -119,6 +118,108 @@ SearchList(
 }
 
 /**
+  Add mappings for any devices without one.  Do not change any existing maps.
+
+  @retval EFI_SUCCESS   The operation was successful.
+**/
+EFI_STATUS
+EFIAPI
+UpdateMapping (
+  VOID
+  )
+{
+  EFI_STATUS                Status;
+  EFI_HANDLE                *HandleList;
+  UINTN                     Count;
+  EFI_DEVICE_PATH_PROTOCOL  **DevicePathList;
+  CHAR16                    *NewDefaultName;
+  CHAR16                    *NewConsistName;
+  EFI_DEVICE_PATH_PROTOCOL  **ConsistMappingTable;
+
+  HandleList  = NULL;
+  Status      = EFI_SUCCESS;
+
+  //
+  // remove mappings that represent removed devices.
+  //
+
+  //
+  // Find each handle with Simple File System
+  //
+  HandleList = GetHandleListByProtocol(&gEfiSimpleFileSystemProtocolGuid);
+  if (HandleList != NULL) {
+    //
+    // Do a count of the handles
+    //
+    for (Count = 0 ; HandleList[Count] != NULL ; Count++);
+
+    //
+    // Get all Device Paths
+    //
+    DevicePathList = AllocateZeroPool(sizeof(EFI_DEVICE_PATH_PROTOCOL*) * Count);
+    ASSERT(DevicePathList != NULL);
+
+    for (Count = 0 ; HandleList[Count] != NULL ; Count++) {
+      DevicePathList[Count] = DevicePathFromHandle(HandleList[Count]);
+    }
+
+    //
+    // Sort all DevicePaths
+    //
+    PerformQuickSort(DevicePathList, Count, sizeof(EFI_DEVICE_PATH_PROTOCOL*), DevicePathCompare);
+
+    ShellCommandConsistMappingInitialize(&ConsistMappingTable);
+
+    //
+    // Assign new Mappings to remainders
+    //
+    for (Count = 0 ; HandleList[Count] != NULL && !EFI_ERROR(Status); Count++) {
+      //
+      // Skip ones that already have
+      //
+      if (gEfiShellProtocol->GetMapFromDevicePath(&DevicePathList[Count]) != NULL) {
+        continue;
+      }
+      //
+      // Get default name
+      //
+      NewDefaultName = ShellCommandCreateNewMappingName(MappingTypeFileSystem);
+      ASSERT(NewDefaultName != NULL);
+
+      //
+      // Call shell protocol SetMap function now...
+      //
+      Status = gEfiShellProtocol->SetMap(DevicePathList[Count], NewDefaultName);
+
+      if (!EFI_ERROR(Status)) {
+        //
+        // Now do consistent name
+        //
+        NewConsistName = ShellCommandConsistMappingGenMappingName(DevicePathList[Count], ConsistMappingTable);
+        if (NewConsistName != NULL) {
+          Status = gEfiShellProtocol->SetMap(DevicePathList[Count], NewConsistName);
+          FreePool(NewConsistName);
+        }
+      }
+
+      FreePool(NewDefaultName);
+    }
+    ShellCommandConsistMappingUnInitialize(ConsistMappingTable);
+    SHELL_FREE_NON_NULL(HandleList);
+    SHELL_FREE_NON_NULL(DevicePathList);
+
+    HandleList = NULL;
+  } else {
+    Count = (UINTN)-1;
+  }
+  //
+  // Do it all over again for gEfiBlockIoProtocolGuid
+  //
+
+  return (Status);
+}
+
+/**
   Determine what type of device is represented and return it's string.  The 
   string is in allocated memory and must be callee freed.  The HII is is listed below.
   The actual string cannot be determined.
@@ -228,12 +329,13 @@ MappingListHasType(
   // specific has priority
   //
   if (Specific != NULL) {
-    NewSpecific = AllocateCopyPool(StrSize(Specific) + sizeof(CHAR16), Specific);
+    NewSpecific = AllocateZeroPool(StrSize(Specific) + sizeof(CHAR16));
     if (NewSpecific == NULL){
       return FALSE;
     }
+    StrCpy(NewSpecific, Specific);
     if (NewSpecific[StrLen(NewSpecific)-1] != L':') {
-      StrnCat(NewSpecific, L":", 2);
+      StrCat(NewSpecific, L":");
     }
 
     if (SearchList(MapList, NewSpecific, NULL, TRUE, FALSE, L";")) {
@@ -243,7 +345,6 @@ MappingListHasType(
     FreePool(NewSpecific);
   }
   if (  Consist
-    && Specific == NULL
     && (SearchList(MapList, L"HD*",  NULL, TRUE, TRUE, L";")
       ||SearchList(MapList, L"CD*",  NULL, TRUE, TRUE, L";")
       ||SearchList(MapList, L"F*",   NULL, TRUE, TRUE, L";")
@@ -252,7 +353,6 @@ MappingListHasType(
   }
 
   if (  Normal
-    && Specific == NULL
     && (SearchList(MapList, L"FS",  NULL, FALSE, TRUE, L";")
       ||SearchList(MapList, L"BLK", NULL, FALSE, TRUE, L";"))){
     return (TRUE);
@@ -316,11 +416,7 @@ PerformSingleMappingDisplay(
     return EFI_NOT_FOUND;
   }
 
-  if (Normal || !Consist) {
-    //
-    // need the Normal here since people can use both on command line.  otherwise unused.
-    //
-
+  if (Normal) {
     //
     // Allocate a name
     //
@@ -338,7 +434,7 @@ PerformSingleMappingDisplay(
     if (TempSpot != NULL) {
       *TempSpot = CHAR_NULL;
     }
-  } else {
+  } else if (Consist) {
     CurrentName = NULL;
 
     //
@@ -389,10 +485,16 @@ PerformSingleMappingDisplay(
         Alias[StrLen(Alias)-1] = CHAR_NULL;
       }
     }
+  } else {
+    CurrentName = NULL;
+    CurrentName = StrnCatGrow(&CurrentName, 0, L"", 0);
+    if (CurrentName == NULL) {
+      return (EFI_OUT_OF_RESOURCES);
+    }
   }
   DevPathString = ConvertDevicePathToText(DevPath, TRUE, FALSE);
-  TempLen = StrLen(CurrentName);
   if (!SFO) {
+    TempLen = StrLen(CurrentName);
     ShellPrintHiiEx (
       -1,
       -1,
@@ -426,6 +528,7 @@ PerformSingleMappingDisplay(
       SHELL_FREE_NON_NULL(MediaType);
     }
   } else {
+    TempLen = StrLen(CurrentName);
     ShellPrintHiiEx (
       -1,
       -1,
@@ -876,12 +979,13 @@ AddMappingFromMapping(
   EFI_STATUS                      Status;
   CHAR16                          *NewSName;
   
-  NewSName = AllocateCopyPool(StrSize(SName) + sizeof(CHAR16), SName);
+  NewSName = AllocateZeroPool(StrSize(SName) + sizeof(CHAR16));
   if (NewSName == NULL) {
     return (SHELL_OUT_OF_RESOURCES);
   }
+  StrCpy(NewSName, SName);
   if (NewSName[StrLen(NewSName)-1] != L':') {
-    StrnCat(NewSName, L":", 2);
+    StrCat(NewSName, L":");
   }
 
   if (!IsNumberLetterOnly(NewSName, StrLen(NewSName)-1)) {
@@ -928,12 +1032,13 @@ AddMappingFromHandle(
   EFI_STATUS                Status;
   CHAR16                    *NewSName;
   
-  NewSName = AllocateCopyPool(StrSize(SName) + sizeof(CHAR16), SName);
+  NewSName = AllocateZeroPool(StrSize(SName) + sizeof(CHAR16));
   if (NewSName == NULL) {
     return (SHELL_OUT_OF_RESOURCES);
   }
+  StrCpy(NewSName, SName);
   if (NewSName[StrLen(NewSName)-1] != L':') {
-    StrnCat(NewSName, L":", 2);
+    StrCat(NewSName, L":");
   }
 
   if (!IsNumberLetterOnly(NewSName, StrLen(NewSName)-1)) {
@@ -1095,7 +1200,7 @@ ShellCommandRunMap (
           //
           // Do the Update
           //
-          Status = ShellCommandUpdateMapping ();
+          Status = UpdateMapping();
           if (EFI_ERROR(Status)) {
             ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_ERR_UK), gShellLevel2HiiHandle, Status);
             ShellStatus = SHELL_UNSUPPORTED;
