@@ -932,6 +932,7 @@ AcpiPlatformEntryPoint (
 
   mGlobalNvsArea.Area->UartSelection = mSystemConfiguration.UartInterface;
   mGlobalNvsArea.Area->PcuUart1Enable = mSystemConfiguration.PcuUart1;
+  mGlobalNvsArea.Area->NativePCIESupport = 1;
 
 
 

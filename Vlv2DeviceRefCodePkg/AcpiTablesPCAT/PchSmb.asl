@@ -1,8 +1,7 @@
 /**************************************************************************;
 ;*                                                                        *;
-;*    Intel Confidential                                                  *;
 ;*                                                                        *;
-;*    Intel Corporation - ACPI Reference Code for the Valleyview          *;
+;*    Intel Corporation - ACPI Reference Code for the Baytrail            *;
 ;*    Family of Customer Reference Boards.                                *;
 ;*                                                                        *;
 ;*                                                                        *;
@@ -30,31 +29,6 @@ Field(SMBP,DWordAcc,NoLock,Preserve)
   I2CE, 1
 }
 
-OperationRegion(SMPB,PCI_Config,0x20,4)
-Field(SMPB,DWordAcc,NoLock,Preserve)
-{
-  ,     5,
-  SBAR, 11
-}
-
-// Define various SMBus IO Mapped Registers.
-
-OperationRegion(SMBI,SystemIO,ShiftLeft(SBAR,5),0x10)
-Field(SMBI,ByteAcc,NoLock,Preserve)
-{
-  HSTS, 8,        // 0 - Host Status Register
-  Offset(0x02),
-  HCON, 8,        // 2 - Host Control
-  HCOM, 8,        // 3 - Host Command
-  TXSA, 8,        // 4 - Transmit Slave Address
-  DAT0, 8,        // 5 - Host Data 0
-  DAT1, 8,        // 6 - Host Data 1
-  HBDR, 8,        // 7 - Host Block Data
-  PECR, 8,        // 8 - Packer Error Check
-  RXSA, 8,        // 9 - Receive Slave Address
-  SDAT, 16,       // A - Slave Data
-}
-
 // SMBus Send Byte - This function will write a single byte of
 // data to a specific Slave Device per SMBus Send Byte Protocol.
 //      Arg0 = Address
@@ -64,6 +38,31 @@ Field(SMBI,ByteAcc,NoLock,Preserve)
 
       Method(SSXB,2,Serialized)
 {
+  OperationRegion(SMPB,PCI_Config,0x20,4)
+  Field(SMPB,DWordAcc,NoLock,Preserve)
+  {
+    ,     5,
+    SBAR, 11
+  }
+
+  // Define various SMBus IO Mapped Registers.
+
+  OperationRegion(SMBI,SystemIO,ShiftLeft(SBAR,5),0x10)
+  Field(SMBI,ByteAcc,NoLock,Preserve)
+  {
+    HSTS, 8,        // 0 - Host Status Register
+    Offset(0x02),
+    HCON, 8,        // 2 - Host Control
+    HCOM, 8,        // 3 - Host Command
+    TXSA, 8,        // 4 - Transmit Slave Address
+    DAT0, 8,        // 5 - Host Data 0
+    DAT1, 8,        // 6 - Host Data 1
+    HBDR, 8,        // 7 - Host Block Data
+    PECR, 8,        // 8 - Packer Error Check
+    RXSA, 8,        // 9 - Receive Slave Address
+    SDAT, 16,       // A - Slave Data
+  }
+
   // Step 1:  Confirm the ICHx SMBus is ready to perform
   // communication.
 
@@ -109,6 +108,30 @@ Field(SMBI,ByteAcc,NoLock,Preserve)
 
 Method(SRXB,1,Serialized)
 {
+  OperationRegion(SMPB,PCI_Config,0x20,4)
+  Field(SMPB,DWordAcc,NoLock,Preserve)
+  {
+    ,     5,
+    SBAR, 11
+  }
+
+  // Define various SMBus IO Mapped Registers.
+
+  OperationRegion(SMBI,SystemIO,ShiftLeft(SBAR,5),0x10)
+  Field(SMBI,ByteAcc,NoLock,Preserve)
+  {
+    HSTS, 8,        // 0 - Host Status Register
+    Offset(0x02),
+    HCON, 8,        // 2 - Host Control
+    HCOM, 8,        // 3 - Host Command
+    TXSA, 8,        // 4 - Transmit Slave Address
+    DAT0, 8,        // 5 - Host Data 0
+    DAT1, 8,        // 6 - Host Data 1
+    HBDR, 8,        // 7 - Host Block Data
+    PECR, 8,        // 8 - Packer Error Check
+    RXSA, 8,        // 9 - Receive Slave Address
+    SDAT, 16,       // A - Slave Data
+  }
   // Step 1:  Confirm the ICHx SMBus is ready to perform
   // communication.
 
@@ -155,6 +178,30 @@ Method(SRXB,1,Serialized)
 
 Method(SWRB,3,Serialized)
 {
+  OperationRegion(SMPB,PCI_Config,0x20,4)
+  Field(SMPB,DWordAcc,NoLock,Preserve)
+  {
+    ,     5,
+    SBAR, 11
+  }
+
+  // Define various SMBus IO Mapped Registers.
+
+  OperationRegion(SMBI,SystemIO,ShiftLeft(SBAR,5),0x10)
+  Field(SMBI,ByteAcc,NoLock,Preserve)
+  {
+    HSTS, 8,        // 0 - Host Status Register
+    Offset(0x02),
+    HCON, 8,        // 2 - Host Control
+    HCOM, 8,        // 3 - Host Command
+    TXSA, 8,        // 4 - Transmit Slave Address
+    DAT0, 8,        // 5 - Host Data 0
+    DAT1, 8,        // 6 - Host Data 1
+    HBDR, 8,        // 7 - Host Block Data
+    PECR, 8,        // 8 - Packer Error Check
+    RXSA, 8,        // 9 - Receive Slave Address
+    SDAT, 16,       // A - Slave Data
+  }
   // Step 1:  Confirm the ICHx SMBus is ready to perform communication.
 
   If(STRT())
@@ -200,6 +247,30 @@ Method(SWRB,3,Serialized)
 
 Method(SRDB,2,Serialized)
 {
+  OperationRegion(SMPB,PCI_Config,0x20,4)
+  Field(SMPB,DWordAcc,NoLock,Preserve)
+  {
+    ,     5,
+    SBAR, 11
+  }
+
+  // Define various SMBus IO Mapped Registers.
+
+  OperationRegion(SMBI,SystemIO,ShiftLeft(SBAR,5),0x10)
+  Field(SMBI,ByteAcc,NoLock,Preserve)
+  {
+    HSTS, 8,        // 0 - Host Status Register
+    Offset(0x02),
+    HCON, 8,        // 2 - Host Control
+    HCOM, 8,        // 3 - Host Command
+    TXSA, 8,        // 4 - Transmit Slave Address
+    DAT0, 8,        // 5 - Host Data 0
+    DAT1, 8,        // 6 - Host Data 1
+    HBDR, 8,        // 7 - Host Block Data
+    PECR, 8,        // 8 - Packer Error Check
+    RXSA, 8,        // 9 - Receive Slave Address
+    SDAT, 16,       // A - Slave Data
+  }
   // Step 1:  Confirm the ICHx SMBus is ready to perform communication.
 
   If(STRT())
@@ -246,6 +317,30 @@ Method(SRDB,2,Serialized)
 
 Method(SWRW,3,Serialized)
 {
+  OperationRegion(SMPB,PCI_Config,0x20,4)
+  Field(SMPB,DWordAcc,NoLock,Preserve)
+  {
+    ,     5,
+    SBAR, 11
+  }
+
+  // Define various SMBus IO Mapped Registers.
+
+  OperationRegion(SMBI,SystemIO,ShiftLeft(SBAR,5),0x10)
+  Field(SMBI,ByteAcc,NoLock,Preserve)
+  {
+    HSTS, 8,        // 0 - Host Status Register
+    Offset(0x02),
+	HCON, 8,        // 2 - Host Control
+	HCOM, 8,        // 3 - Host Command
+	TXSA, 8,        // 4 - Transmit Slave Address
+	DAT0, 8,        // 5 - Host Data 0
+	DAT1, 8,        // 6 - Host Data 1
+	HBDR, 8,        // 7 - Host Block Data
+	PECR, 8,        // 8 - Packer Error Check
+	RXSA, 8,        // 9 - Receive Slave Address
+	SDAT, 16,       // A - Slave Data
+  }
   // Step 1:  Confirm the ICHx SMBus is ready to perform communication.
 
   If(STRT())
@@ -292,6 +387,30 @@ Method(SWRW,3,Serialized)
 
 Method(SRDW,2,Serialized)
 {
+  OperationRegion(SMPB,PCI_Config,0x20,4)
+  Field(SMPB,DWordAcc,NoLock,Preserve)
+  {
+    ,     5,
+    SBAR, 11
+  }
+
+  // Define various SMBus IO Mapped Registers.
+
+  OperationRegion(SMBI,SystemIO,ShiftLeft(SBAR,5),0x10)
+  Field(SMBI,ByteAcc,NoLock,Preserve)
+  {
+    HSTS, 8,        // 0 - Host Status Register
+	Offset(0x02),
+	HCON, 8,        // 2 - Host Control
+	HCOM, 8,        // 3 - Host Command
+	TXSA, 8,        // 4 - Transmit Slave Address
+	DAT0, 8,        // 5 - Host Data 0
+	DAT1, 8,        // 6 - Host Data 1
+	HBDR, 8,        // 7 - Host Block Data
+	PECR, 8,        // 8 - Packer Error Check
+	RXSA, 8,        // 9 - Receive Slave Address
+	SDAT, 16,       // A - Slave Data
+  }
   // Step 1:  Confirm the ICHx SMBus is ready to perform communication.
 
   If(STRT())
@@ -338,6 +457,30 @@ Method(SRDW,2,Serialized)
 
 Method(SBLW,4,Serialized)
 {
+  OperationRegion(SMPB,PCI_Config,0x20,4)
+  Field(SMPB,DWordAcc,NoLock,Preserve)
+  {
+    ,     5,
+    SBAR, 11
+  }
+
+  // Define various SMBus IO Mapped Registers.
+
+  OperationRegion(SMBI,SystemIO,ShiftLeft(SBAR,5),0x10)
+  Field(SMBI,ByteAcc,NoLock,Preserve)
+  {
+    HSTS, 8,        // 0 - Host Status Register
+	Offset(0x02),
+	HCON, 8,        // 2 - Host Control
+	HCOM, 8,        // 3 - Host Command
+	TXSA, 8,        // 4 - Transmit Slave Address
+	DAT0, 8,        // 5 - Host Data 0
+	DAT1, 8,        // 6 - Host Data 1
+	HBDR, 8,        // 7 - Host Block Data
+	PECR, 8,        // 8 - Packer Error Check
+	RXSA, 8,        // 9 - Receive Slave Address
+	SDAT, 16,       // A - Slave Data
+  }
   // Step 1:  Confirm the ICHx SMBus is ready to perform communication.
 
   If(STRT())
@@ -417,6 +560,30 @@ Method(SBLW,4,Serialized)
 
 Method(SBLR,3,Serialized)
 {
+  OperationRegion(SMPB,PCI_Config,0x20,4)
+  Field(SMPB,DWordAcc,NoLock,Preserve)
+  {
+    ,     5,
+    SBAR, 11
+  }
+
+  // Define various SMBus IO Mapped Registers.
+
+  OperationRegion(SMBI,SystemIO,ShiftLeft(SBAR,5),0x10)
+  Field(SMBI,ByteAcc,NoLock,Preserve)
+  {
+    HSTS, 8,        // 0 - Host Status Register
+	Offset(0x02),
+	HCON, 8,        // 2 - Host Control
+	HCOM, 8,        // 3 - Host Command
+	TXSA, 8,        // 4 - Transmit Slave Address
+	DAT0, 8,        // 5 - Host Data 0
+	DAT1, 8,        // 6 - Host Data 1
+	HBDR, 8,        // 7 - Host Block Data
+	PECR, 8,        // 8 - Packer Error Check
+	RXSA, 8,        // 9 - Receive Slave Address
+	SDAT, 16,       // A - Slave Data
+  }
   Name(TBUF, Buffer(256) {})
 
   // Step 1:  Confirm the ICHx SMBus is ready to perform communication.
@@ -506,6 +673,30 @@ Method(SBLR,3,Serialized)
 
 Method(STRT,0,Serialized)
 {
+  OperationRegion(SMPB,PCI_Config,0x20,4)
+  Field(SMPB,DWordAcc,NoLock,Preserve)
+  {
+    ,     5,
+    SBAR, 11
+  }
+
+  // Define various SMBus IO Mapped Registers.
+
+  OperationRegion(SMBI,SystemIO,ShiftLeft(SBAR,5),0x10)
+  Field(SMBI,ByteAcc,NoLock,Preserve)
+  {
+    HSTS, 8,        // 0 - Host Status Register
+	Offset(0x02),
+	HCON, 8,        // 2 - Host Control
+	HCOM, 8,        // 3 - Host Command
+	TXSA, 8,        // 4 - Transmit Slave Address
+	DAT0, 8,        // 5 - Host Data 0
+	DAT1, 8,        // 6 - Host Data 1
+	HBDR, 8,        // 7 - Host Block Data
+	PECR, 8,        // 8 - Packer Error Check
+	RXSA, 8,        // 9 - Receive Slave Address
+	SDAT, 16,       // A - Slave Data
+  }
   // Wait up to 200ms to confirm the SMBus Semaphore has been
   // released (In Use Status = 0).  Note that the Sleep time may take
   // longer as the This function will yield the Processor such that it
@@ -566,6 +757,30 @@ Method(STRT,0,Serialized)
 
 Method(COMP,0,Serialized)
 {
+  OperationRegion(SMPB,PCI_Config,0x20,4)
+  Field(SMPB,DWordAcc,NoLock,Preserve)
+  {
+    ,     5,
+    SBAR, 11
+  }
+
+  // Define various SMBus IO Mapped Registers.
+
+  OperationRegion(SMBI,SystemIO,ShiftLeft(SBAR,5),0x10)
+  Field(SMBI,ByteAcc,NoLock,Preserve)
+  {
+    HSTS, 8,        // 0 - Host Status Register
+	Offset(0x02),
+	HCON, 8,        // 2 - Host Control
+	HCOM, 8,        // 3 - Host Command
+	TXSA, 8,        // 4 - Transmit Slave Address
+	DAT0, 8,        // 5 - Host Data 0
+	DAT1, 8,        // 6 - Host Data 1
+	HBDR, 8,        // 7 - Host Block Data
+	PECR, 8,        // 8 - Packer Error Check
+	RXSA, 8,        // 9 - Receive Slave Address
+	SDAT, 16,       // A - Slave Data
+  }
   // Wait for up to 200ms for the Completion Command
   // Status to get set.
 
@@ -595,6 +810,30 @@ Method(COMP,0,Serialized)
 
 Method(KILL,0,Serialized)
 {
+  OperationRegion(SMPB,PCI_Config,0x20,4)
+  Field(SMPB,DWordAcc,NoLock,Preserve)
+  {
+    ,     5,
+    SBAR, 11
+  }
+
+  // Define various SMBus IO Mapped Registers.
+
+  OperationRegion(SMBI,SystemIO,ShiftLeft(SBAR,5),0x10)
+  Field(SMBI,ByteAcc,NoLock,Preserve)
+  {
+    HSTS, 8,        // 0 - Host Status Register
+	Offset(0x02),
+	HCON, 8,        // 2 - Host Control
+	HCOM, 8,        // 3 - Host Command
+	TXSA, 8,        // 4 - Transmit Slave Address
+	DAT0, 8,        // 5 - Host Data 0
+	DAT1, 8,        // 6 - Host Data 1
+	HBDR, 8,        // 7 - Host Block Data
+	PECR, 8,        // 8 - Packer Error Check
+	RXSA, 8,        // 9 - Receive Slave Address
+	SDAT, 16,       // A - Slave Data
+  }
   Or(HCON,0x02,HCON)                      // Yes.  Send Kill command.
   Or(HSTS,0xFF,HSTS)                      // Clear all status.
 }

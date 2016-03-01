@@ -18,7 +18,7 @@ Module Name:
 
 Abstract:
 
-  IGD OpRegion/Software ACPI Reference Code for the ValleyView Family.
+  IGD OpRegion/Software ACPI Reference Code for the Baytrail Family.
 
 --*/
 

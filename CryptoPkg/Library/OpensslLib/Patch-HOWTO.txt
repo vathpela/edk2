@@ -24,6 +24,23 @@ cryptography. This patch will enable openssl building under UEFI environment.
 ================================================================================
                       HOW to Install Openssl for UEFI Building
 ================================================================================
+
+
+*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_
+
+                         ATTENTION!
+                         
+Please Note:
+
+In this release of MinnowBoard MAX 0.76, the Development Tree you have installed has 
+had the Openssl content installed and patched for you. You only need to go through 
+these instructions if you desire to RE-INSTALL and PATCH AGAIN the Openssl content 
+from the Internet.
+
+
+*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_
+
+
 1.  Download OpenSSL 0.9.8w from official website:
    	http://www.openssl.org/source/openssl-0.9.8w.tar.gz
 

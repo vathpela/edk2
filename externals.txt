@@ -1,0 +1,24 @@
+BaseTools               -r15322 https://svn.code.sf.net/p/edk2/code/branches/UDK2014/BaseTools
+Conf                    -r15322 https://svn.code.sf.net/p/edk2/code/branches/UDK2014/Conf
+CryptoPkg               -r15322 https://svn.code.sf.net/p/edk2/code/branches/UDK2014/CryptoPkg
+EdkCompatibilityPkg     -r15322 https://svn.code.sf.net/p/edk2/code/branches/UDK2014//EdkCompatibilityPkg 
+EdkShellBinPkg          -r15322 https://svn.code.sf.net/p/edk2/code/branches/UDK2014/EdkShellBinPkg
+FatBinPkg               -r15322 https://svn.code.sf.net/p/edk2/code/branches/UDK2014/FatBinPkg
+IntelFrameworkModulePkg -r15322 https://svn.code.sf.net/p/edk2/code/branches/UDK2014/IntelFrameworkModulePkg
+IntelFrameworkPkg       -r15322 https://svn.code.sf.net/p/edk2/code/branches/UDK2014/IntelFrameworkPkg
+MdeModulePkg            -r15322 https://svn.code.sf.net/p/edk2/code/branches/UDK2014/MdeModulePkg
+MdePkg                  -r15322 https://svn.code.sf.net/p/edk2/code/branches/UDK2014/MdePkg
+NetworkPkg              -r15322 https://svn.code.sf.net/p/edk2/code/branches/UDK2014/NetworkPkg
+PcAtChipsetPkg          -r15322 https://svn.code.sf.net/p/edk2/code/branches/UDK2014/PcAtChipsetPkg
+PerformancePkg          -r15322 https://svn.code.sf.net/p/edk2/code/branches/UDK2014/PerformancePkg
+SecurityPkg             -r15322 https://svn.code.sf.net/p/edk2/code/branches/UDK2014/SecurityPkg
+ShellBinPkg             -r15322 https://svn.code.sf.net/p/edk2/code/branches/UDK2014/ShellBinPkg
+ShellPkg                -r15322 https://svn.code.sf.net/p/edk2/code/branches/UDK2014/ShellPkg
+SourceLevelDebugPkg     -r15322 https://svn.code.sf.net/p/edk2/code/branches/UDK2014/SourceLevelDebugPkg
+UefiCpuPkg              -r15322 https://svn.code.sf.net/p/edk2/code/branches/UDK2014/UefiCpuPkg
+FatPkg                  -r84    https://svn.code.sf.net/p/edk2-fatdriver2/code/trunk/FatPkg
+Vlv2DeviceRefCodePkg            https://ssvn.intel.com:80/ssg/csd/tiano/tianoad/trunk/Platforms/MinnowBoard2/Vlv2DeviceRefCodePkgOpenSource
+Vlv2BinaryPkg                   https://ssvn.intel.com:80/ssg/csd/tiano/tianoad/trunk/Platforms/MinnowBoard2/Vlv2BinaryPkg  
+Vlv2TbltDevicePkg               https://ssvn.intel.com:80/ssg/csd/tiano/tianoad/trunk/Platforms/MinnowBoard2/Vlv2TbltDevicePkgOpenSource 
+IntelFspPkg                     https://svn.code.sf.net/p/edk2/code/trunk/edk2/IntelFspPkg
+IntelFspWrapperPkg              https://svn.code.sf.net/p/edk2/code/trunk/edk2/IntelFspWrapperPkg

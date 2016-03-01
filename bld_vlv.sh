@@ -6,22 +6,11 @@ function Usage() {
   echo "***************************************************************************"
   echo "Build BIOS rom for VLV platforms."
   echo
-  echo "Usage: bld_vlv.bat [options] PlatformType [Build Target]"
+  echo "Usage: bld_vlv.bat  PlatformType [Build Target]"
   echo
-  echo "   /q    Quiet mode. Only display Fatal Errors (slightly faster)"
-  echo "   /l    Log a copy of the build output to EDK2.log"
-  echo "   /c    CleanAll before building"
-  echo "   /ecp  ECP build enable"
-  echo "   /x64  Set Arch to X64  (default: IA32)"
   echo
-  echo "       Platform Types:  ALPV, BBAY, BLAK, FFD8, BYTI, CVHS"
+  echo "       Platform Types:  MNW2"
   echo "       Build Targets:   Debug, Release  (default: Debug)"
-  echo
-  echo "Examples:"
-  echo "   bld_vlv.bat ALPV                : IA32 Debug build for AlpineValley"
-  echo "   bld_vlv.bat /q BBAY             : IA32 Debug build for BayleyBay"
-  echo "   bld_vlv.bat /X64 BBAY release   : X64 Release build for BayleyBay"
-  echo "   bld_vlv.bat /ECP BLAK release   : IA32 ECP Release build for BayLake"
   echo
   echo "***************************************************************************"
   echo "Press any key......"
@@ -34,7 +23,7 @@ echo -e $(date)
 ##**********************************************************************
 ## Initial Setup
 ##**********************************************************************
-#ORKSPACE=$(pwd)
+#WORKSPACE=$(pwd)
 #build_threads=($NUMBER_OF_PROCESSORS)+1
 Build_Flags=
 exitCode=0
@@ -73,14 +62,10 @@ make -C BaseTools
 
 ## Define platform specific environment variables.
 PLATFORM_PACKAGE=Vlv2TbltDevicePkg
-PLATFORM_ECP_PACKAGE=R8Vlv2TbltDevicePkg
-PLATFORM_RC_PACKAGE=R8VlvDeviceRefCodePkg
 config_file=$WORKSPACE/$PLATFORM_PACKAGE/PlatformPkgConfig.dsc
 auto_config_inc=$WORKSPACE/$PLATFORM_PACKAGE/AutoPlatformCFG.txt
 
 ## default ECP (override with /ECP flag)
-ECP_SOURCE=$WORKSPACE/EdkCompatibilityPkg
-EFI_SOURCE=$WORKSPACE/$PLATFORM_ECP_PACKAGE
 EDK_SOURCE=$WORKSPACE/EdkCompatibilityPkg
 
 ## create new AutoPlatformCFG.txt file
@@ -154,7 +139,7 @@ sed -i '/^BUILD_TYPE/d' Conf/BiosId.env
 ##            FFD8 (BLAK):  SVP_PF_BUILD = FALSE,  ENBDT_PF_BUILD = FALSE,  TABLET_PF_BUILD = TRUE,   BYTI_PF_BUILD = FALSE, IVI_PF_BUILD = FALSE
 echo "Setting  $1  platform configuration and BIOS ID..."
 if [ "$(echo $1 | tr 'a-z' 'A-Z')" == "MNW2" ]; then
-  echo BOARD_ID = MNW2CRB             >> Conf/BiosId.env
+  echo BOARD_ID = MNW2MAX             >> Conf/BiosId.env
   echo DEFINE ENBDT_PF_BUILD = TRUE  >> $auto_config_inc
 else
   echo "Error - Unsupported PlatformType: $1"

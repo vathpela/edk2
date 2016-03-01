@@ -2,15 +2,15 @@
 # FDF file of Platform.
 #
 # Copyright (c) 2008  - 2014, Intel Corporation. All rights reserved.<BR>
-#                                                                                  
-# This program and the accompanying materials are licensed and made available under
-# the terms and conditions of the BSD License that accompanies this distribution.  
-# The full text of the license may be found at                                     
-# http://opensource.org/licenses/bsd-license.php.                                  
-#                                                                                  
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,            
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.    
-#                                                                                  
+#                                                                                  
+# This program and the accompanying materials are licensed and made available under
+# the terms and conditions of the BSD License that accompanies this distribution.  
+# The full text of the license may be found at                                     
+# http://opensource.org/licenses/bsd-license.php.                                  
+#                                                                                  
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,            
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.    
+#                                                                                  
 #
 #**/
 
@@ -50,19 +50,19 @@ DEFINE FLASH_REGION_VLVMICROCODE_BASE                         = 0xFFE00000
 
 !if $(TARGET) == RELEASE
 DEFINE FLASH_REGION_FVMAIN_OFFSET                             = 0x00170000
-DEFINE FLASH_REGION_FVMAIN_SIZE                               = 0x00120000
+DEFINE FLASH_REGION_FVMAIN_SIZE                               = 0x0012d000
 !else
 !if $(SOURCE_DEBUG_ENABLE) == TRUE
 DEFINE FLASH_REGION_FVMAIN_OFFSET                             = 0x00130000
 DEFINE FLASH_REGION_FVMAIN_SIZE                               = 0x00176000
 !else
 DEFINE FLASH_REGION_FVMAIN_OFFSET                             = 0x00140000
-DEFINE FLASH_REGION_FVMAIN_SIZE                               = 0x00153000
+DEFINE FLASH_REGION_FVMAIN_SIZE                               = 0x00166000
 !endif
 !endif
 
 !if $(TARGET) == RELEASE
-DEFINE FLASH_REGION_FV_RECOVERY2_OFFSET                       = 0x00290000
+DEFINE FLASH_REGION_FV_RECOVERY2_OFFSET                       = 0x0029d000
 DEFINE FLASH_REGION_FV_RECOVERY2_SIZE                         = 0x00021000
 
 DEFINE FLASH_REGION_FV_RECOVERY_OFFSET                        = 0x002D0000
@@ -73,8 +73,8 @@ DEFINE FLASH_REGION_FV_RECOVERY_SIZE                          = 0x00030000
 DEFINE FLASH_REGION_FV_RECOVERY2_OFFSET                       = 0x002A6000
 DEFINE FLASH_REGION_FV_RECOVERY2_SIZE                         = 0x0002D000
 !else
-DEFINE FLASH_REGION_FV_RECOVERY2_OFFSET                       = 0x00293000
-DEFINE FLASH_REGION_FV_RECOVERY2_SIZE                         = 0x00040000
+DEFINE FLASH_REGION_FV_RECOVERY2_OFFSET                       = 0x002A6000
+DEFINE FLASH_REGION_FV_RECOVERY2_SIZE                         = 0x0002D000
 !endif
 
 
@@ -300,7 +300,7 @@ FvNameGuid         = B73FE497-B92E-416e-8326-45AD0D270092
 
 
 
-INF $(PLATFORM_PACKAGE)/PlatformInitPei/PlatformEarlyInit.inf
+INF $(PLATFORM_PACKAGE)/PlatformInitPei/PlatformInitPei.inf
 
 !if $(MINNOW2_FSP_BUILD) == FALSE
 INF RuleOverride = BINARY $(PLATFORM_BINARY_PACKAGE)/$(DXE_ARCHITECTURE)$(TARGET)/IA32/PchSmbusArpDisabled.inf
@@ -369,7 +369,7 @@ INF SecurityPkg/VariableAuthenticated/Pei/VariablePei.inf
 INF MdeModulePkg/Universal/Variable/Pei/VariablePei.inf
 !endif
 
-INF $(PLATFORM_PACKAGE)/PlatformPei/PlatformPeiBB2.inf
+INF $(PLATFORM_PACKAGE)/PlatformPei/PlatformPei.inf
 
 !if $(MINNOW2_FSP_BUILD) == FALSE
 INF RuleOverride = BINARY $(PLATFORM_BINARY_PACKAGE)/$(DXE_ARCHITECTURE)$(TARGET)/IA32/SeCUma.inf
@@ -447,7 +447,7 @@ INF MdeModulePkg/Universal/StatusCodeHandler/RuntimeDxe/StatusCodeHandlerRuntime
 INF MdeModulePkg/Universal/ReportStatusCodeRouter/Smm/ReportStatusCodeRouterSmm.inf
 INF MdeModulePkg/Universal/SecurityStubDxe/SecurityStubDxe.inf
 INF RuleOverride = BINARY $(PLATFORM_BINARY_PACKAGE)/$(DXE_ARCHITECTURE)$(TARGET)/$(DXE_ARCHITECTURE)/MpCpu.inf
-INF $(PLATFORM_PACKAGE)/Metronome/LegacyMetronome.inf
+INF $(PLATFORM_PACKAGE)/Metronome/Metronome.inf
 INF IntelFrameworkModulePkg/Universal/BdsDxe/BdsDxe.inf
 INF MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
 INF MdeModulePkg/Core/RuntimeDxe/RuntimeDxe.inf
@@ -477,7 +477,7 @@ INF MdeModulePkg/Universal/DevicePathDxe/DevicePathDxe.inf
 INF $(PLATFORM_PACKAGE)/FvbRuntimeDxe/FvbRuntimeDxe.inf
 
 
-INF $(PLATFORM_PACKAGE)/PlatformSetupDxe/PlatformSetupDxeVLVA0BB.inf
+INF $(PLATFORM_PACKAGE)/PlatformSetupDxe/PlatformSetupDxe.inf
 
 !if $(DATAHUB_ENABLE) == TRUE
 INF IntelFrameworkModulePkg/Universal/DataHubDxe/DataHubDxe.inf
@@ -521,7 +521,7 @@ INF RuleOverride = BINARY $(PLATFORM_BINARY_PACKAGE)/$(DXE_ARCHITECTURE)$(TARGET
 INF RuleOverride = BINARY $(PLATFORM_BINARY_PACKAGE)/$(DXE_ARCHITECTURE)$(TARGET)/$(DXE_ARCHITECTURE)/VlvInitDxe.inf
 !else
 INF IntelFrameworkModulePkg/Universal/LegacyRegionDxe/LegacyRegionDxe.inf
-INF Vlv2TbltDevicePkg/VlvPlatformInitDxe/VlvPlatformInit.inf
+INF Vlv2TbltDevicePkg/VlvPlatformInitDxe/VlvPlatformInitDxe.inf
 !endif
 !if $(TPM_ENABLED) == TRUE
 INF SecurityPkg/Tcg/TcgConfigDxe/TcgConfigDxe.inf
@@ -532,20 +532,20 @@ INF RuleOverride = DRIVER_ACPITABLE SecurityPkg/Tcg/TcgSmm/TcgSmm.inf
 #
 # EDK II Related Platform codes
 #
-INF $(PLATFORM_PACKAGE)/PlatformSmm/PlatformBB.inf
+INF $(PLATFORM_PACKAGE)/PlatformSmm/PlatformSmm.inf
 INF $(PLATFORM_PACKAGE)/PlatformInfoDxe/PlatformInfoDxe.inf
-INF $(PLATFORM_PACKAGE)/PlatformCpuInfo/PlatformCpuInfoDxe.inf
-INF $(PLATFORM_PACKAGE)/PlatformDxe/PlatformBB.inf
+INF $(PLATFORM_PACKAGE)/PlatformCpuInfoDxe/PlatformCpuInfoDxe.inf
+INF $(PLATFORM_PACKAGE)/PlatformDxe/PlatformDxe.inf
 INF $(PLATFORM_PACKAGE)/PciPlatform/PciPlatform.inf
 INF $(PLATFORM_PACKAGE)/SaveMemoryConfig/SaveMemoryConfig.inf
 INF RuleOverride = BINARY $(PLATFORM_BINARY_PACKAGE)/$(DXE_ARCHITECTURE)$(TARGET)/$(DXE_ARCHITECTURE)/PlatformCpuPolicy.inf
 INF $(PLATFORM_PACKAGE)/PpmPolicy/PpmPolicy.inf
 INF $(PLATFORM_PACKAGE)/SmramSaveInfoHandlerSmm/SmramSaveInfoHandlerSmm.inf
 !if $(GOP_DRIVER_ENABLE) == TRUE
- INF $(PLATFORM_PACKAGE)/PlatformGopPolicy/PlatformGopPolicyBB.inf
+ INF $(PLATFORM_PACKAGE)/PlatformGopPolicy/PlatformGopPolicy.inf
  FILE DRIVER = FF0C8745-3270-4439-B74F-3E45F8C77064 {
   SECTION DXE_DEPEX_EXP = {gPlatformGOPPolicyGuid}
-  SECTION PE32 = $(PLATFORM_PACKAGE)/Restricted/GOP/7.1.1007/RELEASE_VS2008x86/$(DXE_ARCHITECTURE)/IntelGopDriver.efi
+  SECTION PE32 = $(PLATFORM_PACKAGE)/Restricted/GOP/7.2.1011/RELEASE_VS2008x86/$(DXE_ARCHITECTURE)/IntelGopDriver.efi
   SECTION UI = "IntelGopDriver"
 }
 !endif
@@ -574,13 +574,12 @@ INF RuleOverride = ACPITABLE2 Vlv2DeviceRefCodePkg/ValleyView2Soc/CPU/PowerManag
 
 INF RuleOverride = ACPITABLE $(PLATFORM_RC_PACKAGE)/AcpiTablesPCAT/AcpiTables.inf
 
-INF $(PLATFORM_PACKAGE)/AcpiPlatform/AcpiPlatformBB.inf
+INF $(PLATFORM_PACKAGE)/AcpiPlatform/AcpiPlatform.inf
 
   #
   # PCI
   #
-  #INF MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe.inf
-INF $(PLATFORM_PACKAGE)/Override/MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe.inf
+INF MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe.inf
 
 INF RuleOverride = BINARY $(PLATFORM_BINARY_PACKAGE)/$(DXE_ARCHITECTURE)$(TARGET)/$(DXE_ARCHITECTURE)/ISPDxe.inf
 
@@ -588,7 +587,7 @@ INF RuleOverride = BINARY $(PLATFORM_BINARY_PACKAGE)/$(DXE_ARCHITECTURE)$(TARGET
 #
 # ISA
 #
-INF $(PLATFORM_PACKAGE)/Wpce791/SiO791.inf
+INF $(PLATFORM_PACKAGE)/Wpce791/Wpce791.inf
 INF IntelFrameworkModulePkg/Bus/Isa/IsaBusDxe/IsaBusDxe.inf
 INF IntelFrameworkModulePkg/Bus/Isa/IsaIoDxe/IsaIoDxe.inf
 !if $(SOURCE_DEBUG_ENABLE) != TRUE
@@ -627,8 +626,7 @@ INF MdeModulePkg/Bus/Scsi/ScsiDiskDxe/ScsiDiskDxe.inf
 #
 INF MdeModulePkg/Universal/Console/ConPlatformDxe/ConPlatformDxe.inf
 INF MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe.inf
-#INF MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
-INF $(PLATFORM_PACKAGE)/Override/MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
+INF MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
 INF IntelFrameworkModulePkg/Universal/Console/VgaClassDxe/VgaClassDxe.inf
 INF MdeModulePkg/Universal/Console/TerminalDxe/TerminalDxe.inf
 INF MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
@@ -660,7 +658,7 @@ INF EdkCompatibilityPkg/Compatibility/FvOnFv2Thunk/FvOnFv2Thunk.inf
   # SMBIOS
   #
 INF MdeModulePkg/Universal/SmbiosDxe/SmbiosDxe.inf
-INF $(PLATFORM_PACKAGE)/SmBiosMiscDxe/MiscSubclassBB.inf
+INF $(PLATFORM_PACKAGE)/SmBiosMiscDxe/SmBiosMiscDxe.inf
 
 INF RuleOverride = BINARY $(PLATFORM_BINARY_PACKAGE)/$(DXE_ARCHITECTURE)$(TARGET)/$(DXE_ARCHITECTURE)/SmbiosMemory.inf
 
@@ -686,7 +684,7 @@ FILE APPLICATION = PCD(gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdShellFile) {
 
 !if $(GOP_DRIVER_ENABLE) == TRUE
 FILE FREEFORM = 878AC2CC-5343-46F2-B563-51F89DAF56BA {
-  SECTION RAW = $(PLATFORM_PACKAGE)/Restricted/GOP/7.1.1007/VBT/MNW2/Vbt.bin
+  SECTION RAW = $(PLATFORM_PACKAGE)/Restricted/GOP/7.2.1011/VBT/MNW2/Vbt.bin
   SECTION UI = "IntelGopVbt"
 }
 !endif
@@ -699,8 +697,7 @@ FILE FREEFORM = 878AC2CC-5343-46F2-B563-51F89DAF56BA {
     SECTION PE32 = $(PLATFORM_PACKAGE)/Restricted/UNDI/RtkUndiDxe/$(DXE_ARCHITECTURE)/RtkUndiDxe.efi
     SECTION UI = "UNDI"
   }
-#  INF  MdeModulePkg/Universal/Network/SnpDxe/SnpDxe.inf
-  INF  Vlv2TbltDevicePkg/Override/MdeModulePkg/Universal/Network/SnpDxe/SnpDxe.inf
+  INF  MdeModulePkg/Universal/Network/SnpDxe/SnpDxe.inf
   INF  MdeModulePkg/Universal/Network/DpcDxe/DpcDxe.inf
   INF  MdeModulePkg/Universal/Network/MnpDxe/MnpDxe.inf
   INF  MdeModulePkg/Universal/Network/ArpDxe/ArpDxe.inf
